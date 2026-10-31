@@ -122,6 +122,9 @@ const AIRCRAFT_MASS_KG=1250, WING_AREA_M2=16.2, MAX_ENGINE_THRUST_N=5200, TAKEOF
 const simEuler=new THREE.Euler(0,0,0,'YXZ'),simQuaternion=new THREE.Quaternion();
 const simForward=new THREE.Vector3(),simUp=new THREE.Vector3(),simRight=new THREE.Vector3(),simLiftDirection=new THREE.Vector3(),simAirVelocity=new THREE.Vector3(),simDirection=new THREE.Vector3(),simForce=new THREE.Vector3(),simGravity=new THREE.Vector3(0,-AIRCRAFT_MASS_KG*9.81,0);
 const camForward=new THREE.Vector3(),camUp=new THREE.Vector3(),camRight=new THREE.Vector3();
+// Pilot eye point derived from the supplied Cessna's actual pilot-seat node.
+const cockpitEyeLocal=new THREE.Vector3(-.24,.53,-.34);
+let cockpitEyeSource='fallback';
 // Shared canopy material: used by both the aircraft cockpit and the airfield tower.
 const glass=new THREE.MeshPhysicalMaterial({color:0x8bd1e1,metalness:.12,roughness:.12,transparent:true,opacity:.62,clearcoat:1});
 
@@ -267,6 +270,23 @@ async function makeAircraft(){
 
   plane.userData.visualModel=model;
   syncPlaneTransform();
+  // Place the camera at the pilot's seat, not above/in front of the aircraft.
+  // The GLB includes separate left/right front-seat nodes; the left seat is the pilot position.
+  plane.updateMatrixWorld(true);
+  model.updateMatrixWorld(true);
+  const pilotSeat=model.getObjectByName('seat_dside_f_27')||model.getObjectByName('seat_dside_f');
+  if(pilotSeat){
+    const seatWorld=pilotSeat.getWorldPosition(new THREE.Vector3());
+    plane.worldToLocal(seatWorld);
+    cockpitEyeLocal.copy(seatWorld);
+    // Seat pivot is near the cushion. Raise to a realistic seated eye point
+    // and move aft into the cabin, behind the instrument panel and yoke.
+    cockpitEyeLocal.y+=.64;
+    cockpitEyeLocal.z+=.38;
+    cockpitEyeSource='GLB pilot seat';
+  }
+  plane.userData.cockpitEye=cockpitEyeLocal.clone();
+  console.info('[SKYBOUND] Cockpit eye:',cockpitEyeSource,cockpitEyeLocal.toArray().map(v=>Number(v.toFixed(3))));
   if(loadingText)loadingText.textContent='PREPARING PROCEDURAL WORLD';
   if(loadingBar){loadingBar.style.animation='';loadingBar.style.width='45%';}
 }
@@ -589,11 +609,26 @@ function stepPhysics(dt,ctrl){
 }
 const camTarget=new THREE.Vector3(),camPos=new THREE.Vector3();let lastCameraMode=0;
 function updateCamera(dt,ctrl){const a=aircraft,q=plane.quaternion;camForward.set(0,0,-1).applyQuaternion(q);camUp.set(0,1,0).applyQuaternion(q);camRight.set(1,0,0).applyQuaternion(q);
-  const targetFov=state.camera===1?75:state.camera===2?65:state.camera===3?62:72;
-  if(lastCameraMode!==state.camera||camera.fov!==targetFov){camera.fov=targetFov;camera.updateProjectionMatrix();lastCameraMode=state.camera;}
-  if(state.camera===1){camTarget.copy(a.position).addScaledVector(camForward,90);camPos.copy(a.position).addScaledVector(camForward,.42).addScaledVector(camUp,.86);camera.position.lerp(camPos,1-Math.exp(-dt*18));camera.lookAt(camTarget);}
-  else if(state.camera===2){camPos.copy(a.position).addScaledVector(camForward,-29).addScaledVector(camUp,9);camTarget.copy(a.position).addScaledVector(camForward,20);camera.position.lerp(camPos,1-Math.exp(-dt*3.3));camera.lookAt(camTarget);}
-  else{state.orbitYaw-=ctrl.camX*dt*1.8;state.orbitPitch=clamp(state.orbitPitch-ctrl.camY*dt*1.4,-.2,1.1);if(state.mouseDown){state.orbitYaw-=state.mouseDx*.004;state.orbitPitch=clamp(state.orbitPitch-state.mouseDy*.004,-.2,1.1);state.mouseDx=state.mouseDy=0;}const radius=state.camera===3?36:75,ox=Math.sin(state.orbitYaw)*Math.cos(state.orbitPitch)*radius,oy=Math.sin(state.orbitPitch)*radius+7,oz=Math.cos(state.orbitYaw)*Math.cos(state.orbitPitch)*radius;camPos.set(a.position.x+ox,a.position.y+oy,a.position.z+oz);camera.position.lerp(camPos,1-Math.exp(-dt*3));camera.lookAt(a.position);}
+  const targetFov=state.camera===1?72:state.camera===2?65:state.camera===3?62:72;
+  // Cockpit interiors contain nearby gauges, yoke, window frames and panel
+  // geometry. A 2 m near plane clips all of that away and leaves only the nose
+  // and propeller visible. Use a cockpit-safe near plane; keep a larger value
+  // for external cameras to preserve depth precision in the distant terrain.
+  const targetNear=state.camera === 1 ? 0.08 : 1.0;
+  if(camera.near!==targetNear||lastCameraMode!==state.camera||camera.fov!==targetFov){camera.near=targetNear;camera.fov=targetFov;camera.updateProjectionMatrix();lastCameraMode=state.camera;}
+  if(state.camera===1){
+    // First-person pilot view, located at the imported left-seat eye point.
+    // The camera is inside the cabin, aft of the panel, looking through the
+    // windshield. A modest downward sightline keeps the glareshield visible
+    // along the lower edge without staring at the engine cowling.
+    camPos.copy(cockpitEyeLocal).applyQuaternion(q).add(a.position);
+    camTarget.copy(camPos).addScaledVector(camForward,100).addScaledVector(camUp,-7.0);
+    camera.position.copy(camPos);
+    camera.up.copy(camUp);
+    camera.lookAt(camTarget);
+  }
+  else if(state.camera===2){camera.up.set(0,1,0);camPos.copy(a.position).addScaledVector(camForward,-29).addScaledVector(camUp,9);camTarget.copy(a.position).addScaledVector(camForward,20);camera.position.lerp(camPos,1-Math.exp(-dt*3.3));camera.lookAt(camTarget);}
+  else{camera.up.set(0,1,0);state.orbitYaw-=ctrl.camX*dt*1.8;state.orbitPitch=clamp(state.orbitPitch-ctrl.camY*dt*1.4,-.2,1.1);if(state.mouseDown){state.orbitYaw-=state.mouseDx*.004;state.orbitPitch=clamp(state.orbitPitch-state.mouseDy*.004,-.2,1.1);state.mouseDx=state.mouseDy=0;}const radius=state.camera===3?36:75,ox=Math.sin(state.orbitYaw)*Math.cos(state.orbitPitch)*radius,oy=Math.sin(state.orbitPitch)*radius+7,oz=Math.cos(state.orbitYaw)*Math.cos(state.orbitPitch)*radius;camPos.set(a.position.x+ox,a.position.y+oy,a.position.z+oz);camera.position.lerp(camPos,1-Math.exp(-dt*3));camera.lookAt(a.position);}
 }
 function updateEnvironment(dt){worldTime+=dt;const sunAngle=(worldTime/600)*Math.PI*2-.45;sunLight.position.set(Math.cos(sunAngle)*1300,Math.sin(sunAngle)*1400,-650);const day=clamp((Math.sin(sunAngle)+.18)/.8,0,1);sunLight.intensity=.2+day*2.1;scene.background.setRGB(lerp(.025,.49,day),lerp(.055,.70,day),lerp(.10,.81,day));scene.fog.color.copy(scene.background);cloudGroup.position.x=aircraft.position.x*.02;cloudGroup.position.z=aircraft.position.z*.02;}
 function updateHud(dt){cameraName();const a=aircraft,speed=a.airspeed*KTS_PER_MS,alt=a.altAGL*FT_PER_M,head=(((-a.yaw/DEG)%360)+360)%360;$('speed').textContent=Math.round(speed);$('altitude').textContent=Math.round(alt).toLocaleString();$('vspeed').textContent=`${Math.round(a.verticalSpeed*196.85)} FPM`;$('gLoad').textContent=`${a.gLoad.toFixed(1)} G`;$('slipAngle').textContent=`${a.slipAngle.toFixed(1)}°`;$('heading').textContent=`${String(Math.round(head)%360).padStart(3,'0')}°`;$('position').textContent=`${(a.position.x/1000).toFixed(1)} / ${(a.position.z/1000).toFixed(1)} KM`;$('throttleText').textContent=`${Math.round(state.throttle*100)}%`;$('throttleBar').style.width=`${state.throttle*100}%`;$('engineText').textContent=aircraft.enginePower>.78?'HIGH':aircraft.enginePower>.08?'SPOOLING':'IDLE';$('engineBar').style.width=`${aircraft.enginePower*100}%`;$('gearText').textContent='FIXED GEAR';$('gearBar').style.width='100%';$('flightStatus').textContent=state.crashed?'DAMAGED':a.altAGL<5&&speed<35?'ON RUNWAY':a.stall?'STALL WARNING':'IN FLIGHT';$('flightStatus').style.color=a.stall?'var(--red)':'var(--lime)';$('attitudeSky').style.transform=`rotate(${a.roll/DEG}deg) translateY(${a.pitch*45}px)`;$('windText').textContent='240° / 04 KT';$('fpsText').textContent=`${Math.round(state.fps)} FPS`;$('gyroStatus').textContent=state.gyroDevice&&state.gyroCalibrated?'ONLINE':state.gyroDevice?'CALIBRATE':'OFFLINE';}
