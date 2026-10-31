@@ -1,0 +1,3 @@
+Aircraft visual: cessna_182_skylane.glb
+Source: supplied by the user for SKYBOUND integration.
+Keep this file beside index.html.

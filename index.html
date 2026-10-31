@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#07111c" />
+<title>SKYBOUND — Cessna 182 Skylane Flight Simulator</title>
+<style>
+  :root{--bg:#07111c;--panel:rgba(7,17,28,.72);--panel2:rgba(12,27,42,.84);--line:rgba(207,229,245,.16);--text:#eef6fc;--muted:#8ea4b8;--cyan:#71d8ee;--lime:#b9e6bd;--amber:#ffc978;--red:#ff8d83}
+  *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer;color:inherit;border:1px solid var(--line);background:rgba(255,255,255,.06);border-radius:9px;padding:10px 13px;transition:.18s ease}button:hover{background:rgba(113,216,238,.13);border-color:rgba(113,216,238,.55)}button.primary{background:var(--cyan);color:#07131e;border-color:var(--cyan);font-weight:750}button.primary:hover{background:#a2ebf7}button:disabled{opacity:.4;cursor:not-allowed}
+  #sim{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
+  .grain{display:none;pointer-events:none;position:fixed;inset:0;opacity:.075;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E")}
+  .topbar{position:fixed;z-index:5;top:18px;left:22px;right:22px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}.brand,.top-actions{pointer-events:auto}.brand{display:flex;gap:12px;align-items:center}.brand-mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(113,216,238,.15);border:1px solid rgba(113,216,238,.35);color:var(--cyan);font-weight:900;letter-spacing:-2px}.brand-name{font-size:12px;font-weight:850;letter-spacing:.22em}.brand-sub{font-size:9px;color:var(--muted);letter-spacing:.18em;margin-top:3px}.top-actions{display:flex;gap:8px}.top-actions button{font-size:11px;letter-spacing:.05em;background:rgba(6,16,26,.5);backdrop-filter:blur(8px)}
+  .hud{position:fixed;z-index:4;inset:76px 22px 22px;pointer-events:none;display:none}.hud.active{display:block}.panel{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(8px);box-shadow:0 12px 40px rgba(0,0,0,.18);border-radius:13px}.hud-left{position:absolute;left:0;top:0;width:188px;padding:14px}.eyebrow{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}.metric{margin-top:12px}.metric-label{font-size:9px;letter-spacing:.13em;color:var(--muted);text-transform:uppercase}.metric-value{font-size:27px;line-height:1.15;font-weight:650;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.metric-unit{font-size:10px;color:var(--muted);margin-left:5px;letter-spacing:.06em}.metric-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}.metric-row strong{font-size:13px;font-variant-numeric:tabular-nums}.metric-row span{font-size:9px;color:var(--muted);letter-spacing:.09em}.status-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:5px 8px;font-size:9px;letter-spacing:.1em;color:var(--muted);margin-top:13px}.dot{width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px currentColor}.hud-right{position:absolute;right:0;top:0;width:210px;padding:13px}.instrument{margin-top:12px}.instrument-head{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);letter-spacing:.14em}.bar{height:5px;background:rgba(255,255,255,.1);border-radius:8px;overflow:hidden;margin-top:7px}.bar>i{display:block;height:100%;width:0%;background:var(--cyan);border-radius:8px;transition:width .12s linear}.compass{position:absolute;top:0;left:50%;transform:translateX(-50%);width:270px;padding:10px 16px;text-align:center}.compass .heading{font-size:22px;letter-spacing:.08em;font-variant-numeric:tabular-nums}.compass .ticks{font-size:10px;letter-spacing:.22em;color:var(--muted);margin-top:2px}.center-reticle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:28px;height:28px;opacity:.65}.center-reticle:before,.center-reticle:after{content:"";position:absolute;background:rgba(255,255,255,.75)}.center-reticle:before{width:1px;height:28px;left:13px}.center-reticle:after{height:1px;width:28px;top:13px}
+  .bottom-left{position:absolute;bottom:0;left:0;display:flex;gap:8px}.mini-panel{min-width:150px;padding:10px 12px}.mini-panel .big{font-size:15px;font-weight:650;margin-top:3px;font-variant-numeric:tabular-nums}.bottom-right{position:absolute;right:0;bottom:0;display:flex;gap:8px;align-items:end}.hint{font-size:9px;color:var(--muted);letter-spacing:.08em}
+  .attitude-wrap{position:absolute;bottom:76px;left:50%;transform:translateX(-50%);width:120px;height:120px;border:1px solid rgba(255,255,255,.45);border-radius:50%;overflow:hidden;background:rgba(0,0,0,.3);box-shadow:0 8px 35px rgba(0,0,0,.25)}.attitude-sky{position:absolute;inset:-30%;background:linear-gradient(#5f9db8 0 50%,#987d56 50%);transform-origin:center;transition:transform .1s linear}.attitude-mark{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,255,255,.25)}.attitude-mark:before{content:"";position:absolute;left:18%;right:18%;top:50%;height:1px;background:white;box-shadow:0 -12px 0 -0.3px rgba(255,255,255,.75),0 12px 0 -0.3px rgba(255,255,255,.75)}.attitude-mark:after{content:"";position:absolute;width:27px;height:1px;background:#fff;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:-18px 0 0 -0.2px #fff,18px 0 0 -0.2px #fff}
+  .overlay{position:fixed;z-index:10;inset:0;display:grid;place-items:center;background:linear-gradient(120deg,rgba(4,11,19,.78),rgba(4,11,19,.42));backdrop-filter:blur(12px);padding:22px}.menu-card{width:min(860px,100%);border:1px solid rgba(213,236,249,.18);border-radius:20px;background:linear-gradient(145deg,rgba(12,30,45,.96),rgba(5,15,25,.94));box-shadow:0 25px 100px rgba(0,0,0,.48);overflow:hidden}.menu-grid{display:grid;grid-template-columns:1.05fr .95fr}.menu-main{padding:38px}.menu-side{padding:34px;background:rgba(255,255,255,.025);border-left:1px solid var(--line)}.kicker{font-size:10px;letter-spacing:.25em;color:var(--cyan);font-weight:800}.hero-title{font-size:clamp(36px,5vw,58px);line-height:.98;letter-spacing:-.065em;margin:17px 0 14px;font-weight:750}.hero-title em{color:var(--cyan);font-style:normal}.intro{font-size:13px;line-height:1.65;color:#a9bdcd;max-width:460px}.menu-buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:25px}.menu-buttons button{min-width:130px}.menu-side h3{font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:700;text-transform:uppercase;margin:0 0 15px}.spec{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.075);font-size:11px}.spec span{color:var(--muted)}.spec strong{font-weight:600;text-align:right}.menu-foot{padding:14px 38px;border-top:1px solid var(--line);display:flex;justify-content:space-between;color:var(--muted);font-size:9px;letter-spacing:.12em}
+  .modal-card{width:min(650px,100%);max-height:min(82vh,800px);overflow:auto;padding:26px;border:1px solid rgba(213,236,249,.18);border-radius:17px;background:rgba(7,19,31,.97);box-shadow:0 25px 100px rgba(0,0,0,.5)}.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.modal-head h2{font-size:19px;letter-spacing:-.03em;margin:0}.close{font-size:18px;padding:5px 10px}.control-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.08)}.control-row:last-child{border:0}.control-row strong{display:block;font-size:12px}.control-row small{display:block;color:var(--muted);font-size:10px;margin-top:4px;line-height:1.4}.control-row input[type=range]{width:150px;accent-color:var(--cyan)}.control-row input[type=checkbox]{accent-color:var(--cyan);width:16px;height:16px}.control-row select{background:#102438;border:1px solid var(--line);border-radius:7px;color:var(--text);padding:7px}.keygrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.key{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:11px}.key kbd{font-size:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);padding:4px 7px;border-radius:5px;color:var(--cyan)}.diag{margin-top:15px;padding:13px;background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:10px;font-size:10px;color:var(--muted);line-height:1.7}.diag strong{color:var(--text)}.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.toast{position:fixed;z-index:30;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 14px;background:rgba(4,14,23,.9);border:1px solid var(--line);border-radius:9px;font-size:11px;color:var(--text);opacity:0;pointer-events:none;transition:.25s}.toast.show{opacity:1}.flight-tag{position:absolute;top:66px;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:.2em;color:rgba(238,246,252,.75);pointer-events:none}.loading{position:fixed;z-index:20;inset:0;display:grid;place-items:center;background:#07111c;color:var(--text);transition:opacity .4s}.loading.hidden{opacity:0;pointer-events:none}.loader-inner{text-align:center}.loader-mark{font-size:34px;color:var(--cyan);font-weight:900;letter-spacing:-.1em}.loader-text{font-size:10px;letter-spacing:.22em;color:var(--muted);margin-top:8px}.loader-bar{width:190px;height:2px;background:rgba(255,255,255,.1);margin:18px auto 0;overflow:hidden}.loader-bar i{display:block;width:45%;height:100%;background:var(--cyan);animation:load 1.1s ease-in-out infinite}@keyframes load{from{transform:translateX(-100%)}to{transform:translateX(230%)}}
+  @media(max-width:720px){.menu-grid{grid-template-columns:1fr}.menu-side{border-left:0;border-top:1px solid var(--line);padding:22px 30px}.menu-main{padding:28px}.menu-foot{padding:12px 28px}.hud{inset:68px 10px 12px}.hud-left{width:135px;padding:10px}.hud-right{width:150px;padding:10px}.metric-value{font-size:21px}.compass{width:180px}.attitude-wrap{width:86px;height:86px;bottom:68px}.topbar{left:12px;right:12px}.top-actions button{padding:8px}.bottom-left{gap:5px}.mini-panel{min-width:100px;padding:8px}.bottom-right .hint{display:none}.hero-title{font-size:42px}}
+
+  .tutorial-panel{position:fixed;z-index:8;right:22px;top:304px;width:min(370px,calc(100vw - 44px));max-height:calc(100vh - 330px);overflow:auto;padding:16px;background:rgba(6,19,30,.94);border:1px solid rgba(113,216,238,.32);border-radius:15px;box-shadow:0 18px 55px rgba(0,0,0,.38);backdrop-filter:blur(12px);pointer-events:auto}
+  .tutorial-top{display:flex;justify-content:space-between;align-items:center;gap:12px}.tutorial-step{font-size:9px;letter-spacing:.18em;color:var(--cyan);font-weight:800}.tutorial-progress{height:4px;background:rgba(255,255,255,.1);border-radius:9px;margin:11px 0 14px;overflow:hidden}.tutorial-progress i{display:block;height:100%;background:var(--cyan);width:0;transition:width .2s ease}.tutorial-title{font-size:19px;letter-spacing:-.04em;margin:0 0 7px}.tutorial-copy{font-size:11px;line-height:1.55;color:#b5c7d5;margin:0 0 12px}.tutorial-command{padding:9px 10px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.035);border-radius:8px;margin-top:7px}.tutorial-command.active{border-color:rgba(113,216,238,.4);background:rgba(113,216,238,.075)}.tutorial-command span{display:block;font-size:8px;letter-spacing:.16em;color:var(--muted);margin-bottom:4px}.tutorial-command strong{display:block;font-size:11px;line-height:1.45;font-weight:650}.tutorial-status{font-size:9px;letter-spacing:.10em;color:var(--amber);margin-top:12px;line-height:1.5}.tutorial-status.ready{color:var(--lime)}.tutorial-actions{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)}.tutorial-auto{font-size:8px;line-height:1.5;letter-spacing:.10em;color:var(--muted);max-width:235px}.tutorial-auto strong{color:var(--cyan);font-weight:800}.tutorial-exit{padding:7px 9px;font-size:8px;letter-spacing:.08em;flex:none}
+  @media(max-width:760px){.menu-grid{grid-template-columns:1fr}.menu-side{border-left:0;border-top:1px solid var(--line);padding:20px 26px}.menu-main{padding:25px}.tutorial-panel{top:auto;bottom:76px;right:12px;width:min(360px,calc(100vw - 24px));max-height:48vh}.hud-left{width:150px}.hud-right{width:165px}.compass{top:90px;width:210px}.bottom-left{gap:5px}.mini-panel{min-width:0;padding:8px}.attitude-wrap{display:none}}
+
+</style>
+</head>
+<body>
+<div id="sim"></div><div class="grain"></div>
+<div class="loading" id="loading"><div class="loader-inner"><div class="loader-mark">SB</div><div class="loader-text">LOADING CESSNA 182 SKYLANE MODEL · 0%</div><div class="loader-bar"><i></i></div></div></div>
+<header class="topbar">
+  <div class="brand"><div class="brand-mark">SB</div><div><div class="brand-name">SKYBOUND</div><div class="brand-sub">PROCEDURAL WORLD · CESSNA 182 SKYLANE</div></div></div>
+  <div class="top-actions"><button id="hudBtn">HUD / H</button><button id="settingsBtn">SETTINGS</button><button id="pauseBtn">PAUSE / ESC</button></div>
+</header>
+<div class="flight-tag" id="flightTag">FREE FLIGHT · CONTINENT 01</div>
+<section class="hud" id="hud">
+  <div class="panel hud-left">
+    <div class="eyebrow">Flight telemetry</div>
+    <div class="metric"><div class="metric-label">Indicated airspeed</div><div><span class="metric-value" id="speed">0</span><span class="metric-unit">KTS</span></div></div>
+    <div class="metric"><div class="metric-label">Altitude AGL</div><div><span class="metric-value" id="altitude">0</span><span class="metric-unit">FT</span></div></div>
+    <div class="metric-row"><span>VERTICAL SPEED</span><strong id="vspeed">0 FPM</strong></div>
+    <div class="metric-row"><span>LOAD FACTOR</span><strong id="gLoad">1.0 G</strong></div>
+    <div class="metric-row"><span>SIDESLIP</span><strong id="slipAngle">0.0°</strong></div>
+    <div class="metric-row"><span>WORLD POSITION</span><strong id="position">0 / 0</strong></div>
+    <div class="status-pill"><i class="dot"></i><span id="flightStatus">ON RUNWAY</span></div>
+  </div>
+  <div class="panel compass"><div class="eyebrow">Magnetic heading</div><div class="heading" id="heading">000°</div><div class="ticks">N · NE · E · SE · S · SW · W · NW</div></div>
+  <div class="panel hud-right">
+    <div class="eyebrow">Aircraft systems</div>
+    <div class="instrument"><div class="instrument-head"><span>THROTTLE</span><strong id="throttleText">0%</strong></div><div class="bar"><i id="throttleBar"></i></div></div>
+    <div class="instrument"><div class="instrument-head"><span>ENGINE</span><strong id="engineText">IDLE</strong></div><div class="bar"><i id="engineBar"></i></div></div>
+    <div class="instrument"><div class="instrument-head"><span>LANDING GEAR</span><strong id="gearText">FIXED GEAR</strong></div><div class="bar"><i id="gearBar" style="width:100%;background:var(--lime)"></i></div></div>
+    <div class="instrument"><div class="instrument-head"><span>WIND</span><strong id="windText">240° / 04 KT</strong></div></div>
+    <div class="instrument"><div class="instrument-head"><span>SIM RATE</span><strong id="fpsText">60 FPS</strong></div></div>
+  </div>
+  <div class="center-reticle"></div>
+  <div class="attitude-wrap"><div class="attitude-sky" id="attitudeSky"></div><div class="attitude-mark"></div></div>
+  <div class="bottom-left">
+    <div class="panel mini-panel"><div class="eyebrow">Camera</div><div class="big" id="cameraName">CHASE</div></div>
+    <div class="panel mini-panel"><div class="eyebrow">Controller</div><div class="big" id="controllerStatus">KEYBOARD + MOUSE</div></div>
+    <div class="panel mini-panel"><div class="eyebrow">Gyroscope</div><div class="big" id="gyroStatus">OFFLINE</div></div>
+  </div>
+  <div class="bottom-right"><span class="hint">WASD FLIGHT · LMB DRAG STEER · RMB DRAG LOOK · G GEAR INFO · SPACE PAUSE</span></div>
+</section>
+
+<div class="overlay" id="mainMenu">
+  <div class="menu-card">
+    <div class="menu-grid">
+      <div class="menu-main"><div class="kicker">A NEW WORLD IS WAITING</div><h1 class="hero-title">Find your<br><em>own horizon.</em></h1><p class="intro">Take the controls of your imported Cessna 182 Skylane and explore a living procedural landscape. Start free flight, or choose Teach Me to Fly for a guided lesson with live, device-specific control instructions.</p><div class="menu-buttons"><button class="primary" id="startBtn">START FLIGHT&nbsp; ↗</button><button id="teachBtn">TEACH ME TO FLY</button><button id="controlsBtn">CONTROLS</button></div><div style="margin-top:18px;color:#7f95a8;font-size:10px;line-height:1.6">No controller required: use WASD and mouse-drag flight controls. Connect a DualSense for controller input.</div></div>
+      <aside class="menu-side"><h3>Flight configuration</h3><div class="spec"><span>Aircraft</span><strong>Cessna 182 Skylane</strong></div><div class="spec"><span>World</span><strong>Infinite / Procedural</strong></div><div class="spec"><span>Starting location</span><strong>North Ridge Airfield</strong></div><div class="spec"><span>Weather</span><strong>Scattered clouds · 4 kt</strong></div><div class="spec"><span>Simulation</span><strong>Real-time aerodynamics</strong></div><div style="margin-top:20px;padding:12px;border-radius:9px;background:rgba(113,216,238,.07);border:1px solid rgba(113,216,238,.16);font-size:10px;line-height:1.6;color:#a9c3d4"><strong style="color:var(--cyan)">DUALSENSE READY</strong><br>Sticks, triggers and buttons use the Gamepad API. Pair the controller's gyro separately through WebHID in Settings.</div></aside>
+    </div><div class="menu-foot"><span>SKYBOUND SIMULATION LABS</span><span>CESSNA 182 · MAC / WEB</span></div>
+  </div>
+</div>
+
+<div class="overlay" id="pauseMenu" style="display:none">
+  <div class="modal-card" style="width:min(420px,100%);text-align:center"><div class="kicker">FLIGHT PAUSED</div><h2 style="font-size:32px;letter-spacing:-.06em;margin:12px 0">Take a breath.</h2><p class="intro" style="margin:0 auto">Your aircraft is holding its current state. Ready when you are.</p><div class="modal-actions" style="justify-content:center"><button class="primary" id="resumeBtn">RESUME FLIGHT</button><button id="restartBtn">RESTART</button><button id="returnBtn">MAIN MENU</button></div></div>
+</div>
+
+<aside class="tutorial-panel" id="tutorialPanel" style="display:none" aria-live="polite">
+  <div class="tutorial-top"><span class="tutorial-step" id="tutorialStep">FLIGHT SCHOOL · 01 / 08</span><button id="tutorialClose" aria-label="Close lesson">✕</button></div>
+  <div class="tutorial-progress"><i id="tutorialProgress"></i></div>
+  <h2 class="tutorial-title" id="tutorialTitle">Power up</h2>
+  <p class="tutorial-copy" id="tutorialObjective">Increase throttle before takeoff.</p>
+  <div class="tutorial-command active" id="tutorialPrimaryWrap"><span id="tutorialPrimaryLabel">KEYBOARD + MOUSE</span><strong id="tutorialPrimary">Hold LEFT SHIFT to increase throttle.</strong></div>
+  <div class="tutorial-status" id="tutorialStatus">WAITING FOR YOUR INPUT</div>
+  <div class="tutorial-actions"><div class="tutorial-auto"><strong>AUTO-ADVANCE ENABLED</strong><br>Complete the action and the instructor moves on automatically. No button presses needed. ESC / OPTIONS pauses.</div><button class="tutorial-exit" id="tutorialExit">EXIT LESSON</button></div>
+</aside>
+
+<div class="overlay" id="modalOverlay" style="display:none"><div class="modal-card" id="modalContent"></div></div>
+<div class="toast" id="toast"></div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// SKYBOUND — single-file simulator prototype. World generation and flight are local to this page.
+const $ = (id)=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const wrapAngle=(a)=>{while(a>Math.PI)a-=Math.PI*2;while(a< -Math.PI)a+=Math.PI*2;return a};
+const DEG=Math.PI/180, FT_PER_M=3.28084, KTS_PER_MS=1.94384;
+const state={started:false,paused:false,hud:true,camera:1,gear:true,throttle:0,worldSeed:48731,worldScale:1,quality:'High',gyroEnabled:true,gyroPitch:false,gyroSensitivity:1.0,gyroDeadzone:2.5,stickSensitivity:1.0,deadzone:.08,controlResponse:1.0,inputExpo:.38,rollStability:.22,gamepad:null,gamepadName:'',gyroDevice:null,gyroRaw:{x:0,y:0,z:0},gyroBias:{x:0,y:0,z:0},gyroCalibrating:false,gyroCalibrationStart:0,gyroSamples:[],gyroCalibrated:false,keys:{},mouseDown:false,mouseX:0,mouseY:0,mouseDx:0,mouseDy:0,mouseFlightActive:false,mouseFlightX:0,mouseFlightY:0,mouseFlightDx:0,mouseFlightDy:0,mouseButton:-1,dpadUpLatch:false,dpadDownLatch:false,dpadLeftLatch:false,dpadRightLatch:false,triangleLatch:false,orbitYaw:0,orbitPitch:.2,flightTime:0,crashed:false,lastFrame:0,fps:60,fpsAccum:0,fpsCount:0,showDiag:false,tutorial:{active:false,index:0,mode:'keyboardMouse',inputMode:'keyboardMouse',readySince:0,lastStep:-1,lastMode:'',lastUiUpdate:0,startedAt:0},wind:new THREE.Vector3(2.2,0,-1.1)};
+const aircraft={position:new THREE.Vector3(0,171.8,0),velocity:new THREE.Vector3(0,0,0),pitch:0,roll:0,yaw:0,pitchRate:0,rollRate:0,yawRate:0,controlPitch:0,controlRoll:0,controlYaw:0,airspeed:0,verticalSpeed:0,altAGL:1.8,alpha:0,stall:false,engineRunning:true,enginePower:0,gLoad:1,slipAngle:0,damage:0};
+let scene,camera,renderer,clock,plane,planeVisual,terrainGroup,cloudGroup,sunLight,water,terrainMeshes=new Map(),chunksBuilt=0,worldTime=0,worldSeed=state.worldSeed;
+const CHUNK=1200, SEG=28, RADIUS=2, RETAIN_RADIUS=3, SEA=105, RUNWAY=170;
+const AIRCRAFT_VISUAL_SCALE=1.08;
+let aircraftGroundOffset=1.35;
+const TERRAIN_PALETTE=[new THREE.Color('#b3aa8b'),new THREE.Color('#7f9b70'),new THREE.Color('#587f61'),new THREE.Color('#777f74'),new THREE.Color('#d0d4d3')];
+let resources={},chunkQueue=[],pendingChunks=new Set(),neededChunkKeys=new Set(),cloudMesh=null;
+let adaptivePixelRatio=1,adaptiveTimer=0,diagnosticsTimer=0,hudTimer=0,physicsAccumulator=0,frameStartTime=0;
+const FIXED_STEP=1/60;
+// Tuned light-aircraft parameters. Keep rolling resistance time-based (per second),
+// never as a fixed multiplier per rendered/physics frame.
+const AIRCRAFT_MASS_KG=1250, WING_AREA_M2=16.2, MAX_ENGINE_THRUST_N=5200, TAKEOFF_ROTATE_KTS=58;
+const simEuler=new THREE.Euler(0,0,0,'YXZ'),simQuaternion=new THREE.Quaternion();
+const simForward=new THREE.Vector3(),simUp=new THREE.Vector3(),simRight=new THREE.Vector3(),simLiftDirection=new THREE.Vector3(),simAirVelocity=new THREE.Vector3(),simDirection=new THREE.Vector3(),simForce=new THREE.Vector3(),simGravity=new THREE.Vector3(0,-AIRCRAFT_MASS_KG*9.81,0);
+const camForward=new THREE.Vector3(),camUp=new THREE.Vector3(),camRight=new THREE.Vector3();
+// Shared canopy material: used by both the aircraft cockpit and the airfield tower.
+const glass=new THREE.MeshPhysicalMaterial({color:0x8bd1e1,metalness:.12,roughness:.12,transparent:true,opacity:.62,clearcoat:1});
+
+function hash2(x,z,seed=worldSeed){let h=(Math.imul(x|0,374761393)+Math.imul(z|0,668265263)+Math.imul(seed|0,1442695041))|0;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967295;}
+function valueNoise(x,z){const ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz;const a=hash2(ix,iz),b=hash2(ix+1,iz),c=hash2(ix,iz+1),d=hash2(ix+1,iz+1);const u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);return lerp(lerp(a,b,u),lerp(c,d,u),v);}
+function fbm(x,z){let n=0,amp=.55,f=1,norm=0;for(let i=0;i<5;i++){n+=valueNoise(x*f,z*f)*amp;norm+=amp;amp*=.5;f*=2.03;}return n/norm;}
+function naturalHeight(x,z){const continental=fbm(x/1700,z/1700);const ridge=1-Math.abs(valueNoise(x/690+24,z/690+8)*2-1);const detail=fbm(x/115,z/115);return 25+continental*120+Math.pow(Math.max(0,continental-.45),2)*1500+Math.pow(ridge,3)*detail*300;}
+function riverXAt(z){return 610*Math.sin(z/2780)+175*Math.sin(z/910+1.1);}
+function lakeCell(cx,cz){if(hash2(cx+1009,cz+2017)>.985){return{x:cx*CHUNK+150+hash2(cx+23,cz+8)*900,z:cz*CHUNK+150+hash2(cx+41,cz+17)*900,r:48+hash2(cx+73,cz+29)*78};}return null;}
+function heightAt(x,z){
+  let h=naturalHeight(x,z);
+  const d=Math.hypot(x,z);
+  if(d>530){
+    const riverDist=Math.abs(x-riverXAt(z));
+    if(riverDist<78)h=lerp(SEA+5,h,smooth(18,78,riverDist));
+    const cx=Math.floor(x/CHUNK),cz=Math.floor(z/CHUNK);
+    for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
+      const lake=lakeCell(cx+dx,cz+dz);
+      if(lake){const ld=Math.hypot(x-lake.x,z-lake.z);if(ld<lake.r+24)h=lerp(SEA+5,h,smooth(lake.r-14,lake.r+24,ld));}
+    }
+  }
+  // Flatten the complete runway/apron footprint and keep the terrain safely
+  // below the runway slab. Previously only a circular patch around the origin
+  // was flattened, so the long runway intersected the procedural terrain.
+  const apronX=Math.max(Math.abs(x)-150,0);
+  const apronZ=Math.max(Math.abs(z)-675,0);
+  const apronDistance=Math.hypot(apronX,apronZ);
+  const apronBlend=1-smooth(0,220,apronDistance);
+  h=lerp(h,RUNWAY-2.0,apronBlend);
+  return h;
+}
+function groundLevelAt(x,z){
+  // Runway mesh top is exactly RUNWAY; terrain is intentionally two metres
+  // lower beneath the slab to avoid z-fighting, so use runway elevation for physics.
+  if(Math.abs(x)<=37&&Math.abs(z)<=650)return RUNWAY;
+  return heightAt(x,z);
+}
+function noiseColor(h,slope){if(h<SEA+7)return new THREE.Color('#b3aa8b');if(h<SEA+45)return new THREE.Color('#7f9b70');if(h<SEA+170)return new THREE.Color('#587f61');if(h<SEA+360)return new THREE.Color('#777f74');return new THREE.Color('#d0d4d3');}
+function initSharedResources(){
+  resources.terrainMaterial=new THREE.MeshLambertMaterial({vertexColors:true});
+  resources.oceanMaterial=new THREE.MeshBasicMaterial({color:0x2d7188,side:THREE.DoubleSide});
+  resources.riverMaterial=new THREE.MeshBasicMaterial({color:0x367d91,side:THREE.DoubleSide});
+  resources.lakeMaterial=new THREE.MeshBasicMaterial({color:0x3f8497,side:THREE.DoubleSide});
+  resources.treeGeometry=new THREE.ConeGeometry(1,1,5);resources.treeGeometry.translate(0,.5,0);
+  resources.treeMaterial=new THREE.MeshLambertMaterial({color:0x496f50});
+  resources.treeMaterialDark=new THREE.MeshLambertMaterial({color:0x365d45});
+  resources.buildingGeometry=new THREE.BoxGeometry(1,1,1);
+  resources.buildingMaterial=new THREE.MeshLambertMaterial({color:0x8d9a9b});
+  resources.roadGeometry=new THREE.BoxGeometry(1,.55,9);
+  resources.roadMaterial=new THREE.MeshLambertMaterial({color:0x444c4d});
+  resources.bridgeGeometry=new THREE.BoxGeometry(92,2,42);
+  resources.bridgeMaterial=new THREE.MeshLambertMaterial({color:0x68777b});
+  resources.airstripGeometry=new THREE.BoxGeometry(42,.5,420);
+  resources.airstripMaterial=new THREE.MeshLambertMaterial({color:0x42484a});
+  resources.cloudGeometry=new THREE.IcosahedronGeometry(1,0);
+  resources.cloudMaterial=new THREE.MeshLambertMaterial({color:0xe8f0f3});
+}
+function currentPixelRatio(){const cap=state.quality==='Low'?.78:state.quality==='Medium'?.95:1.15;return Math.min(window.devicePixelRatio||1,cap);}
+function applyPixelRatio(){if(!renderer)return;renderer.setPixelRatio(currentPixelRatio());renderer.setSize(innerWidth,innerHeight,false);}
+async function setupScene(){
+  scene=new THREE.Scene();scene.background=new THREE.Color('#83b5ce');scene.fog=new THREE.FogExp2('#83b5ce',.00016);
+  camera=new THREE.PerspectiveCamera(66,innerWidth/innerHeight,2,10500);
+  renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false,depth:true,stencil:false,preserveDrawingBuffer:false});
+  adaptivePixelRatio=currentPixelRatio();renderer.setPixelRatio(currentPixelRatio());renderer.setSize(innerWidth,innerHeight,false);
+  // Large dynamic terrain shadow maps were a major source of shimmer and GPU cost.
+  // The simulator uses stable hemisphere + directional lighting without shadow maps.
+  renderer.shadowMap.enabled=false;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
+  $('sim').appendChild(renderer.domElement);
+  scene.add(new THREE.HemisphereLight(0xd9efff,0x5b644e,1.8));
+  sunLight=new THREE.DirectionalLight(0xffedcc,2.0);sunLight.position.set(-800,1200,-500);sunLight.castShadow=false;scene.add(sunLight);
+  terrainGroup=new THREE.Group();scene.add(terrainGroup);cloudGroup=new THREE.Group();scene.add(cloudGroup);initSharedResources();
+  await makeAircraft();makeClouds();buildRunway();updateChunks();
+  // Build the immediate 3x3 start area behind the loading screen to avoid terrain pop-in on first view.
+  const initial=chunkQueue.filter(item=>item.priority<=2);chunkQueue=chunkQueue.filter(item=>item.priority>2);pendingChunks=new Set(chunkQueue.map(item=>item.key));
+  for(const item of initial)buildChunk(item.cx,item.cz);
+  clock=new THREE.Clock();
+}
+async function makeAircraft(){
+  // The aircraft visual is the supplied Cessna 182 Skylane GLB. No procedural
+  // aircraft geometry is generated here; physics remain independent of the mesh.
+  plane=new THREE.Group();
+  planeVisual=new THREE.Group();
+  plane.add(planeVisual);
+  scene.add(plane);
+
+  const modelUrl=new URL('./cessna_182_skylane.glb',document.baseURI).href;
+  const loader=new GLTFLoader();
+  const loadingText=$('loading').querySelector('.loader-text');
+  const loadingBar=$('loading').querySelector('.loader-bar i');
+  if(loadingText)loadingText.textContent='LOADING CESSNA 182 SKYLANE MODEL · 0%';
+  let gltf;
+  try{
+    gltf=await loader.loadAsync(modelUrl,event=>{
+      if(event.lengthComputable&&event.total>0){
+        const percent=Math.round(event.loaded/event.total*100);
+        if(loadingText)loadingText.textContent=`LOADING CESSNA 182 SKYLANE MODEL · ${percent}%`;
+        if(loadingBar){loadingBar.style.animation='none';loadingBar.style.width=`${percent}%`;}
+      }else if(loadingText){
+        loadingText.textContent='DOWNLOADING CESSNA 182 SKYLANE MODEL…';
+      }
+    });
+  }catch(error){
+    throw new Error(`Unable to load cessna_182_skylane.glb. Keep the supplied model file in the same folder as index.html and launch SKYBOUND with launch-macos.command. Details: ${error.message}`);
+  }
+
+  const model=gltf.scene;
+  model.name='User supplied Cessna 182 Skylane';
+  model.scale.setScalar(AIRCRAFT_VISUAL_SCALE);
+  model.traverse(object=>{
+    if(object.isMesh||object.isSkinnedMesh){
+      object.castShadow=false;
+      object.receiveShadow=false;
+      object.frustumCulled=true;
+      if(object.material){
+        const materials=Array.isArray(object.material)?object.material:[object.material];
+        for(const material of materials){
+          if(material.map)material.map.colorSpace=THREE.SRGBColorSpace;
+          if(material.normalMap)material.normalMap.colorSpace=THREE.NoColorSpace;
+          if(material.roughnessMap)material.roughnessMap.colorSpace=THREE.NoColorSpace;
+          if(material.metalnessMap)material.metalnessMap.colorSpace=THREE.NoColorSpace;
+        }
+      }
+    }
+  });
+  planeVisual.add(model);
+  planeVisual.updateMatrixWorld(true);
+  const aircraftBounds=new THREE.Box3().setFromObject(planeVisual);
+  // Derive wheel contact height from the actual imported model bounds.
+  aircraftGroundOffset=Math.max(.8,-aircraftBounds.min.y+.035);
+  aircraft.position.set(0,RUNWAY+aircraftGroundOffset,0);
+  aircraft.altAGL=aircraftGroundOffset;
+
+  // The supplied model includes a dedicated propeller pivot and slow/blurred
+  // prop meshes. Animate the original assembly instead of adding a fake prop.
+  const prop=model.getObjectByName('prop_1_33');
+  const propSlow=model.getObjectByName('prop_1_slow_31');
+  const propFast=model.getObjectByName('prop_1_fast_32');
+  plane.userData.prop=prop||null;
+  plane.userData.propSlow=propSlow||null;
+  plane.userData.propFast=propFast||null;
+  if(propSlow)propSlow.visible=true;
+  if(propFast)propFast.visible=false;
+
+  plane.userData.visualModel=model;
+  syncPlaneTransform();
+  if(loadingText)loadingText.textContent='PREPARING PROCEDURAL WORLD';
+  if(loadingBar){loadingBar.style.animation='';loadingBar.style.width='45%';}
+}
+function buildRunway(){
+  const runwayMat=new THREE.MeshLambertMaterial({color:0x343e46}),stripeMat=new THREE.MeshLambertMaterial({color:0xe8e4d6});
+  const runway=new THREE.Mesh(new THREE.BoxGeometry(74,.7,1300),runwayMat);runway.position.set(0,RUNWAY-.35,0);terrainGroup.add(runway);
+  const stripeGeo=new THREE.BoxGeometry(1,.12,40),stripes=new THREE.InstancedMesh(stripeGeo,stripeMat,13),dummy=new THREE.Object3D();let n=0;
+  for(let z=-570;z<=570;z+=95){dummy.position.set(0,RUNWAY+.065,z);dummy.rotation.set(0,0,0);dummy.scale.set(1,1,1);dummy.updateMatrix();stripes.setMatrixAt(n++,dummy.matrix);}stripes.count=n;stripes.instanceMatrix.needsUpdate=true;terrainGroup.add(stripes);
+  const edgeGeo=new THREE.BoxGeometry(.8,.1,1300),edges=new THREE.InstancedMesh(edgeGeo,stripeMat,2);n=0;for(const side of [-1,1]){dummy.position.set(side*34,RUNWAY+.055,0);dummy.rotation.set(0,0,0);dummy.scale.set(1,1,1);dummy.updateMatrix();edges.setMatrixAt(n++,dummy.matrix);}edges.instanceMatrix.needsUpdate=true;terrainGroup.add(edges);
+  const towerMat=new THREE.MeshLambertMaterial({color:0xb5c0c5}),tower=new THREE.Mesh(new THREE.BoxGeometry(12,26,12),towerMat);tower.position.set(110,RUNWAY+13,-170);terrainGroup.add(tower);const cab=new THREE.Mesh(new THREE.BoxGeometry(18,6,18),glass);cab.position.set(110,RUNWAY+29,-170);terrainGroup.add(cab);
+  const hangar=new THREE.Mesh(new THREE.BoxGeometry(70,25,55),new THREE.MeshLambertMaterial({color:0xbec7c8}));hangar.position.set(-120,RUNWAY+12.5,-110);terrainGroup.add(hangar);
+}
+function makeClouds(){
+  const clouds=34,parts=5,count=clouds*parts;cloudMesh=new THREE.InstancedMesh(resources.cloudGeometry,resources.cloudMaterial,count);cloudMesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  const dummy=new THREE.Object3D();let n=0;
+  for(let i=0;i<clouds;i++){
+    const x=(hash2(i,31)-.5)*9000,z=(hash2(i,91)-.5)*9000,y=850+hash2(i,3)*900;
+    for(let j=0;j<parts;j++){const r=45+hash2(i,j+10)*75;dummy.position.set(x+(j-2)*48,y+hash2(i,j+40)*22,z+(hash2(i,j+60)-.5)*75);dummy.scale.set(r,r*.45,r);dummy.rotation.set(0,hash2(i,j+20)*6.28,0);dummy.updateMatrix();cloudMesh.setMatrixAt(n++,dummy.matrix);}
+  }
+  cloudMesh.instanceMatrix.needsUpdate=true;cloudMesh.frustumCulled=true;cloudGroup.add(cloudMesh);
+}
+function terrainColorIndex(h){return h<SEA+7?0:h<SEA+45?1:h<SEA+170?2:h<SEA+360?3:4;}
+function buildChunk(cx,cz){
+  const key=`${cx},${cz}`;if(terrainMeshes.has(key))return;
+  const row=SEG+1,step=CHUNK/SEG,baseX=cx*CHUNK,baseZ=cz*CHUNK;
+  const positions=new Float32Array(row*row*3),colors=new Float32Array(row*row*3),normals=new Float32Array(row*row*3),heights=new Float32Array(row*row),indices=new Uint16Array(SEG*SEG*6);
+  let p=0,c=0,k=0;
+  for(let iz=0;iz<=SEG;iz++)for(let ix=0;ix<=SEG;ix++){
+    const x=baseX+ix*step,z=baseZ+iz*step,h=heightAt(x,z),v=iz*row+ix;
+    heights[v]=h;positions[p++]=x;positions[p++]=h;positions[p++]=z;
+    const col=TERRAIN_PALETTE[terrainColorIndex(h)];colors[c++]=col.r;colors[c++]=col.g;colors[c++]=col.b;
+    // Forward-difference normals sample beyond chunk edges so shared border
+    // vertices receive identical normals in adjacent chunks (no lighting seams).
+    const hx=heightAt(x+step,z),hz=heightAt(x,z+step),nx=h-hx,ny=step,nz=h-hz,inv=1/Math.hypot(nx,ny,nz);
+    normals[v*3]=nx*inv;normals[v*3+1]=ny*inv;normals[v*3+2]=nz*inv;
+    if(ix<SEG&&iz<SEG){const a=v,b=a+1,d=a+row,e=d+1;indices[k++]=a;indices[k++]=d;indices[k++]=b;indices[k++]=b;indices[k++]=d;indices[k++]=e;}
+  }
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(positions,3));geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.setAttribute('normal',new THREE.BufferAttribute(normals,3));geo.setIndex(new THREE.BufferAttribute(indices,1));geo.computeBoundingSphere();
+  const mesh=new THREE.Mesh(geo,resources.terrainMaterial);mesh.frustumCulled=true;mesh.userData.chunk=key;mesh.userData.disposeGeometry=true;terrainGroup.add(mesh);terrainMeshes.set(key,mesh);
+  buildOceanSurface(cx,cz,heights);populateChunk(cx,cz);
+}
+function buildOceanSurface(cx,cz,heights){
+  const step=CHUNK/SEG,baseX=cx*CHUNK,baseZ=cz*CHUNK,row=SEG+1,verts=[],indices=[];
+  const surfaceY=SEA+.8;
+  for(let iz=0;iz<SEG;iz++)for(let ix=0;ix<SEG;ix++){
+    const a=iz*row+ix,b=a+1,c=a+row,d=c+1;
+    if(Math.max(heights[a],heights[b],heights[c],heights[d])>=SEA-3)continue;
+    const v=verts.length/3,x=baseX+ix*step,z=baseZ+iz*step;
+    verts.push(x,surfaceY,z,x+step,surfaceY,z,x,surfaceY,z+step,x+step,surfaceY,z+step);
+    indices.push(v,v+2,v+1,v+1,v+2,v+3);
+  }
+  if(!indices.length)return;
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(indices);geo.computeBoundingSphere();
+  const ocean=new THREE.Mesh(geo,resources.oceanMaterial);ocean.frustumCulled=true;ocean.userData.chunk=`ocean:${cx},${cz}`;ocean.userData.disposeGeometry=true;terrainGroup.add(ocean);
+}
+function populateChunk(cx,cz){
+  const seed=hash2(cx,cz),x0=cx*CHUNK,z0=cz*CHUNK,dummy=new THREE.Object3D();
+  // Forests are one instanced draw call per chunk and use shared GPU resources.
+  if(seed>.18){const count=state.quality==='Low'?24:state.quality==='Medium'?42:58,trees=new THREE.InstancedMesh(resources.treeGeometry,seed>.65?resources.treeMaterialDark:resources.treeMaterial,count);let n=0;for(let i=0;i<count*2&&n<count;i++){const x=x0+hash2(i+cx*77,cz*23+4)*CHUNK,z=z0+hash2(i+cz*63,cx*31+7)*CHUNK;if(Math.hypot(x,z)<520)continue;const h=heightAt(x,z);if(h<SEA+30||h>SEA+360)continue;const scale=4+hash2(i+cx,cz+i)*12;dummy.position.set(x,h+scale*.45,z);dummy.scale.set(scale*.65,scale,scale*.65);dummy.rotation.y=hash2(i,cz)*6.28;dummy.updateMatrix();trees.setMatrixAt(n++,dummy.matrix);}trees.count=n;trees.instanceMatrix.needsUpdate=true;trees.userData.chunk=`foliage:${cx},${cz}`;terrainGroup.add(trees);}
+  // Deterministic small settlements: a single draw call for buildings and a single one for roads.
+  if(seed<.105&&Math.hypot(cx,cz)>.8){const centerX=x0+CHUNK*.5,centerZ=z0+CHUNK*.5,ground=heightAt(centerX,centerZ);if(ground>SEA+20){const count=22,buildings=new THREE.InstancedMesh(resources.buildingGeometry,resources.buildingMaterial,count);for(let i=0;i<count;i++){const x=centerX+(hash2(i,cx+5)-.5)*500,z=centerZ+(hash2(i+30,cz+5)-.5)*500,h=heightAt(x,z),height=10+hash2(i,cx+99)*60;dummy.position.set(x,h+height/2,z);dummy.scale.set(12+hash2(i,cz+40)*30,height,12+hash2(i,cz+70)*30);dummy.rotation.y=hash2(i+5,cx+cz)*Math.PI;dummy.updateMatrix();buildings.setMatrixAt(i,dummy.matrix);}buildings.instanceMatrix.needsUpdate=true;buildings.userData.chunk=`city:${cx},${cz}`;terrainGroup.add(buildings);
+      const roads=new THREE.InstancedMesh(resources.roadGeometry,resources.roadMaterial,12);for(let i=0;i<12;i++){const x=centerX-275+i*50,z=centerZ+205+Math.sin(i*.35+seed*8)*22;dummy.position.set(x,heightAt(x,z)+.35,z);dummy.scale.set(1,1,1);dummy.rotation.y=Math.sin(i*.35+seed*8)*.16;dummy.updateMatrix();roads.setMatrixAt(i,dummy.matrix);}roads.instanceMatrix.needsUpdate=true;roads.userData.chunk=`road:${cx},${cz}`;terrainGroup.add(roads);
+      const bridgeX=riverXAt(centerZ);if(bridgeX>x0-40&&bridgeX<x0+CHUNK+40){const bridge=new THREE.Mesh(resources.bridgeGeometry,resources.bridgeMaterial);bridge.position.set(bridgeX,SEA+15,centerZ+205);bridge.userData.chunk=`bridge:${cx},${cz}`;terrainGroup.add(bridge);}
+    }}
+  // River strips are opaque and assigned by their centerline to one chunk only.
+  const rv=[],ri=[];for(let j=0;j<28;j++){const zA=z0+j*CHUNK/28,zB=z0+(j+1)*CHUNK/28,xA=riverXAt(zA),xB=riverXAt(zB),midX=(xA+xB)*.5;if(Math.floor(midX/CHUNK)!==cx)continue;const a=rv.length/3;rv.push(xA-18,SEA+7,zA,xA+18,SEA+7,zA,xB-18,SEA+7,zB,xB+18,SEA+7,zB);ri.push(a,a+2,a+1,a+1,a+2,a+3);}
+  if(ri.length){const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(rv,3));geo.setIndex(ri);geo.computeBoundingSphere();const river=new THREE.Mesh(geo,resources.riverMaterial);river.userData.chunk=`river:${cx},${cz}`;river.userData.disposeGeometry=true;terrainGroup.add(river);}
+  const lake=lakeCell(cx,cz);if(lake){const lakeMesh=new THREE.Mesh(new THREE.CircleGeometry(Math.max(12,lake.r-16),24),resources.lakeMaterial);lakeMesh.rotation.x=-Math.PI/2;lakeMesh.position.set(lake.x,SEA+8,lake.z);lakeMesh.userData.chunk=`lake:${cx},${cz}`;lakeMesh.userData.disposeGeometry=true;terrainGroup.add(lakeMesh);}
+  if(seed>.94&&Math.hypot(cx,cz)>1){const x=x0+CHUNK*.5,z=z0+CHUNK*.5,h=heightAt(x,z),strip=new THREE.Mesh(resources.airstripGeometry,resources.airstripMaterial);strip.position.set(x,h+.25,z);strip.userData.chunk=`airstrip:${cx},${cz}`;terrainGroup.add(strip);}
+}
+let lastChunkCenter='';
+function releaseChunkObject(o){terrainGroup.remove(o);if(o.userData?.disposeGeometry)o.geometry?.dispose();if(o.userData?.disposeMaterial){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material?.dispose();}}
+function updateChunks(){
+  const cx=Math.floor(aircraft.position.x/CHUNK),cz=Math.floor(aircraft.position.z/CHUNK),center=`${cx},${cz}`;
+  if(center===lastChunkCenter)return;
+  const needed=new Set(),retain=new Set();
+  for(let z=cz-RADIUS;z<=cz+RADIUS;z++)for(let x=cx-RADIUS;x<=cx+RADIUS;x++)needed.add(`${x},${z}`);
+  for(let z=cz-RETAIN_RADIUS;z<=cz+RETAIN_RADIUS;z++)for(let x=cx-RETAIN_RADIUS;x<=cx+RETAIN_RADIUS;x++)retain.add(`${x},${z}`);
+  neededChunkKeys=needed;
+  // Keep a one-chunk safety ring around the active world. This prevents the
+  // visible horizon from disappearing while the next ring is generated.
+  for(let i=terrainGroup.children.length-1;i>=0;i--){
+    const o=terrainGroup.children[i],tag=o.userData?.chunk;if(!tag)continue;
+    const owner=tag.includes(':')?tag.slice(tag.lastIndexOf(':')+1):tag;
+    if(!retain.has(owner)){if(tag===owner)terrainMeshes.delete(owner);releaseChunkObject(o);}
+  }
+  for(const key of [...terrainMeshes.keys()])if(!retain.has(key))terrainMeshes.delete(key);
+  chunkQueue=chunkQueue.filter(item=>needed.has(item.key)&&!terrainMeshes.has(item.key));
+  pendingChunks=new Set(chunkQueue.map(item=>item.key));
+  for(const key of needed){
+    if(!terrainMeshes.has(key)&&!pendingChunks.has(key)){
+      const [x,z]=key.split(',').map(Number);
+      chunkQueue.push({key,cx:x,cz:z,priority:(x-cx)**2+(z-cz)**2});pendingChunks.add(key);
+    }
+  }
+  chunkQueue.sort((a,b)=>a.priority-b.priority);lastChunkCenter=center;
+}
+function processChunkQueue(frameBudgetMs=3.5){
+  // At most one chunk per frame. Skip generation when the frame has already
+  // consumed its geometry budget; preloaded rings keep the scene covered.
+  if(!chunkQueue.length)return;
+  const item=chunkQueue[0];
+  if(!neededChunkKeys.has(item.key)||terrainMeshes.has(item.key)){chunkQueue.shift();pendingChunks.delete(item.key);return;}
+  if(performance.now()-frameStartTime>frameBudgetMs)return;
+  chunkQueue.shift();pendingChunks.delete(item.key);buildChunk(item.cx,item.cz);
+}
+function syncPlaneTransform(){plane.position.copy(aircraft.position);plane.rotation.order='YXZ';plane.rotation.set(aircraft.pitch,aircraft.yaw,-aircraft.roll);}
+
+// DualSense direct WebHID motion input. Gamepad API remains the main stick/button channel.
+async function connectGyro(){
+  if(!('hid' in navigator)){toast('WebHID is unavailable here. Use Chrome or Edge on localhost / HTTPS.');return;}
+  try{
+    const devices=await navigator.hid.requestDevice({filters:[{vendorId:0x054c,productId:0x0ce6},{vendorId:0x054c,productId:0x0df2}]});if(!devices.length)return;const dev=devices[0];await dev.open();state.gyroDevice=dev;dev.addEventListener('inputreport',onHidReport);$('gyroStatus').textContent='CONNECTED';$('gyroDetail').textContent=`${dev.productName||'DualSense'} · WebHID active`;toast('DualSense motion sensor connected. Hold the controller still and calibrate.');
+  }catch(err){console.error(err);toast(`Gyro connection failed: ${err.message||err}`);}
+}
+function onHidReport(e){
+  const d=e.data;let off=e.reportId===0x31?16:15;if(d.byteLength<off+6){off=e.reportId===0x31?17:16;if(d.byteLength<off+6)return;}
+  const raw={x:d.getInt16(off,true),y:d.getInt16(off+2,true),z:d.getInt16(off+4,true)};state.gyroRaw=raw;
+  if(state.gyroCalibrating){state.gyroSamples.push(raw);if(performance.now()-state.gyroCalibrationStart>1800 && state.gyroSamples.length>=100){for(const k of ['x','y','z'])state.gyroBias[k]=state.gyroSamples.reduce((a,v)=>a+v[k],0)/state.gyroSamples.length;state.gyroCalibrating=false;state.gyroCalibrated=true;$('gyroDetail').textContent='Calibrated · live gyro rates';toast('Gyroscope calibrated.');}}
+}
+function startGyroCalibration(){if(!state.gyroDevice){toast('Connect the DualSense gyro first.');return;}state.gyroSamples=[];state.gyroCalibrationStart=performance.now();state.gyroCalibrating=true;$('gyroDetail').textContent='Calibrating — hold controller still';toast('Hold the controller still for two seconds.');}
+function readGyro(){const g=state.gyroRaw,b=state.gyroBias;return{x:(g.x-b.x)/1024,y:(g.y-b.y)/1024,z:(g.z-b.z)/1024};}
+
+function readGamepad(){const pads=navigator.getGamepads?navigator.getGamepads():[];let gp=null;if(state.gamepad!==null&&pads[state.gamepad]?.connected)gp=pads[state.gamepad];if(!gp)gp=Array.from(pads).find(p=>p&&p.connected)||null;if(gp){state.gamepad=gp.index;state.gamepadName=gp.id||'Gamepad';$('controllerStatus').textContent='DUALSENSE';if(state.gamepadName.length>26)$('controllerStatus').textContent='CONNECTED';}else{$('controllerStatus').textContent='KEYBOARD + MOUSE';state.gamepad=null;}return gp;}
+window.addEventListener('gamepadconnected',e=>{state.gamepad=e.gamepad.index;state.gamepadName=e.gamepad.id;toast('Controller connected. Use a control to switch Flight School to DualSense instructions.');});window.addEventListener('gamepaddisconnected',()=>{state.gamepad=null;if(state.tutorial.active)setTutorialInputMode('keyboardMouse');toast('Controller disconnected.');});
+function dead(v,d=state.deadzone){
+  const a=Math.abs(v);if(a<=d)return 0;
+  return Math.sign(v)*((a-d)/(1-d));
+}
+function curveAxis(v){
+  const x=dead(clamp(v,-1,1)),a=Math.abs(x),e=state.inputExpo;
+  return Math.sign(x)*((1-e)*a+e*a*a*a);
+}
+function getControls(dt){
+  let pitch=0,roll=0,yaw=0,throttleDelta=0,camX=0,camY=0;
+  const gp=readGamepad();
+  if(gp){
+    const a=gp.axes||[],b=gp.buttons||[];
+    const moved=a.some(v=>Math.abs(v)>.18)||b.some(v=>v.pressed||(v.value||0)>.18);
+    if(state.tutorial.active&&moved)setTutorialInputMode('controller');
+    roll=curveAxis(a[0]||0);pitch=-curveAxis(a[1]||0);
+    camX=curveAxis(a[2]||0);camY=curveAxis(a[3]||0);
+    const r2=b[7]?.value??(b[7]?.pressed?1:0),l2=b[6]?.value??(b[6]?.pressed?1:0);
+    throttleDelta=(r2-l2)*.62*dt;
+    yaw=((b[4]?.pressed?1:0)-(b[5]?.pressed?1:0));
+    if(b[0]?.pressed&&!state.crossLatch){toggleGear();state.crossLatch=true;}if(!b[0]?.pressed)state.crossLatch=false;
+    if(b[1]?.pressed&&!state.circleLatch){nextCamera();state.circleLatch=true;}if(!b[1]?.pressed)state.circleLatch=false;
+    if(b[2]?.pressed&&!state.squareLatch){state.hud=!state.hud;setHud();state.squareLatch=true;}if(!b[2]?.pressed)state.squareLatch=false;
+    if(b[3]?.pressed&&!state.triangleLatch){state.camera=state.camera===1?2:1;cameraName();state.triangleLatch=true;}if(!b[3]?.pressed)state.triangleLatch=false;
+    if(b[12]?.pressed&&!state.dpadUpLatch){state.throttle=clamp(state.throttle+.05,0,1);state.dpadUpLatch=true;}if(!b[12]?.pressed)state.dpadUpLatch=false;
+    if(b[13]?.pressed&&!state.dpadDownLatch){state.throttle=clamp(state.throttle-.05,0,1);state.dpadDownLatch=true;}if(!b[13]?.pressed)state.dpadDownLatch=false;
+    if(b[14]?.pressed&&!state.dpadLeftLatch){state.camera=(state.camera+2)%4+1;cameraName();state.dpadLeftLatch=true;}if(!b[14]?.pressed)state.dpadLeftLatch=false;
+    if(b[15]?.pressed&&!state.dpadRightLatch){nextCamera();state.dpadRightLatch=true;}if(!b[15]?.pressed)state.dpadRightLatch=false;
+    if(b[9]?.pressed&&!state.startLatch){togglePause();state.startLatch=true;}if(!b[9]?.pressed)state.startLatch=false;
+  }
+  // Digital controls remain available alongside a connected controller.
+  const k=state.keys;
+  if(state.tutorial.active&&Object.entries(k).some(([code,down])=>down&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyQ','KeyE','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyG'].includes(code)))setTutorialInputMode('keyboardMouse');
+  if(k.KeyW||k.ArrowUp)pitch+=1;if(k.KeyS||k.ArrowDown)pitch-=1;
+  if(k.KeyA||k.ArrowLeft)roll-=1;if(k.KeyD||k.ArrowRight)roll+=1;
+  if(k.KeyQ)yaw+=1;if(k.KeyE)yaw-=1;
+  if(k.ShiftLeft||k.ShiftRight)throttleDelta+=.38*dt;
+  if(k.ControlLeft||k.ControlRight)throttleDelta-=.38*dt;
+  // Mouse drag behaves like a virtual spring-centred stick, not one-frame impulses.
+  // This gives the pilot stable proportional control while dragging.
+  if(state.mouseFlightActive){
+    roll+=curveAxis(clamp(state.mouseFlightDx/150,-1,1));
+    pitch+=curveAxis(clamp(-state.mouseFlightDy/150,-1,1));
+  }
+  if(k.KeyG&&!state.gLatch){toggleGear();state.gLatch=true;}if(!k.KeyG)state.gLatch=false;
+  if(k.Digit1)state.camera=1;if(k.Digit2)state.camera=2;if(k.Digit3)state.camera=3;if(k.Digit4)state.camera=4;
+  if(state.gyroEnabled&&state.gyroDevice&&state.gyroCalibrated){
+    const g=readGyro(),dz=state.gyroDeadzone;
+    const rate=v=>Math.abs(v)<dz?0:Math.sign(v)*(Math.abs(v)-dz);
+    yaw+=clamp(rate(g.y)/70*state.gyroSensitivity,-1,1);
+    if(state.gyroPitch)pitch+=clamp(rate(g.x)/80*state.gyroSensitivity,-1,1);
+  }
+  state.throttle=clamp(state.throttle+throttleDelta,0,1);
+  return{pitch:clamp(pitch*state.stickSensitivity,-1,1),roll:clamp(roll*state.stickSensitivity,-1,1),yaw:clamp(yaw,-1,1),camX,camY};
+}
+function toggleGear(){state.gear=true;toast('Cessna 182 Skylane uses fixed landing gear.');}
+function nextCamera(){state.camera=state.camera%4+1;cameraName();}
+function cameraName(){$('cameraName').textContent=['','COCKPIT','CHASE','ORBIT','FREE LOOK'][state.camera];}
+function togglePause(){if(!state.started)return;state.paused=!state.paused;$('pauseMenu').style.display=state.paused?'grid':'none';}
+function setHud(){$('hud').classList.toggle('active',state.hud&&state.started&&!state.paused);}
+function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),2600);}
+function stepPhysics(dt,ctrl){
+  if(state.crashed)return;
+  const a=aircraft;
+  const groundBefore=groundLevelAt(a.position.x,a.position.z);
+  const contactOffset=aircraftGroundOffset;
+  const wasOnGround=a.position.y<=groundBefore+contactOffset+.35;
+
+  // Smooth input at a fixed, time-based rate. A higher response setting shortens
+  // the lag; the response remains stable at 30, 60 and 120 Hz render rates.
+  const inputTau=.105/Math.max(.45,state.controlResponse);
+  const inputBlend=1-Math.exp(-dt/inputTau);
+  a.controlPitch=lerp(a.controlPitch,ctrl.pitch,inputBlend);
+  a.controlRoll=lerp(a.controlRoll,ctrl.roll,inputBlend);
+  a.controlYaw=lerp(a.controlYaw,ctrl.yaw,inputBlend);
+
+  // Air-relative flow and control authority. Controls become progressively more
+  // effective as airflow builds over the control surfaces.
+  simEuler.set(a.pitch,a.yaw,-a.roll,'YXZ');
+  simQuaternion.setFromEuler(simEuler);
+  simForward.set(0,0,-1).applyQuaternion(simQuaternion);
+  simUp.set(0,1,0).applyQuaternion(simQuaternion);
+  simRight.set(1,0,0).applyQuaternion(simQuaternion);
+  simAirVelocity.copy(a.velocity).sub(state.wind);
+  const airspeed=Math.max(.05,simAirVelocity.length());
+  const authority=clamp(.28+airspeed/34,.28,1.12)*(wasOnGround ? 0.62 : 1);
+  const preSlipAngle=Math.atan2(simAirVelocity.dot(simRight),Math.max(airspeed,.1));
+
+  // Control inputs command angular rates instead of adding unbounded angular
+  // acceleration. This gives the trainer a crisp, damped and predictable feel.
+  const pitchRateTarget=a.controlPitch*(31*DEG)*authority;
+  const bankLimit=65*DEG;
+  const rollRateTarget=a.controlRoll*(78*DEG)*authority - (wasOnGround?0:Math.sin(a.roll)*state.rollStability*.34);
+  const coordinatedYawRate=(!wasOnGround&&airspeed>7)?-9.81*Math.tan(clamp(a.roll,-bankLimit,bankLimit))/Math.max(airspeed,12):0;
+  const rudderAuthority=wasOnGround?clamp(airspeed/10,0,1):clamp(airspeed/24,.25,1.15);
+  const slipDamper=wasOnGround?0:clamp(-preSlipAngle*.9,-.18,.18);
+  const yawRateTarget=wasOnGround?a.controlYaw*.16*rudderAuthority:coordinatedYawRate+a.controlYaw*(22*DEG)*rudderAuthority+slipDamper;
+  const pitchResponse=1-Math.exp(-dt*6.2*Math.max(.65,state.controlResponse));
+  const rollResponse=1-Math.exp(-dt*7.2*Math.max(.65,state.controlResponse));
+  const yawResponse=1-Math.exp(-dt*4.8);
+  a.pitchRate=lerp(a.pitchRate,pitchRateTarget,pitchResponse);
+  a.rollRate=lerp(a.rollRate,rollRateTarget,rollResponse);
+  a.yawRate=lerp(a.yawRate,yawRateTarget,yawResponse);
+  a.pitch=clamp(a.pitch+a.pitchRate*dt,-.38,.40);
+  a.roll=clamp(a.roll+a.rollRate*dt,-bankLimit,bankLimit);
+  a.yaw=wrapAngle(a.yaw+a.yawRate*dt);
+
+  simEuler.set(a.pitch,a.yaw,-a.roll,'YXZ');
+  simQuaternion.setFromEuler(simEuler);
+  simForward.set(0,0,-1).applyQuaternion(simQuaternion);
+  simUp.set(0,1,0).applyQuaternion(simQuaternion);
+  simRight.set(1,0,0).applyQuaternion(simQuaternion);
+
+  // Lift is applied perpendicular to the airflow, not simply along world-up.
+  simAirVelocity.copy(a.velocity).sub(state.wind);
+  const airspeedNow=Math.max(.05,simAirVelocity.length());
+  simDirection.copy(simAirVelocity).normalize();
+  const alpha=-Math.asin(clamp(simDirection.dot(simUp),-1,1));
+  a.alpha=alpha;
+  const altitude=Math.max(0,a.position.y-170);
+  const rho=1.225*Math.exp(-altitude/8500);
+  const qbar=.5*rho*airspeedNow*airspeedNow;
+  const clLinear=clamp(.22+5.25*alpha,-.55,1.52);
+  const stallAlphaBlend=smooth(14*DEG,22*DEG,alpha);
+  const vs=Math.sqrt((2*AIRCRAFT_MASS_KG*9.81)/(rho*WING_AREA_M2*1.52));
+  const lowSpeedStall=wasOnGround?0:1-smooth(vs*.82,vs*1.06,airspeedNow);
+  const stallBlend=wasOnGround?0:Math.max(stallAlphaBlend,lowSpeedStall);
+  const cl=lerp(clLinear,.62,stallBlend);
+  const heightAGL=Math.max(0,a.position.y-groundBefore);
+  const groundEffect=1+(1-smooth(1,14,heightAGL))*.12;
+  const lift=qbar*WING_AREA_M2*cl*groundEffect;
+  a.stall=!wasOnGround&&stallBlend>.24;
+  // Induced drag rises with lift demand; separated flow adds a pronounced but
+  // progressive drag penalty instead of an abrupt binary stall switch.
+  const cd=.031+.052*cl*cl+stallBlend*.42;
+  const drag=qbar*WING_AREA_M2*cd;
+  const lateralSpeed=simAirVelocity.dot(simRight);
+  const sideDrag=.5*rho*airspeedNow*Math.abs(lateralSpeed)*WING_AREA_M2*.72;
+
+  // Engine power spools realistically instead of jumping instantly with throttle.
+  const spoolTau=state.throttle>a.enginePower?1.15:.72;
+  a.enginePower+=(state.throttle-a.enginePower)*(1-Math.exp(-dt/spoolTau));
+  const thrust=a.engineRunning?a.enginePower*MAX_ENGINE_THRUST_N:0;
+  simLiftDirection.copy(simUp).addScaledVector(simDirection,-simUp.dot(simDirection));
+  if(simLiftDirection.lengthSq()<1e-6)simLiftDirection.copy(simUp);
+  simLiftDirection.normalize();
+  simForce.copy(simForward).multiplyScalar(thrust)
+    .addScaledVector(simLiftDirection,lift)
+    .addScaledVector(simDirection,-drag)
+    .addScaledVector(simRight,-Math.sign(lateralSpeed)*sideDrag)
+    .add(simGravity);
+
+  a.velocity.addScaledVector(simForce,dt/AIRCRAFT_MASS_KG);
+  a.velocity.multiplyScalar(Math.exp(-.012*dt));
+  a.position.addScaledVector(a.velocity,dt);
+  if(a.stall&&!wasOnGround){
+    // A mild nose drop and vertical sink recover naturally as AoA is reduced.
+    a.velocity.y-=clamp(2.4+stallBlend*4.0,2.4,6.4)*dt;
+    a.pitchRate-=.10*stallBlend*dt;
+  }
+
+  const ground=groundLevelAt(a.position.x,a.position.z);
+  const contactY=ground+contactOffset;
+  if(a.position.y<contactY){
+    const impact=Math.abs(a.velocity.y);
+    a.position.y=contactY;
+    if(a.velocity.y<0)a.velocity.y=0;
+    const fx=-Math.sin(a.yaw),fz=-Math.cos(a.yaw);
+    const rx=Math.cos(a.yaw),rz=-Math.sin(a.yaw);
+    const forwardV=a.velocity.x*fx+a.velocity.z*fz;
+    const lateralV=a.velocity.x*rx+a.velocity.z*rz;
+    const rollingV=forwardV*Math.exp(-.028*dt);
+    const lateralAfter=lateralV*Math.exp(-1.35*dt);
+    a.velocity.x=fx*rollingV+rx*lateralAfter;
+    a.velocity.z=fz*rollingV+rz*lateralAfter;
+    a.pitchRate*=Math.exp(-dt*1.1);
+    a.rollRate*=Math.exp(-dt*2.4);
+    if(impact>13||Math.abs(a.roll)>.82){
+      state.crashed=true;state.paused=true;$('pauseMenu').style.display='grid';
+      $('pauseMenu').querySelector('h2').textContent='Aircraft damaged';
+      $('pauseMenu').querySelector('.intro').textContent='The landing impact exceeded the safe envelope. Restart the flight to try again.';
+      toast('Hard landing — aircraft damaged.');
+    }
+  }
+
+  simAirVelocity.copy(a.velocity).sub(state.wind);
+  a.airspeed=simAirVelocity.length();
+  a.verticalSpeed=a.velocity.y;
+  a.altAGL=Math.max(0,a.position.y-ground);
+  a.gLoad=wasOnGround?1:lift/(AIRCRAFT_MASS_KG*9.81);
+  a.slipAngle=Math.atan2(lateralSpeed,Math.max(airspeedNow,.1))/DEG;
+  if(a.position.y<=ground+contactOffset+.35)a.stall=false;
+  if(plane.userData.prop){plane.userData.prop.rotation.y+=dt*(18+a.enginePower*205);const blur=a.enginePower>.58;if(plane.userData.propFast)plane.userData.propFast.visible=blur;if(plane.userData.propSlow)plane.userData.propSlow.visible=!blur;}
+  syncPlaneTransform();
+}
+const camTarget=new THREE.Vector3(),camPos=new THREE.Vector3();let lastCameraMode=0;
+function updateCamera(dt,ctrl){const a=aircraft,q=plane.quaternion;camForward.set(0,0,-1).applyQuaternion(q);camUp.set(0,1,0).applyQuaternion(q);camRight.set(1,0,0).applyQuaternion(q);
+  const targetFov=state.camera===1?75:state.camera===2?65:state.camera===3?62:72;
+  if(lastCameraMode!==state.camera||camera.fov!==targetFov){camera.fov=targetFov;camera.updateProjectionMatrix();lastCameraMode=state.camera;}
+  if(state.camera===1){camTarget.copy(a.position).addScaledVector(camForward,90);camPos.copy(a.position).addScaledVector(camForward,.42).addScaledVector(camUp,.86);camera.position.lerp(camPos,1-Math.exp(-dt*18));camera.lookAt(camTarget);}
+  else if(state.camera===2){camPos.copy(a.position).addScaledVector(camForward,-29).addScaledVector(camUp,9);camTarget.copy(a.position).addScaledVector(camForward,20);camera.position.lerp(camPos,1-Math.exp(-dt*3.3));camera.lookAt(camTarget);}
+  else{state.orbitYaw-=ctrl.camX*dt*1.8;state.orbitPitch=clamp(state.orbitPitch-ctrl.camY*dt*1.4,-.2,1.1);if(state.mouseDown){state.orbitYaw-=state.mouseDx*.004;state.orbitPitch=clamp(state.orbitPitch-state.mouseDy*.004,-.2,1.1);state.mouseDx=state.mouseDy=0;}const radius=state.camera===3?36:75,ox=Math.sin(state.orbitYaw)*Math.cos(state.orbitPitch)*radius,oy=Math.sin(state.orbitPitch)*radius+7,oz=Math.cos(state.orbitYaw)*Math.cos(state.orbitPitch)*radius;camPos.set(a.position.x+ox,a.position.y+oy,a.position.z+oz);camera.position.lerp(camPos,1-Math.exp(-dt*3));camera.lookAt(a.position);}
+}
+function updateEnvironment(dt){worldTime+=dt;const sunAngle=(worldTime/600)*Math.PI*2-.45;sunLight.position.set(Math.cos(sunAngle)*1300,Math.sin(sunAngle)*1400,-650);const day=clamp((Math.sin(sunAngle)+.18)/.8,0,1);sunLight.intensity=.2+day*2.1;scene.background.setRGB(lerp(.025,.49,day),lerp(.055,.70,day),lerp(.10,.81,day));scene.fog.color.copy(scene.background);cloudGroup.position.x=aircraft.position.x*.02;cloudGroup.position.z=aircraft.position.z*.02;}
+function updateHud(dt){cameraName();const a=aircraft,speed=a.airspeed*KTS_PER_MS,alt=a.altAGL*FT_PER_M,head=(((-a.yaw/DEG)%360)+360)%360;$('speed').textContent=Math.round(speed);$('altitude').textContent=Math.round(alt).toLocaleString();$('vspeed').textContent=`${Math.round(a.verticalSpeed*196.85)} FPM`;$('gLoad').textContent=`${a.gLoad.toFixed(1)} G`;$('slipAngle').textContent=`${a.slipAngle.toFixed(1)}°`;$('heading').textContent=`${String(Math.round(head)%360).padStart(3,'0')}°`;$('position').textContent=`${(a.position.x/1000).toFixed(1)} / ${(a.position.z/1000).toFixed(1)} KM`;$('throttleText').textContent=`${Math.round(state.throttle*100)}%`;$('throttleBar').style.width=`${state.throttle*100}%`;$('engineText').textContent=aircraft.enginePower>.78?'HIGH':aircraft.enginePower>.08?'SPOOLING':'IDLE';$('engineBar').style.width=`${aircraft.enginePower*100}%`;$('gearText').textContent='FIXED GEAR';$('gearBar').style.width='100%';$('flightStatus').textContent=state.crashed?'DAMAGED':a.altAGL<5&&speed<35?'ON RUNWAY':a.stall?'STALL WARNING':'IN FLIGHT';$('flightStatus').style.color=a.stall?'var(--red)':'var(--lime)';$('attitudeSky').style.transform=`rotate(${a.roll/DEG}deg) translateY(${a.pitch*45}px)`;$('windText').textContent='240° / 04 KT';$('fpsText').textContent=`${Math.round(state.fps)} FPS`;$('gyroStatus').textContent=state.gyroDevice&&state.gyroCalibrated?'ONLINE':state.gyroDevice?'CALIBRATE':'OFFLINE';}
+function updateDiagnostics(){const gp=readGamepad(),c=$('controllerDetail'),a=$('controllerAxes');if(c&&a){if(gp){c.textContent=`${gp.id||'Gamepad'} · index ${gp.index} · ${gp.buttons.length} buttons / ${gp.axes.length} axes`;const ax=(gp.axes||[]).slice(0,4).map(v=>(v||0).toFixed(2)).join(' / '),b=gp.buttons||[];a.textContent=`Axes: ${ax||'—'} · L2/R2: ${((b[6]?.value)||0).toFixed(2)} / ${((b[7]?.value)||0).toFixed(2)}`;}else{c.textContent='No controller detected · WASD + mouse active';a.textContent='W/S pitch · A/D roll · Q/E rudder · Shift/Ctrl throttle · LMB drag steer · RMB drag camera';}}}
+function adaptRenderResolution(dt){/* Intentionally stable pixel ratio: dynamic DPR changes can shimmer. Use the explicit quality presets instead. */}
+function frame(){requestAnimationFrame(frame);frameStartTime=performance.now();const frameDt=Math.min(clock.getDelta(),.05);state.fpsAccum+=frameDt;state.fpsCount++;if(state.fpsAccum>=1){state.fps=state.fpsCount/state.fpsAccum;state.fpsAccum=0;state.fpsCount=0;}adaptRenderResolution(frameDt);
+  updateChunks();processChunkQueue();diagnosticsTimer+=frameDt;if(diagnosticsTimer>.25){updateDiagnostics();diagnosticsTimer=0;}
+  if(state.started&&!state.paused){const ctrl=getControls(frameDt);physicsAccumulator=Math.min(physicsAccumulator+frameDt,.12);let steps=0;while(physicsAccumulator>=FIXED_STEP&&steps<5){stepPhysics(FIXED_STEP,ctrl);updateCamera(FIXED_STEP,ctrl);updateEnvironment(FIXED_STEP);physicsAccumulator-=FIXED_STEP;steps++;}if(steps===5)physicsAccumulator=Math.min(physicsAccumulator,FIXED_STEP);hudTimer+=frameDt;if(hudTimer>.08){updateHud(frameDt);tutorialTick();hudTimer=0;}}
+  renderer.render(scene,camera);
+}
+const flightLesson=[
+  {title:'Power up',objective:'You are lined up on the runway. Bring engine power up smoothly to at least 90%.',controller:'Hold R2 to increase throttle. Use L2 if you overshoot.',keyboard:'Hold LEFT SHIFT to increase throttle. Hold LEFT CTRL to reduce it.',mouse:'No mouse movement is needed for throttle.',done:()=>state.throttle>=.9,status:'WAITING FOR 90% THROTTLE'},
+  {title:'Build takeoff speed',objective:'Keep the aircraft straight and let it accelerate. Avoid pitching or banking while the airspeed builds to 58 knots.',controller:'Keep the LEFT STICK centred and continue holding R2.',keyboard:'Keep W/A/S/D released. Continue holding LEFT SHIFT.',mouse:'Keep the left mouse button released; focus on the runway.',done:()=>aircraft.airspeed*KTS_PER_MS>=TAKEOFF_ROTATE_KTS,status:`WAITING FOR ${TAKEOFF_ROTATE_KTS} KTS`},
+  {title:'Rotate — lift the nose',objective:'At takeoff speed, gently raise the nose. Use a small input, not a hard pull.',controller:'Push the LEFT STICK UP slightly (toward the top edge) to pitch up.',keyboard:'Tap or gently hold W to pitch the nose up.',mouse:'Hold LEFT MOUSE BUTTON and drag UP gently to raise the nose.',done:()=>aircraft.altAGL>7&&aircraft.airspeed>20,status:'WAITING FOR LIFTOFF'},
+  {title:'Climb steadily',objective:'Establish a shallow climb. Make small corrections and keep the wings close to level. Aim for 200 ft above ground.',controller:'Use small LEFT STICK UP taps for pitch. Move it LEFT/RIGHT only for small roll corrections.',keyboard:'Use short W taps for pitch. Use A/D for small roll corrections.',mouse:'Hold LEFT MOUSE BUTTON and make small drags. Drag UP to pitch up; LEFT/RIGHT to bank.',done:()=>aircraft.altAGL>61,status:'WAITING FOR 200 FT AGL'},
+  {title:'Stabilise the climb',objective:'The Cessna 182 Skylane has fixed landing gear, so there is no gear-retraction action. Hold a steady climb with a positive vertical speed and nearly level wings.',controller:'Use small LEFT STICK corrections. Keep the wings within about 10° of level and maintain a positive climb.',keyboard:'Use short W/A/D corrections. Keep the wings within about 10° of level and maintain a positive climb.',mouse:'Hold LEFT MOUSE BUTTON and make tiny drags. Drag UP for pitch; LEFT/RIGHT for roll corrections.',done:()=>aircraft.verticalSpeed>1.2&&Math.abs(aircraft.roll)<.18&&aircraft.airspeed>25,status:'WAITING FOR A STABLE CLIMB'},
+  {title:'Make a gentle turn',objective:'Aircraft turn by banking. Try a shallow 15° bank, then release the controls.',controller:'Move the LEFT STICK LEFT or RIGHT to bank. L1/R1 provide rudder input.',keyboard:'Press A to bank left or D to bank right. Q/E control rudder.',mouse:'Hold LEFT MOUSE BUTTON and drag LEFT or RIGHT to bank.',done:()=>Math.abs(aircraft.roll)>.22,status:'WAITING FOR A 13° BANK'},
+  {title:'Level the wings',objective:'Stop the turn by easing the wings back to level. Avoid large opposite inputs.',controller:'Ease the LEFT STICK toward the opposite side, then return it to the centre.',keyboard:'Tap the opposite A/D key briefly, then release both keys.',mouse:'Hold LEFT MOUSE BUTTON and drag gently in the opposite direction, then release.',done:()=>Math.abs(aircraft.roll)<.09,status:'WAITING FOR WINGS LEVEL'},
+  {title:'You are flying',objective:'You have practised throttle, takeoff, climb, fixed-gear checks, banking and recovery. Keep exploring, or practise a landing when you are ready.',controller:'Left stick: pitch/roll · R2/L2: throttle · L1/R1: rudder · ✕: fixed-gear info · ○: camera · OPTIONS: pause.',keyboard:'W/S: pitch · A/D: roll · Q/E: rudder · SHIFT/CTRL: throttle · G: fixed-gear info · 1–4: camera · ESC: pause.',mouse:'LMB + drag: pitch/roll · RMB + drag: camera look. Use the keyboard for throttle; landing gear is fixed.',done:()=>true,status:'BASIC FLIGHT LESSON COMPLETE'}
+];
+function hasConnectedGamepad(){try{return Array.from(navigator.getGamepads?.()||[]).some(p=>p&&p.connected);}catch{return false;}}
+function tutorialInputMode(){
+  // Flight School teaches only the input scheme currently in use. Mouse and
+  // keyboard are one combined fallback scheme; DualSense is a separate scheme.
+  const connected=hasConnectedGamepad();
+  if(!connected&&state.tutorial.inputMode==='controller')state.tutorial.inputMode='keyboardMouse';
+  if(connected&&!state.tutorial.inputMode)state.tutorial.inputMode='controller';
+  if(state.tutorial.inputMode!=='controller'&&state.tutorial.inputMode!=='keyboardMouse'){
+    state.tutorial.inputMode=connected?'controller':'keyboardMouse';
+  }
+  return state.tutorial.inputMode;
+}
+function setTutorialInputMode(mode){
+  if(!state.tutorial.active)return;
+  const next=(mode==='controller'&&hasConnectedGamepad())?'controller':'keyboardMouse';
+  if(state.tutorial.inputMode!==next){
+    state.tutorial.inputMode=next;
+    updateTutorialPanel();
+  }
+}
+function keyboardMouseLessonInstruction(step,index){
+  const instructions=[
+    'Hold LEFT SHIFT to increase throttle; hold LEFT CTRL to reduce it. Mouse is not needed for throttle.',
+    'Keep W/A/S/D released and keep the left mouse button released. Hold LEFT SHIFT to maintain power while the aircraft accelerates.',
+    'Press W gently to raise the nose, OR hold LEFT MOUSE BUTTON and drag UP a small amount. Avoid a sudden pull.',
+    'Use short W taps to maintain a shallow climb. Use A/D or LEFT MOUSE BUTTON + small left/right drags to keep the wings level.',
+    'The Cessna 182 has fixed landing gear. No gear input is needed; focus on maintaining a steady climb.',
+    'Press A or D to bank, OR hold LEFT MOUSE BUTTON and drag left/right until the bank reaches about 13°.',
+    'Tap the opposite A/D key, OR use a small opposite LEFT MOUSE BUTTON drag. Release the controls as the wings level.',
+    'W/S: pitch · A/D: roll · Q/E: rudder · SHIFT/CTRL: throttle · G: fixed-gear info · 1–4: camera. LEFT MOUSE + drag: pitch/roll; RIGHT MOUSE + drag: camera look.'
+  ];
+  return instructions[index] || `${step.keyboard} ${step.mouse}`;
+}
+function tutorialProgressFor(index){
+  const speed=aircraft.airspeed*KTS_PER_MS,roll=Math.abs(aircraft.roll),alt=aircraft.altAGL;
+  switch(index){
+    case 0:return clamp(state.throttle/.9,0,1);
+    case 1:return clamp(speed/TAKEOFF_ROTATE_KTS,0,1);
+    case 2:return aircraft.altAGL>7&&speed>20?1:clamp((alt-3.2)/3.8,0,.95);
+    case 3:return clamp(alt/61,0,1);
+    case 4:return clamp(.35+Math.min(aircraft.verticalSpeed/1.2,1)*.4+(Math.abs(aircraft.roll)<.18?.25:0),0,1);
+    case 5:return clamp(roll/.22,0,1);
+    case 6:return clamp(1-roll/.22,0,1);
+    default:return 1;
+  }
+}
+function tutorialFeedback(index){
+  const speed=aircraft.airspeed*KTS_PER_MS,rollDeg=Math.abs(aircraft.roll)/DEG,altFt=aircraft.altAGL*FT_PER_M;
+  switch(index){
+    case 0:
+      return state.throttle<.65?'Bring the power up gradually. Keep holding the throttle control.':state.throttle<.9?`Good. ${Math.round(state.throttle*100)}% power — keep increasing toward 90%.`:'Power target reached. The instructor will advance automatically.';
+    case 1:
+      if(state.throttle<.8)return 'Power has dropped. Keep the throttle high so the aircraft can accelerate.';
+      if(Math.abs(aircraft.roll)>.14)return 'Keep the wings level and stay aligned with the runway.';
+      return `Building speed: ${Math.round(speed)} / ${TAKEOFF_ROTATE_KTS} knots. Keep the nose steady.`;
+    case 2:
+      if(aircraft.stall)return 'Too much pitch for the current speed. Ease the nose down slightly and let the wing regain lift.';
+      if(speed<TAKEOFF_ROTATE_KTS)return `Wait for more speed before rotating. Target ${TAKEOFF_ROTATE_KTS} knots; current airspeed: ${Math.round(speed)} knots.`;
+      return 'Gently raise the nose. Small input only — avoid pulling sharply.';
+    case 3:
+      if(aircraft.stall)return 'You are approaching a stall. Ease forward slightly to reduce angle of attack.';
+      if(aircraft.pitch<.035)return 'A little more nose-up attitude will establish a climb.';
+      if(rollDeg>12)return `Reduce the ${aircraft.roll>0?'right':'left'} bank. Keep the wings nearly level while climbing.`;
+      return `Nice climb. ${Math.round(altFt)} ft AGL — keep a shallow nose-up attitude.`;
+    case 4:
+      if(aircraft.verticalSpeed<=1.2)return 'This Cessna 182 has fixed landing gear. Keep a positive climb above 1.2 m/s.';
+      if(rollDeg>10)return 'Good climb. Reduce the bank slightly and keep the wings level.';
+      return 'Climb stabilised. The fixed landing gear requires no action.';
+    case 5:
+      return rollDeg>13?`Bank detected: ${Math.round(rollDeg)}° ${aircraft.roll>0?'right':'left'}. Ease off the control.`:'Apply a gentle left or right bank until the aircraft reaches about 13°.';
+    case 6:
+      return rollDeg>7?`Still banked ${aircraft.roll>0?'right':'left'} by ${Math.round(rollDeg)}°. Apply a small opposite input.`:'Wings nearly level. Release the controls and let the aircraft settle.';
+    default:return 'Basic flight lesson complete. The instructor will close automatically.';
+  }
+}
+function startTutorial(){
+  state.tutorial.active=true;state.tutorial.index=0;state.tutorial.timer=0;state.tutorial.readySince=0;state.tutorial.startedAt=performance.now();state.tutorial.lastStep=-1;state.tutorial.lastMode='';
+  state.tutorial.inputMode=hasConnectedGamepad()?'controller':'keyboardMouse';state.tutorial.mode=tutorialInputMode();
+  $('mainMenu').style.display='none';restart();$('flightTag').textContent='FLIGHT SCHOOL · NORTH RIDGE';$('tutorialPanel').style.display='block';updateTutorialPanel();toast(`Flight school started · ${state.tutorial.mode==='controller'?'DualSense':'keyboard + mouse'} instructions`);
+}
+function updateTutorialPanel(){
+  if(!state.tutorial.active)return;
+  const step=flightLesson[state.tutorial.index];if(!step)return;
+  const mode=tutorialInputMode(),i=state.tutorial.index;
+  state.tutorial.mode=mode;
+  $('tutorialStep').textContent=`FLIGHT SCHOOL · ${String(i+1).padStart(2,'0')} / ${String(flightLesson.length).padStart(2,'0')}`;
+  $('tutorialTitle').textContent=step.title;
+  $('tutorialObjective').textContent=step.objective;
+  // Never show controller and keyboard/mouse instructions together.
+  if(mode==='controller'){
+    $('tutorialPrimaryLabel').textContent='DUALSENSE CONTROLLER';
+    $('tutorialPrimary').textContent=step.controller;
+  }else{
+    $('tutorialPrimaryLabel').textContent='KEYBOARD + MOUSE';
+    $('tutorialPrimary').textContent=keyboardMouseLessonInstruction(step,i);
+  }
+  const progress=(i+tutorialProgressFor(i))/flightLesson.length;
+  $('tutorialProgress').style.width=`${clamp(progress,0,1)*100}%`;
+  $('tutorialStatus').textContent=tutorialFeedback(i);
+  $('tutorialStatus').classList.toggle('ready',false);
+  state.tutorial.lastStep=i;state.tutorial.lastMode=mode;
+}
+function finishTutorial(){state.tutorial.active=false;state.tutorial.readySince=0;$('tutorialPanel').style.display='none';toast('Flight school complete. Enjoy your flight!');}
+function advanceTutorial(){
+  if(!state.tutorial.active)return;
+  const next=state.tutorial.index+1;
+  if(next>=flightLesson.length){finishTutorial();return;}
+  state.tutorial.index=next;state.tutorial.readySince=0;updateTutorialPanel();
+}
+function exitTutorial(){state.tutorial.active=false;state.tutorial.readySince=0;$('tutorialPanel').style.display='none';toast('Flight school closed. Free flight remains active.');}
+function tutorialTick(){
+  if(!state.tutorial.active||state.paused)return;
+  const now=performance.now(),mode=tutorialInputMode(),index=state.tutorial.index,step=flightLesson[index];
+  if(mode!==state.tutorial.lastMode){updateTutorialPanel();}
+  const complete=!!step.done();
+  if(complete){
+    if(!state.tutorial.readySince)state.tutorial.readySince=now;
+    const delay=index===flightLesson.length-1?2200:850;
+    const elapsed=now-state.tutorial.readySince,remaining=Math.max(0,(delay-elapsed)/1000);
+    $('tutorialStatus').textContent=index===flightLesson.length-1?'LESSON COMPLETE · RETURNING TO FREE FLIGHT':`ACTION DETECTED · NEXT LESSON IN ${remaining.toFixed(1)}s`;
+    $('tutorialStatus').classList.toggle('ready',true);
+    $('tutorialProgress').style.width=`${((index+1)/flightLesson.length)*100}%`;
+    if(elapsed>=delay){
+      if(index===flightLesson.length-1)finishTutorial();
+      else{advanceTutorial();toast(`Good work. ${flightLesson[state.tutorial.index].title} — follow the new instruction.`);}
+    }
+  }else{
+    state.tutorial.readySince=0;
+    $('tutorialStatus').textContent=tutorialFeedback(index);
+    $('tutorialStatus').classList.toggle('ready',false);
+    $('tutorialProgress').style.width=`${((index+tutorialProgressFor(index))/flightLesson.length)*100}%`;
+  }
+  // Keep the device-specific control instructions in sync if the user swaps input methods.
+  if(mode!==state.tutorial.lastMode)updateTutorialPanel();
+}
+function startFlight(){state.started=true;state.paused=false;state.crashed=false;physicsAccumulator=0;$('mainMenu').style.display='none';$('pauseMenu').style.display='none';$('flightTag').textContent='FREE FLIGHT · NORTH RIDGE';setHud();cameraName();toast('Flight controls active. Advance throttle and rotate to take off.');}
+function restart(){state.crashed=false;state.paused=false;physicsAccumulator=0;$('pauseMenu').querySelector('h2').textContent='Take a breath.';$('pauseMenu').querySelector('.intro').textContent='Your aircraft is holding its current state. Ready when you are.';state.throttle=0;aircraft.position.set(0,RUNWAY+aircraftGroundOffset,0);aircraft.velocity.set(0,0,0);aircraft.pitch=aircraft.roll=aircraft.yaw=aircraft.pitchRate=aircraft.rollRate=aircraft.yawRate=0;aircraft.controlPitch=aircraft.controlRoll=aircraft.controlYaw=0;aircraft.enginePower=0;aircraft.airspeed=0;aircraft.stall=false;state.flightTime=0;state.gear=true;$('pauseMenu').style.display='none';state.started=true;setHud();syncPlaneTransform();toast('Aircraft reset on North Ridge runway.');}
+function openModal(title,body){$('modalContent').innerHTML=`<div class="modal-head"><h2>${title}</h2><button class="close" id="modalClose">✕</button></div>${body}`;$('modalOverlay').style.display='grid';$('modalClose').onclick=()=>$('modalOverlay').style.display='none';}
+function settingsModal(){openModal('Simulator settings',`
+  <div class="control-row"><div><strong>Graphics quality</strong><small>Lower quality reduces terrain detail, shadows and cloud density.</small></div><select id="qualitySelect"><option>High</option><option>Medium</option><option>Low</option></select></div>
+  <div class="control-row"><div><strong>Flight control response</strong><small>Higher values make pitch, roll and rudder react faster.</small></div><input id="controlResponse" type="range" min=".55" max="1.65" step=".05" value="${state.controlResponse}"></div>
+  <div class="control-row"><div><strong>Stick sensitivity</strong><small>Overall DualSense and keyboard/mouse flight authority.</small></div><input id="stickSens" type="range" min=".4" max="1.8" step=".05" value="${state.stickSensitivity}"></div>
+  <div class="control-row"><div><strong>Fine-control curve</strong><small>More expo gives finer movement around the stick centre.</small></div><input id="inputExpo" type="range" min="0" max=".75" step=".05" value="${state.inputExpo}"></div>
+  <div class="control-row"><div><strong>Wing stability assist</strong><small>Gentle self-levelling when you release the roll input.</small></div><input id="rollStability" type="range" min="0" max=".65" step=".05" value="${state.rollStability}"></div>
+  <div class="control-row"><div><strong>Stick dead zone</strong><small>Ignore small stick drift.</small></div><input id="deadzone" type="range" min="0" max=".25" step=".01" value="${state.deadzone}"></div>
+  <div class="control-row"><div><strong>Enable gyro flight input</strong><small>Use DualSense gyro rotation for yaw.</small></div><input id="gyroEnabled" type="checkbox" ${state.gyroEnabled?'checked':''}></div>
+  <div class="control-row"><div><strong>Gyro pitch assist</strong><small>Use controller pitch rotation as an optional secondary input.</small></div><input id="gyroPitch" type="checkbox" ${state.gyroPitch?'checked':''}></div>
+  <div class="control-row"><div><strong>Gyro sensitivity</strong><small>Angular rate scaling for yaw / pitch.</small></div><input id="gyroSens" type="range" min=".2" max="2.5" step=".05" value="${state.gyroSensitivity}"></div>
+  <div class="control-row"><div><strong>Gyro noise threshold</strong><small>Degrees per second ignored as sensor drift.</small></div><input id="gyroDz" type="range" min="0" max="12" step=".5" value="${state.gyroDeadzone}"></div>
+  <div class="diag"><strong>Controller diagnostics</strong><br><span id="controllerDetail">Waiting for controller input…</span><br><span id="controllerAxes">Axes: — · Triggers: —</span></div>
+  <div class="diag"><strong>DualSense motion sensor</strong><br><span id="gyroDetail">${state.gyroDevice?(state.gyroCalibrated?'Calibrated · live gyro rates':'Connected · calibration required'):'Not connected. Pair it using WebHID.'}</span><br>USB and Bluetooth HID report layouts are supported by the parser. Motion sensor data is read directly; no simulated gyro values are used.</div>
+  <div class="modal-actions"><button class="primary" id="pairGyro">PAIR DUALSENSE GYRO</button><button id="calibrateGyro">CALIBRATE NEUTRAL</button><button id="doneSettings">DONE</button></div>`);
+  $('qualitySelect').value=state.quality;$('qualitySelect').onchange=e=>{state.quality=e.target.value;adaptivePixelRatio=currentPixelRatio();applyPixelRatio();toast('Graphics quality updated.');};
+  $('controlResponse').oninput=e=>state.controlResponse=+e.target.value;$('stickSens').oninput=e=>state.stickSensitivity=+e.target.value;$('inputExpo').oninput=e=>state.inputExpo=+e.target.value;$('rollStability').oninput=e=>state.rollStability=+e.target.value;$('deadzone').oninput=e=>state.deadzone=+e.target.value;$('gyroEnabled').onchange=e=>state.gyroEnabled=e.target.checked;$('gyroPitch').onchange=e=>state.gyroPitch=e.target.checked;$('gyroSens').oninput=e=>state.gyroSensitivity=+e.target.value;$('gyroDz').oninput=e=>state.gyroDeadzone=+e.target.value;
+  $('pairGyro').onclick=async()=>{await connectGyro();$('gyroDetail').textContent=state.gyroDevice?`${state.gyroDevice.productName||'DualSense'} · connected, calibrate before flying`:'No DualSense HID device selected.';};$('calibrateGyro').onclick=startGyroCalibration;$('doneSettings').onclick=()=>$('modalOverlay').style.display='none';
+}
+function controlsModal(){openModal('Flight controls',`<div class="keygrid">
+  <div class="key"><span>Pitch down / up</span><kbd>W / S · ↑ / ↓</kbd></div><div class="key"><span>Roll left / right</span><kbd>A / D · ← / →</kbd></div>
+  <div class="key"><span>Rudder left / right</span><kbd>Q LEFT · E RIGHT</kbd></div><div class="key"><span>Throttle increase</span><kbd>SHIFT</kbd></div>
+  <div class="key"><span>Throttle decrease</span><kbd>CTRL</kbd></div><div class="key"><span>Landing gear</span><kbd>FIXED ON C182</kbd></div>
+  <div class="key"><span>Camera views</span><kbd>1 – 4</kbd></div><div class="key"><span>Toggle HUD</span><kbd>H</kbd></div>
+  <div class="key"><span>Pause / resume</span><kbd>ESC / SPACE</kbd></div><div class="key"><span>Mouse flight steering</span><kbd>Hold LMB + drag</kbd></div><div class="key"><span>Camera look</span><kbd>Hold RMB + drag</kbd></div></div>
+  <div class="diag"><strong>Keyboard + mouse fallback</strong><br>W/S: pitch · A/D: roll · Q/E: rudder · Shift/Ctrl: throttle · G: fixed-gear info · 1–4: camera · H: HUD · ESC/SPACE: pause. Hold left mouse and drag to steer (horizontal = roll, vertical = pitch). Hold right mouse and drag to orbit the camera. Keyboard controls remain available alongside the controller.<br><br><strong>DualSense mapping</strong><br>Left stick: pitch / roll · Right stick: camera · R2/L2: throttle · L1: rudder left · R1: rudder right · ✕: fixed-gear info · ○: camera · □: HUD · △: cockpit/chase toggle · D-pad up/down: throttle steps · D-pad left/right: camera cycle · OPTIONS: pause.<br><br><strong>Gyroscope</strong><br>Pair through Settings → Pair DualSense Gyro. Rotate the controller around its vertical axis to command yaw. Hold it still during calibration. Gyro data requires WebHID in a compatible browser such as desktop Chrome or Edge.</div>`);}
+
+// Inputs and buttons
+$('startBtn').onclick=startFlight;$('teachBtn').onclick=startTutorial;$('tutorialExit').onclick=exitTutorial;$('tutorialClose').onclick=exitTutorial;$('controlsBtn').onclick=controlsModal;$('settingsBtn').onclick=settingsModal;$('hudBtn').onclick=()=>{state.hud=!state.hud;setHud();};$('pauseBtn').onclick=togglePause;$('resumeBtn').onclick=()=>{state.paused=false;$('pauseMenu').style.display='none';setHud();};$('restartBtn').onclick=restart;$('returnBtn').onclick=()=>{state.started=false;state.paused=false;exitTutorial();$('pauseMenu').style.display='none';$('mainMenu').style.display='grid';setHud();};
+window.addEventListener('keydown',e=>{state.keys[e.code]=true;if(state.tutorial.active&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyQ','KeyE','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyG'].includes(e.code))setTutorialInputMode('keyboardMouse');if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(e.code==='Escape'||e.code==='Space'){if(state.started)togglePause();}if(e.code==='KeyH'){state.hud=!state.hud;setHud();}if(e.code==='KeyC')nextCamera();});window.addEventListener('keyup',e=>state.keys[e.code]=false);
+rendererSafeResize();function rendererSafeResize(){window.addEventListener('resize',()=>{if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);});}
+$('sim').addEventListener('pointerdown',e=>{
+  if(e.button===0){
+    // Left-drag always flies, even when a controller is connected. This makes
+    // keyboard/mouse a genuine selectable input scheme rather than a fallback
+    // that silently stops working when a gamepad is plugged in.
+    state.mouseFlightActive=true;
+    if(state.tutorial.active)setTutorialInputMode('keyboardMouse');
+    state.mouseFlightX=e.clientX;state.mouseFlightY=e.clientY;
+    state.mouseFlightDx=0;state.mouseFlightDy=0;
+  }else if(e.button===2){
+    state.mouseDown=true;state.mouseButton=e.button;state.mouseX=e.clientX;state.mouseY=e.clientY;
+    if(state.tutorial.active)setTutorialInputMode('keyboardMouse');
+  }
+});
+window.addEventListener('pointerup',()=>{state.mouseDown=false;state.mouseFlightActive=false;state.mouseFlightDx=0;state.mouseFlightDy=0;state.mouseButton=-1;});
+window.addEventListener('pointercancel',()=>{state.mouseDown=false;state.mouseFlightActive=false;state.mouseFlightDx=0;state.mouseFlightDy=0;state.mouseButton=-1;});
+window.addEventListener('pointermove',e=>{
+  if(state.mouseFlightActive){if(state.tutorial.active)setTutorialInputMode('keyboardMouse');state.mouseFlightDx=e.clientX-state.mouseFlightX;state.mouseFlightDy=e.clientY-state.mouseFlightY;}
+  if(state.mouseDown){state.mouseDx+=e.clientX-state.mouseX;state.mouseDy+=e.clientY-state.mouseY;state.mouseX=e.clientX;state.mouseY=e.clientY;}
+});
+$('sim').addEventListener('contextmenu',e=>e.preventDefault());
+
+(async()=>{
+  try{
+    await setupScene();
+    $('loading').classList.add('hidden');
+    setTimeout(()=>$('loading').remove(),500);
+    frame();
+  }catch(err){
+    console.error(err);
+    $('loading').innerHTML=`<div style="max-width:600px;padding:24px;text-align:center"><h2>Unable to start SKYBOUND</h2><p style="color:#9ab0c2;font-size:13px;line-height:1.6">${err.message}</p><p style="color:#70879b;font-size:11px">Check your internet connection and confirm that cessna_182_skylane.glb is beside index.html. Launch from launch-macos.command so the model can be loaded locally.</p></div>`;
+  }
+})();
+</script>
+</body>
+</html>
