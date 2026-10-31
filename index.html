@@ -245,6 +245,28 @@ async function makeAircraft(){
           if(material.normalMap)material.normalMap.colorSpace=THREE.NoColorSpace;
           if(material.roughnessMap)material.roughnessMap.colorSpace=THREE.NoColorSpace;
           if(material.metalnessMap)material.metalnessMap.colorSpace=THREE.NoColorSpace;
+
+          // The supplied Cessna model ships with a very dark green windshield
+          // base-colour texture/factor. Keep the original glass geometry, but
+          // remove that tint so the pilot can actually see the runway/horizon.
+          // Preserve a restrained clearcoat highlight rather than an opaque tint.
+          const materialName=String(material.name||'').toLowerCase();
+          const isWindshield=materialName.includes('windshield')||materialName.includes('windscreen');
+          const isGlass=isWindshield||materialName.includes('glass');
+          if(isGlass){
+            material.color?.set(0xffffff);
+            material.map=null; // discard the dark baked tint texture only
+            material.transparent=true;
+            material.opacity=isWindshield?.12:.08;
+            material.depthWrite=false;
+            material.metalness=0;
+            material.roughness=.18;
+            material.side=THREE.DoubleSide;
+            if('clearcoat' in material)material.clearcoat=.22;
+            if('clearcoatRoughness' in material)material.clearcoatRoughness=.12;
+            if('specularIntensity' in material)material.specularIntensity=.28;
+            material.needsUpdate=true;
+          }
         }
       }
     }
