@@ -29,7 +29,7 @@
 <div class="loading" id="loading"><div class="loader-inner"><div class="loader-mark">SB</div><div class="loader-text">LOADING CESSNA 182 SKYLANE MODEL · 0%</div><div class="loader-bar"><i></i></div></div></div>
 <header class="topbar">
   <div class="brand"><div class="brand-mark">SB</div><div><div class="brand-name">SKYBOUND</div><div class="brand-sub">PROCEDURAL WORLD · CESSNA 182 SKYLANE</div></div></div>
-  <div class="top-actions"><button id="hudBtn">HUD / H</button><button id="settingsBtn">SETTINGS</button><button id="pauseBtn">PAUSE / ESC</button></div>
+  <div class="top-actions"><button id="hudBtn">HUD / H</button><button id="soundBtn" aria-pressed="true">SOUND ON</button><button id="settingsBtn">SETTINGS</button><button id="pauseBtn">PAUSE / ESC</button></div>
 </header>
 <div class="flight-tag" id="flightTag">FREE FLIGHT · CONTINENT 01</div>
 <section class="hud" id="hud">
@@ -106,7 +106,7 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
 const wrapAngle=(a)=>{while(a>Math.PI)a-=Math.PI*2;while(a< -Math.PI)a+=Math.PI*2;return a};
 const DEG=Math.PI/180, FT_PER_M=3.28084, KTS_PER_MS=1.94384;
-const state={started:false,paused:false,hud:true,camera:1,gear:true,throttle:0,worldSeed:48731,worldScale:1,quality:'High',gyroEnabled:true,gyroPitch:false,gyroSensitivity:1.0,gyroDeadzone:2.5,stickSensitivity:1.0,deadzone:.08,controlResponse:1.0,inputExpo:.38,rollStability:.22,gamepad:null,gamepadName:'',gyroDevice:null,gyroRaw:{x:0,y:0,z:0},gyroBias:{x:0,y:0,z:0},gyroCalibrating:false,gyroCalibrationStart:0,gyroSamples:[],gyroCalibrated:false,keys:{},mouseDown:false,mouseX:0,mouseY:0,mouseDx:0,mouseDy:0,mouseFlightActive:false,mouseFlightX:0,mouseFlightY:0,mouseFlightDx:0,mouseFlightDy:0,mouseButton:-1,dpadUpLatch:false,dpadDownLatch:false,dpadLeftLatch:false,dpadRightLatch:false,triangleLatch:false,orbitYaw:0,orbitPitch:.2,flightTime:0,crashed:false,lastFrame:0,fps:60,fpsAccum:0,fpsCount:0,showDiag:false,tutorial:{active:false,index:0,mode:'keyboardMouse',inputMode:'keyboardMouse',readySince:0,lastStep:-1,lastMode:'',lastUiUpdate:0,startedAt:0},wind:new THREE.Vector3(2.2,0,-1.1)};
+const state={started:false,paused:false,hud:true,camera:1,gear:true,throttle:0,worldSeed:48731,worldScale:1,quality:'High',gyroEnabled:true,gyroPitch:false,gyroSensitivity:1.0,gyroDeadzone:2.5,stickSensitivity:1.0,deadzone:.08,controlResponse:1.0,inputExpo:.38,rollStability:.22,gamepad:null,gamepadName:'',gyroDevice:null,gyroRaw:{x:0,y:0,z:0},gyroBias:{x:0,y:0,z:0},gyroCalibrating:false,gyroCalibrationStart:0,gyroSamples:[],gyroCalibrated:false,keys:{},mouseDown:false,mouseX:0,mouseY:0,mouseDx:0,mouseDy:0,mouseFlightActive:false,mouseFlightX:0,mouseFlightY:0,mouseFlightDx:0,mouseFlightDy:0,mouseButton:-1,dpadUpLatch:false,dpadDownLatch:false,dpadLeftLatch:false,dpadRightLatch:false,triangleLatch:false,orbitYaw:0,orbitPitch:.2,flightTime:0,crashed:false,lastFrame:0,fps:60,fpsAccum:0,fpsCount:0,showDiag:false,audioEnabled:true,audioVolume:.68,effectVolume:.62,tutorial:{active:false,index:0,mode:'keyboardMouse',inputMode:'keyboardMouse',readySince:0,lastStep:-1,lastMode:'',lastUiUpdate:0,startedAt:0},wind:new THREE.Vector3(2.2,0,-1.1)};
 const aircraft={position:new THREE.Vector3(0,171.8,0),velocity:new THREE.Vector3(0,0,0),pitch:0,roll:0,yaw:0,pitchRate:0,rollRate:0,yawRate:0,controlPitch:0,controlRoll:0,controlYaw:0,airspeed:0,verticalSpeed:0,altAGL:1.8,alpha:0,stall:false,engineRunning:true,enginePower:0,gLoad:1,slipAngle:0,damage:0};
 let scene,camera,renderer,clock,plane,planeVisual,terrainGroup,cloudGroup,sunLight,water,terrainMeshes=new Map(),chunksBuilt=0,worldTime=0,worldSeed=state.worldSeed;
 const CHUNK=1200, SEG=28, RADIUS=2, RETAIN_RADIUS=3, SEA=105, RUNWAY=170;
@@ -432,6 +432,133 @@ function onHidReport(e){
 function startGyroCalibration(){if(!state.gyroDevice){toast('Connect the DualSense gyro first.');return;}state.gyroSamples=[];state.gyroCalibrationStart=performance.now();state.gyroCalibrating=true;$('gyroDetail').textContent='Calibrating — hold controller still';toast('Hold the controller still for two seconds.');}
 function readGyro(){const g=state.gyroRaw,b=state.gyroBias;return{x:(g.x-b.x)/1024,y:(g.y-b.y)/1024,z:(g.z-b.z)/1024};}
 
+
+// SKYBOUND acoustic model: C182T reference engine/prop frequencies, a soft
+// broadband exhaust/prop texture, cockpit-filtered airflow, and restrained
+// rudder-pedal/cable foley. Audio is generated locally with Web Audio so it
+// follows the live simulation (RPM, throttle, airspeed, sideslip and camera).
+let aircraftAudio=null;
+function makeAircraftNoiseBuffer(ctx,duration=2.5){
+  const length=Math.max(1,Math.floor(ctx.sampleRate*duration));
+  const buffer=ctx.createBuffer(1,length,ctx.sampleRate),data=buffer.getChannelData(0);
+  // Soft pink-ish noise is a better base for airflow/exhaust than harsh white noise.
+  let low=0,mid=0,high=0;
+  for(let i=0;i<length;i++){
+    const white=Math.random()*2-1;
+    low=.985*low+.015*white;
+    mid=.82*mid+.18*white;
+    high=white-mid;
+    data[i]=clamp((low*2.8+mid*.85+high*.12)*.28,-1,1);
+  }
+  return buffer;
+}
+function ensureAircraftAudio(){
+  if(aircraftAudio){if(aircraftAudio.ctx.state==='suspended')aircraftAudio.ctx.resume().catch(()=>{});return true;}
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtx){toast('This browser does not support Web Audio.');return false;}
+  try{
+    const ctx=new AudioCtx({latencyHint:'interactive'});
+    const master=ctx.createGain();master.gain.value=0;
+    const compressor=ctx.createDynamicsCompressor();compressor.threshold.value=-20;compressor.knee.value=12;compressor.ratio.value=3.2;compressor.attack.value=.012;compressor.release.value=.22;
+    master.connect(compressor);compressor.connect(ctx.destination);
+
+    const engineBus=ctx.createGain();engineBus.gain.value=.78;
+    const engineFilter=ctx.createBiquadFilter();engineFilter.type='lowpass';engineFilter.frequency.value=1750;engineFilter.Q.value=.62;
+    const enginePan=ctx.createStereoPanner();enginePan.pan.value=0;
+    engineBus.connect(engineFilter);engineFilter.connect(enginePan);enginePan.connect(master);
+
+    const tones=[];
+    const addTone=(kind,multiple,level)=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type=kind;osc.frequency.value=30;gain.gain.value=level;
+      osc.connect(gain);gain.connect(engineBus);osc.start();tones.push({osc,gain,multiple});
+    };
+    // Six-cylinder, four-stroke firing order: 3 firing events per crank revolution.
+    // At 2,400 RPM this yields 120 Hz; harmonics reproduce the piston/prop tone stack.
+    addTone('sine',-1,.043); // crankshaft fundamental: RPM / 60
+    addTone('sine',-2,.019);
+    addTone('triangle',-3,.009);
+    [.105,.052,.029,.017,.010,.006].forEach((level,i)=>addTone(i<2?'sine':'triangle',i+1,level));
+
+    const engineNoise=ctx.createBufferSource();engineNoise.buffer=makeAircraftNoiseBuffer(ctx,3);engineNoise.loop=true;
+    const exhaustBand=ctx.createBiquadFilter();exhaustBand.type='bandpass';exhaustBand.frequency.value=820;exhaustBand.Q.value=.62;
+    const exhaustGain=ctx.createGain();exhaustGain.gain.value=0;engineNoise.connect(exhaustBand);exhaustBand.connect(exhaustGain);exhaustGain.connect(engineBus);engineNoise.start();
+
+    const propNoise=ctx.createBufferSource();propNoise.buffer=makeAircraftNoiseBuffer(ctx,2.5);propNoise.loop=true;
+    const propBand=ctx.createBiquadFilter();propBand.type='lowpass';propBand.frequency.value=1250;propBand.Q.value=.5;
+    const propGain=ctx.createGain();propGain.gain.value=0;propNoise.connect(propBand);propBand.connect(propGain);propGain.connect(engineBus);propNoise.start();
+    // Gentle blade-passage modulation on the prop wash texture.
+    const propLfo=ctx.createOscillator(),propLfoDepth=ctx.createGain();propLfo.type='sine';propLfo.frequency.value=32.5;propLfoDepth.gain.value=.006;propLfo.connect(propLfoDepth);propLfoDepth.connect(propGain.gain);propLfo.start();
+
+    const windSource=ctx.createBufferSource();windSource.buffer=makeAircraftNoiseBuffer(ctx,3);windSource.loop=true;
+    const windHigh=ctx.createBiquadFilter();windHigh.type='highpass';windHigh.frequency.value=145;windHigh.Q.value=.55;
+    const windLow=ctx.createBiquadFilter();windLow.type='lowpass';windLow.frequency.value=1900;windLow.Q.value=.5;
+    const windGain=ctx.createGain();windGain.gain.value=0;const windPan=ctx.createStereoPanner();windPan.pan.value=0;
+    windSource.connect(windHigh);windHigh.connect(windLow);windLow.connect(windGain);windGain.connect(windPan);windPan.connect(master);windSource.start();
+
+    const pedalBus=ctx.createGain();pedalBus.gain.value=1;pedalBus.connect(master);
+    const pedalBuffer=makeAircraftNoiseBuffer(ctx,.28);
+    aircraftAudio={ctx,master,engineBus,engineFilter,enginePan,tones,exhaustGain,propGain,propLfo,windLow,windGain,windPan,pedalBus,pedalBuffer,previousRudder:0,lastPedalTime:-1,enabled:true};
+    ctx.resume().catch(()=>{});
+    syncSoundButton();
+    return true;
+  }catch(err){console.error('[SKYBOUND audio]',err);toast('Unable to initialise aircraft audio.');return false;}
+}
+function setAudioParam(param,value,timeConstant=.08){
+  if(!aircraftAudio||!Number.isFinite(value))return;
+  const now=aircraftAudio.ctx.currentTime;
+  param.setTargetAtTime(value,now,timeConstant);
+}
+function playRudderPedalFoley(amount){
+  if(!aircraftAudio||!state.audioEnabled||state.paused)return;
+  const a=aircraftAudio,ctx=a.ctx,now=ctx.currentTime;
+  if(now-a.lastPedalTime<.095)return;
+  a.lastPedalTime=now;
+  const src=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain(),pan=ctx.createStereoPanner();
+  src.buffer=a.pedalBuffer;filter.type='bandpass';filter.frequency.value=480+Math.min(1,Math.abs(amount))*520;filter.Q.value=.85;
+  pan.pan.value=clamp(amount,-1,1)*.35;
+  const peak=(.006+Math.min(1,Math.abs(amount))*.014)*state.effectVolume;
+  gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(peak,now+.012);gain.gain.exponentialRampToValueAtTime(.0001,now+.145);
+  src.connect(filter);filter.connect(gain);gain.connect(pan);pan.connect(a.pedalBus);src.start(now);src.stop(now+.16);
+  src.onended=()=>{src.disconnect();filter.disconnect();gain.disconnect();pan.disconnect();};
+}
+function updateAircraftAudio(dt){
+  if(!aircraftAudio)return;
+  const a=aircraftAudio,ctx=a.ctx,now=ctx.currentTime;
+  if(ctx.state==='suspended'&&state.started&&!state.paused)ctx.resume().catch(()=>{});
+  const active=state.started&&!state.paused&&!state.crashed;
+  const audible=state.audioEnabled?state.audioVolume:0;
+  setAudioParam(a.master.gain,active?audible:0,.16);
+  const running=active&&aircraft.engineRunning;
+  const power=running?clamp(aircraft.enginePower,0,1):0;
+  // Simplified constant-speed-prop training model: idle-to-governed RPM follows power.
+  const rpm=running?650+1750*Math.pow(power,.78):0;
+  const crankHz=Math.max(0,rpm/60);
+  const firingHz=crankHz*3; // six-cylinder, four-stroke firing events / three-blade passage
+  for(const t of a.tones){const hz=t.multiple<0?crankHz*Math.abs(t.multiple):firingHz*t.multiple;t.osc.frequency.setTargetAtTime(Math.max(0,hz),now,.11);}
+  setAudioParam(a.engineBus.gain,running?.76:0,.12);
+  setAudioParam(a.exhaustGain.gain,running?( .012+.048*power):0,.18);
+  setAudioParam(a.propGain.gain,running?( .018+.05*power):0,.15);
+  setAudioParam(a.propLfo.frequency,firingHz,.12);
+
+  const speedKts=Math.max(0,aircraft.airspeed*KTS_PER_MS);
+  const slip=clamp(aircraft.slipAngle/24,-1,1);
+  const windIntensity=active?(smooth(12,85,speedKts)*(.085+.11*Math.abs(slip))):0;
+  setAudioParam(a.windGain.gain,windIntensity,.22);
+  setAudioParam(a.windPan.pan,slip*.72,.18);
+  const cockpit=state.camera===1;
+  setAudioParam(a.engineFilter.frequency,cockpit?1550:3100,.25);
+  setAudioParam(a.windLow.frequency,cockpit?1650:3900,.25);
+  setAudioParam(a.enginePan.pan,cockpit?slip*.12:clamp(-aircraft.position.x/1800,-.65,.65),.2);
+
+  const rudder=aircraft.controlYaw;
+  const rudderDelta=rudder-a.previousRudder;
+  if(active&&Math.abs(rudderDelta)>.135)playRudderPedalFoley(rudderDelta);
+  a.previousRudder=rudder;
+}
+function syncSoundButton(){const b=$('soundBtn');if(!b)return;b.textContent=state.audioEnabled?'SOUND ON':'SOUND OFF';b.setAttribute('aria-pressed',String(state.audioEnabled));}
+function toggleAircraftAudio(){state.audioEnabled=!state.audioEnabled;if(state.audioEnabled)ensureAircraftAudio();syncSoundButton();toast(state.audioEnabled?'Aircraft audio enabled.':'Aircraft audio muted.');}
+function setAircraftAudioVolume(value){state.audioVolume=clamp(Number(value),0,1);if(aircraftAudio)setAudioParam(aircraftAudio.master.gain,state.started&&!state.paused&&state.audioEnabled?state.audioVolume:0,.08);}
+
 function readGamepad(){const pads=navigator.getGamepads?navigator.getGamepads():[];let gp=null;if(state.gamepad!==null&&pads[state.gamepad]?.connected)gp=pads[state.gamepad];if(!gp)gp=Array.from(pads).find(p=>p&&p.connected)||null;if(gp){state.gamepad=gp.index;state.gamepadName=gp.id||'Gamepad';$('controllerStatus').textContent='DUALSENSE';if(state.gamepadName.length>26)$('controllerStatus').textContent='CONNECTED';}else{$('controllerStatus').textContent='KEYBOARD + MOUSE';state.gamepad=null;}return gp;}
 window.addEventListener('gamepadconnected',e=>{state.gamepad=e.gamepad.index;state.gamepadName=e.gamepad.id;toast('Controller connected. Use a control to switch Flight School to DualSense instructions.');});window.addEventListener('gamepaddisconnected',()=>{state.gamepad=null;if(state.tutorial.active)setTutorialInputMode('keyboardMouse');toast('Controller disconnected.');});
 function dead(v,d=state.deadzone){
@@ -659,6 +786,7 @@ function adaptRenderResolution(dt){/* Intentionally stable pixel ratio: dynamic 
 function frame(){requestAnimationFrame(frame);frameStartTime=performance.now();const frameDt=Math.min(clock.getDelta(),.05);state.fpsAccum+=frameDt;state.fpsCount++;if(state.fpsAccum>=1){state.fps=state.fpsCount/state.fpsAccum;state.fpsAccum=0;state.fpsCount=0;}adaptRenderResolution(frameDt);
   updateChunks();processChunkQueue();diagnosticsTimer+=frameDt;if(diagnosticsTimer>.25){updateDiagnostics();diagnosticsTimer=0;}
   if(state.started&&!state.paused){const ctrl=getControls(frameDt);physicsAccumulator=Math.min(physicsAccumulator+frameDt,.12);let steps=0;while(physicsAccumulator>=FIXED_STEP&&steps<5){stepPhysics(FIXED_STEP,ctrl);updateCamera(FIXED_STEP,ctrl);updateEnvironment(FIXED_STEP);physicsAccumulator-=FIXED_STEP;steps++;}if(steps===5)physicsAccumulator=Math.min(physicsAccumulator,FIXED_STEP);hudTimer+=frameDt;if(hudTimer>.08){updateHud(frameDt);tutorialTick();hudTimer=0;}}
+  updateAircraftAudio(frameDt);
   renderer.render(scene,camera);
 }
 const flightLesson=[
@@ -747,7 +875,7 @@ function tutorialFeedback(index){
   }
 }
 function startTutorial(){
-  state.tutorial.active=true;state.tutorial.index=0;state.tutorial.timer=0;state.tutorial.readySince=0;state.tutorial.startedAt=performance.now();state.tutorial.lastStep=-1;state.tutorial.lastMode='';
+  ensureAircraftAudio();state.tutorial.active=true;state.tutorial.index=0;state.tutorial.timer=0;state.tutorial.readySince=0;state.tutorial.startedAt=performance.now();state.tutorial.lastStep=-1;state.tutorial.lastMode='';
   state.tutorial.inputMode=hasConnectedGamepad()?'controller':'keyboardMouse';state.tutorial.mode=tutorialInputMode();
   $('mainMenu').style.display='none';restart();$('flightTag').textContent='FLIGHT SCHOOL · NORTH RIDGE';$('tutorialPanel').style.display='block';updateTutorialPanel();toast(`Flight school started · ${state.tutorial.mode==='controller'?'DualSense':'keyboard + mouse'} instructions`);
 }
@@ -806,10 +934,14 @@ function tutorialTick(){
   // Keep the device-specific control instructions in sync if the user swaps input methods.
   if(mode!==state.tutorial.lastMode)updateTutorialPanel();
 }
-function startFlight(){state.started=true;state.paused=false;state.crashed=false;physicsAccumulator=0;$('mainMenu').style.display='none';$('pauseMenu').style.display='none';$('flightTag').textContent='FREE FLIGHT · NORTH RIDGE';setHud();cameraName();toast('Flight controls active. Advance throttle and rotate to take off.');}
+function startFlight(){ensureAircraftAudio();state.started=true;state.paused=false;state.crashed=false;physicsAccumulator=0;$('mainMenu').style.display='none';$('pauseMenu').style.display='none';$('flightTag').textContent='FREE FLIGHT · NORTH RIDGE';setHud();cameraName();toast('Flight controls active. Advance throttle and rotate to take off.');}
 function restart(){state.crashed=false;state.paused=false;physicsAccumulator=0;$('pauseMenu').querySelector('h2').textContent='Take a breath.';$('pauseMenu').querySelector('.intro').textContent='Your aircraft is holding its current state. Ready when you are.';state.throttle=0;aircraft.position.set(0,RUNWAY+aircraftGroundOffset,0);aircraft.velocity.set(0,0,0);aircraft.pitch=aircraft.roll=aircraft.yaw=aircraft.pitchRate=aircraft.rollRate=aircraft.yawRate=0;aircraft.controlPitch=aircraft.controlRoll=aircraft.controlYaw=0;aircraft.enginePower=0;aircraft.airspeed=0;aircraft.stall=false;state.flightTime=0;state.gear=true;$('pauseMenu').style.display='none';state.started=true;setHud();syncPlaneTransform();toast('Aircraft reset on North Ridge runway.');}
 function openModal(title,body){$('modalContent').innerHTML=`<div class="modal-head"><h2>${title}</h2><button class="close" id="modalClose">✕</button></div>${body}`;$('modalOverlay').style.display='grid';$('modalClose').onclick=()=>$('modalOverlay').style.display='none';}
 function settingsModal(){openModal('Simulator settings',`
+  <div class="control-row"><div><strong>Aircraft audio</strong><small>Six-cylinder piston pulses, three-blade prop wash, speed-sensitive airflow and subtle pedal/cable movement.</small></div><input id="audioEnabled" type="checkbox" ${state.audioEnabled?'checked':''}></div>
+  <div class="control-row"><div><strong>Master audio level</strong><small>Engine, propeller and airflow volume.</small></div><input id="audioVolume" type="range" min="0" max="1" step=".01" value="${state.audioVolume}"></div>
+  <div class="control-row"><div><strong>Rudder / airframe effects</strong><small>Subtle mechanical pedal movement and sideslip airflow.</small></div><input id="effectVolume" type="range" min="0" max="1" step=".01" value="${state.effectVolume}"></div>
+  <div class="diag"><strong>Audio model</strong><br>Based on Cessna 182T IO-540 / three-blade propeller reference frequencies. Rudder effects represent soft pedal and cable movement; airflow responds to indicated speed and sideslip. This is a real-time acoustic model, not a copied aircraft sound recording. <a href="https://freesound.org/people/JLWSound/sounds/322321/" target="_blank" rel="noopener noreferrer" style="color:var(--cyan)">Listen to a genuine CC0 Cessna 172E reference recording ↗</a> (similar piston-single sound, not a C182 recording).</div>
   <div class="control-row"><div><strong>Graphics quality</strong><small>Lower quality reduces terrain detail, shadows and cloud density.</small></div><select id="qualitySelect"><option>High</option><option>Medium</option><option>Low</option></select></div>
   <div class="control-row"><div><strong>Flight control response</strong><small>Higher values make pitch, roll and rudder react faster.</small></div><input id="controlResponse" type="range" min=".55" max="1.65" step=".05" value="${state.controlResponse}"></div>
   <div class="control-row"><div><strong>Stick sensitivity</strong><small>Overall DualSense and keyboard/mouse flight authority.</small></div><input id="stickSens" type="range" min=".4" max="1.8" step=".05" value="${state.stickSensitivity}"></div>
@@ -823,6 +955,7 @@ function settingsModal(){openModal('Simulator settings',`
   <div class="diag"><strong>Controller diagnostics</strong><br><span id="controllerDetail">Waiting for controller input…</span><br><span id="controllerAxes">Axes: — · Triggers: —</span></div>
   <div class="diag"><strong>DualSense motion sensor</strong><br><span id="gyroDetail">${state.gyroDevice?(state.gyroCalibrated?'Calibrated · live gyro rates':'Connected · calibration required'):'Not connected. Pair it using WebHID.'}</span><br>USB and Bluetooth HID report layouts are supported by the parser. Motion sensor data is read directly; no simulated gyro values are used.</div>
   <div class="modal-actions"><button class="primary" id="pairGyro">PAIR DUALSENSE GYRO</button><button id="calibrateGyro">CALIBRATE NEUTRAL</button><button id="doneSettings">DONE</button></div>`);
+  $('audioEnabled').onchange=e=>{state.audioEnabled=e.target.checked;if(state.audioEnabled)ensureAircraftAudio();syncSoundButton();};$('audioVolume').oninput=e=>setAircraftAudioVolume(e.target.value);$('effectVolume').oninput=e=>state.effectVolume=+e.target.value;
   $('qualitySelect').value=state.quality;$('qualitySelect').onchange=e=>{state.quality=e.target.value;adaptivePixelRatio=currentPixelRatio();applyPixelRatio();toast('Graphics quality updated.');};
   $('controlResponse').oninput=e=>state.controlResponse=+e.target.value;$('stickSens').oninput=e=>state.stickSensitivity=+e.target.value;$('inputExpo').oninput=e=>state.inputExpo=+e.target.value;$('rollStability').oninput=e=>state.rollStability=+e.target.value;$('deadzone').oninput=e=>state.deadzone=+e.target.value;$('gyroEnabled').onchange=e=>state.gyroEnabled=e.target.checked;$('gyroPitch').onchange=e=>state.gyroPitch=e.target.checked;$('gyroSens').oninput=e=>state.gyroSensitivity=+e.target.value;$('gyroDz').oninput=e=>state.gyroDeadzone=+e.target.value;
   $('pairGyro').onclick=async()=>{await connectGyro();$('gyroDetail').textContent=state.gyroDevice?`${state.gyroDevice.productName||'DualSense'} · connected, calibrate before flying`:'No DualSense HID device selected.';};$('calibrateGyro').onclick=startGyroCalibration;$('doneSettings').onclick=()=>$('modalOverlay').style.display='none';
@@ -836,7 +969,7 @@ function controlsModal(){openModal('Flight controls',`<div class="keygrid">
   <div class="diag"><strong>Keyboard + mouse fallback</strong><br>W/S: pitch · A/D: roll · Q/E: rudder · Shift/Ctrl: throttle · G: fixed-gear info · 1–4: camera · H: HUD · ESC/SPACE: pause. Hold left mouse and drag to steer (horizontal = roll, vertical = pitch). Hold right mouse and drag to orbit the camera. Keyboard controls remain available alongside the controller.<br><br><strong>DualSense mapping</strong><br>Left stick: pitch / roll · Right stick: camera · R2/L2: throttle · L1: rudder left · R1: rudder right · ✕: fixed-gear info · ○: camera · □: HUD · △: cockpit/chase toggle · D-pad up/down: throttle steps · D-pad left/right: camera cycle · OPTIONS: pause.<br><br><strong>Gyroscope</strong><br>Pair through Settings → Pair DualSense Gyro. Rotate the controller around its vertical axis to command yaw. Hold it still during calibration. Gyro data requires WebHID in a compatible browser such as desktop Chrome or Edge.</div>`);}
 
 // Inputs and buttons
-$('startBtn').onclick=startFlight;$('teachBtn').onclick=startTutorial;$('tutorialExit').onclick=exitTutorial;$('tutorialClose').onclick=exitTutorial;$('controlsBtn').onclick=controlsModal;$('settingsBtn').onclick=settingsModal;$('hudBtn').onclick=()=>{state.hud=!state.hud;setHud();};$('pauseBtn').onclick=togglePause;$('resumeBtn').onclick=()=>{state.paused=false;$('pauseMenu').style.display='none';setHud();};$('restartBtn').onclick=restart;$('returnBtn').onclick=()=>{state.started=false;state.paused=false;exitTutorial();$('pauseMenu').style.display='none';$('mainMenu').style.display='grid';setHud();};
+$('startBtn').onclick=startFlight;$('teachBtn').onclick=startTutorial;$('tutorialExit').onclick=exitTutorial;$('tutorialClose').onclick=exitTutorial;$('controlsBtn').onclick=controlsModal;$('settingsBtn').onclick=settingsModal;$('hudBtn').onclick=()=>{state.hud=!state.hud;setHud();};$('soundBtn').onclick=toggleAircraftAudio;$('pauseBtn').onclick=togglePause;$('resumeBtn').onclick=()=>{state.paused=false;$('pauseMenu').style.display='none';setHud();};$('restartBtn').onclick=restart;$('returnBtn').onclick=()=>{state.started=false;state.paused=false;exitTutorial();$('pauseMenu').style.display='none';$('mainMenu').style.display='grid';setHud();};
 window.addEventListener('keydown',e=>{state.keys[e.code]=true;if(state.tutorial.active&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyQ','KeyE','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyG'].includes(e.code))setTutorialInputMode('keyboardMouse');if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(e.code==='Escape'||e.code==='Space'){if(state.started)togglePause();}if(e.code==='KeyH'){state.hud=!state.hud;setHud();}if(e.code==='KeyC')nextCamera();});window.addEventListener('keyup',e=>state.keys[e.code]=false);
 rendererSafeResize();function rendererSafeResize(){window.addEventListener('resize',()=>{if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);});}
 $('sim').addEventListener('pointerdown',e=>{
@@ -860,6 +993,7 @@ window.addEventListener('pointermove',e=>{
   if(state.mouseDown){state.mouseDx+=e.clientX-state.mouseX;state.mouseDy+=e.clientY-state.mouseY;state.mouseX=e.clientX;state.mouseY=e.clientY;}
 });
 $('sim').addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('visibilitychange',()=>{if(!aircraftAudio)return;if(document.hidden){aircraftAudio.ctx.suspend().catch(()=>{});}else if(state.started&&!state.paused){aircraftAudio.ctx.resume().catch(()=>{});}});
 
 (async()=>{
   try{
