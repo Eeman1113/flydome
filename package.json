@@ -1,0 +1,17 @@
+{
+  "name": "skybound",
+  "version": "0.3.0",
+  "private": true,
+  "description": "SKYBOUND — procedural-world Cessna 182 flight simulator built with Next.js and three.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "16.4.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "three": "0.164.1"
+  }
+}

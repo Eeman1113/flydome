@@ -1,6 +1,6 @@
 # SKYBOUND — Cessna 182 Skylane Flight Simulator
 
-A browser flight simulator built on three.js. **Every page load generates a brand-new world** (seeded terrain, climate, season, airfield site and clouds) lit by a real HDR sky. The aircraft is the user-supplied `cessna_182_skylane.glb`. Three.js is loaded from jsDelivr, so an internet connection is required.
+A browser flight simulator built with **Next.js** and **three.js**. **Every page load generates a brand-new world** (seeded terrain, climate, season, airfield site and clouds) lit by a real HDR sky. The aircraft is the user-supplied `public/models/cessna_182_skylane.glb`. All code and assets are bundled locally; no CDN is needed.
 
 ## World & rendering (v0.2)
 
@@ -11,18 +11,38 @@ A browser flight simulator built on three.js. **Every page load generates a bran
 - **Post-processing** (High/Ultra): MSAA HDR render target, bloom, ACES tone mapping, vignette/grade. Aircraft shadow via a tight sun-aligned shadow map. In the cockpit the aircraft is rendered in a separate near-plane pass so the world keeps depth precision to the horizon.
 - **Automatic quality.** The GPU is detected (WebGL renderer string, core count) to pick Low/Medium/High/Ultra, then a runtime governor measures frame rate against the display refresh and adjusts render scale, view distance (4–20 km of streamed chunks) and the effects tier. Settings → Graphics quality allows a manual override.
 
-## Recommended launch
+## Running
 
-For the most reliable Gamepad and WebHID permissions, serve the folder from `localhost` instead of opening the file directly. On macOS, double-click `launch-macos.command`. It starts a local server and opens the simulator in your browser. Keep its Terminal window open while playing.
-
-Manual alternative:
+Requires Node.js 20+.
 
 ```bash
-cd skybound-flight-sim
-python3 -m http.server 8000
+npm install
+npm run dev          # http://localhost:3000
 ```
 
-Then open http://localhost:8000 in desktop Chrome or Edge.
+Production build: `npm run build && npm run start` (the build uses webpack). On macOS you can also double-click `launch-macos.command`, which installs dependencies on first run and starts the dev server.
+
+Desktop Chrome or Edge is recommended (WebHID gyro support). URL options: `?seed=12345` (world), `?sky=belfast` (sky), `?debug` (exposes `window.SKYB` for inspection).
+
+## Project layout
+
+```
+app/                 Next.js App Router: layout, page (HUD/menu markup), global styles
+src/game/
+  engine.js          renderer, scene setup, post-processing, aircraft loading, frame loop
+  terrainLib.js      seeded terrain/climate generator + chunk mesh builder (shared with worker)
+  terrain.worker.js  Web Worker that builds terrain chunks off the main thread
+  chunks.js          chunk streaming, LOD, forests, physics ground queries
+  sky.js             HDR loading, sun/exposure calibration, atmosphere shader chunks, sky dome
+  materials.js       terrain/water/tree shaders and geometry
+  scenery.js         water plane, clouds, airfield
+  perf.js            GPU detection and the runtime quality governor
+  physics.js         flight model        camera.js   camera rigs
+  input.js           keyboard/mouse/gamepad/WebHID gyro     audio.js   procedural engine audio
+  tutorial.js        Flight School      ui.js       HUD, menus, settings
+  config.js / world.js / util.js / textures.js   shared state, seeded world, helpers, procedural textures
+public/models/       Cessna 182 GLB      public/skies/   CC0 HDR skies
+```
 
 ## DualSense support
 
@@ -117,7 +137,7 @@ The new Settings controls let you tune flight-control response, centre-stick exp
 
 ## User-supplied aircraft asset
 
-`cessna_182_skylane.glb` is bundled in this project and must remain in the same directory as `index.html`. The HTML file by itself is not a complete distributable because the 3D aircraft model is an external sidecar asset. Use the complete ZIP or keep the GLB next to the HTML file.
+`public/models/cessna_182_skylane.glb` is served by Next.js from the `public/` folder.
 
 ## Aircraft model attribution and license
 
@@ -126,4 +146,4 @@ The supplied GLB metadata identifies the model as **“Cessna 182 Skylane” by 
 
 ## Sky HDRI attribution
 
-The `skies/*.hdr` files are CC0 (public domain) HDRIs from Poly Haven: Kloofendal 48d Partly Cloudy (Pure Sky), Qwantani Noon (Pure Sky), Qwantani Late Afternoon (Pure Sky) and Belfast Sunset (Pure Sky).
+The `public/skies/*.hdr` files are CC0 (public domain) HDRIs from Poly Haven: Kloofendal 48d Partly Cloudy (Pure Sky), Qwantani Noon (Pure Sky), Qwantani Late Afternoon (Pure Sky) and Belfast Sunset (Pure Sky).

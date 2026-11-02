@@ -1,5 +1,5 @@
 Aircraft visual: cessna_182_skylane.glb
 Source: supplied by the user for SKYBOUND integration.
-Keep this file beside index.html.
+Location: public/models/cessna_182_skylane.glb
 
-Sky HDRIs: skies/*.hdr — CC0 pure-sky HDRIs from Poly Haven (polyhaven.com). Keep the skies folder beside index.html.
+Sky HDRIs: skies/*.hdr — CC0 pure-sky HDRIs from Poly Haven (polyhaven.com). Location: public/skies/
