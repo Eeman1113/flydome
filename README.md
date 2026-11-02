@@ -1,10 +1,15 @@
 # SKYBOUND — Cessna 182 Skylane Flight Simulator
 
-A browser-based flight simulator with a procedurally generated world. The aircraft is the user-supplied `cessna_182_skylane.glb` model; SKYBOUND does not generate a replacement aircraft mesh. Three.js and GLTFLoader are loaded from jsDelivr, so an internet connection is required.
+A browser flight simulator built on three.js. **Every page load generates a brand-new world** (seeded terrain, climate, season, airfield site and clouds) lit by a real HDR sky. The aircraft is the user-supplied `cessna_182_skylane.glb`. Three.js is loaded from jsDelivr, so an internet connection is required.
 
-## Aircraft model
+## World & rendering (v0.2)
 
-The project loads `cessna_182_skylane.glb` from the same folder as `index.html`. Keep the GLB beside the HTML file. The model is loaded with Three.js GLTFLoader, scaled to approximately Cessna 182 dimensions, and its wheel clearance is measured from the imported mesh bounds for runway contact. The model includes its own exterior and interior geometry and a propeller assembly; the simulator animates the supplied propeller node rather than drawing a replacement aircraft. The Cessna 182 has fixed landing gear, which is reflected in the HUD and Flight School.
+- **New world on every refresh.** A random seed drives the continent: domain-warped continents and coastlines, ridged-multifractal mountain ranges, rolling hills, lowland rivers, lakes, temperature/moisture climate, summer or autumn seasons. The airfield is placed automatically at the flattest suitable site near the origin. Use `?seed=12345` to revisit a world, or **NEW WORLD** in the menu.
+- **HDR sky lighting.** Four CC0 pure-sky HDRIs from [Poly Haven](https://polyhaven.com) live in `skies/` (partly cloudy midday, clear noon, late afternoon, golden sunset); one is picked per world (`?sky=belfast` etc. to force one). The HDR is analysed at load: the sun disc is located and integrated for the sun light's direction, colour and irradiance; sky irradiance sets exposure; the sun is clamped out of the image-based lighting so it is not counted twice.
+- **Terrain.** Chunks are generated in Web Workers with distance LOD (64/32/16/8 segments) and crack-hiding skirts. Per-vertex biome data, baked terrain self-shadowing toward the HDR sun and ambient occlusion feed a splatting shader: grass/dry/desert/tundra, farmland patchwork, forest floor, slope rock with strata, snow line, beaches and wet shorelines.
+- **Forests** are instanced conifer and broadleaf trees with per-instance tint and wind sway. **Water** is PBR with layered scrolling normals reflecting the HDR sky. **Clouds** are camera-sorted, sun-lit billboard cumulus. **Atmosphere** is height fog with sun in-scattering.
+- **Post-processing** (High/Ultra): MSAA HDR render target, bloom, ACES tone mapping, vignette/grade. Aircraft shadow via a tight sun-aligned shadow map. In the cockpit the aircraft is rendered in a separate near-plane pass so the world keeps depth precision to the horizon.
+- **Automatic quality.** The GPU is detected (WebGL renderer string, core count) to pick Low/Medium/High/Ultra, then a runtime governor measures frame rate against the display refresh and adjusts render scale, view distance (4–20 km of streamed chunks) and the effects tier. Settings → Graphics quality allows a manual override.
 
 ## Recommended launch
 
@@ -54,7 +59,6 @@ The `glass is not defined` startup issue has been fixed by moving the canopy mat
 
 - This is a functional prototype, not a certified training simulator. Aerodynamics are simplified and should not be used for real-world flight training.
 - Terrain is generated deterministically from a seed and streamed in chunks around the aircraft.
-- The world, runway, basic settlements, forests, clouds and aircraft are procedural. The visuals are intentionally lightweight for laptop-class hardware.
 ## Visual stability notes (v0.1.2)
 
 This build addresses terrain shimmer/flicker by removing the single transparent 30 km water plane that intersected low terrain, generating opaque ocean quads only where terrain is fully below sea level, assigning river segments to exactly one chunk (to prevent duplicate transparent river surfaces), and lowering/flattening terrain beneath the full runway footprint. Procedural terrain no longer receives the large directional shadow map, which avoids shadow-map acne on long terrain surfaces. Chunk cleanup now resolves every tagged object to its owning chunk and only updates when the aircraft crosses a chunk boundary.
@@ -118,3 +122,8 @@ The new Settings controls let you tune flight-control response, centre-stick exp
 ## Aircraft model attribution and license
 
 The supplied GLB metadata identifies the model as **“Cessna 182 Skylane” by VTX**, sourced from [Sketchfab](https://sketchfab.com/3d-models/cessna-182-skylane-2dde31b1aa8f484f96bb7ee9d9c5ad26). Its embedded metadata lists **CC BY-NC-SA 4.0** ([license terms](https://creativecommons.org/licenses/by-nc-sa/4.0/)). This license is non-commercial and requires attribution and ShareAlike for adaptations. Check that the license fits the way you intend to distribute or use SKYBOUND.
+
+
+## Sky HDRI attribution
+
+The `skies/*.hdr` files are CC0 (public domain) HDRIs from Poly Haven: Kloofendal 48d Partly Cloudy (Pure Sky), Qwantani Noon (Pure Sky), Qwantani Late Afternoon (Pure Sky) and Belfast Sunset (Pure Sky).
