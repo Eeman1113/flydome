@@ -1,7 +1,7 @@
 // SKYBOUND · scenery
 import * as THREE from 'three';
 import { clamp } from './util.js';
-import { RUNWAY_HALF_L, RUNWAY_HALF_W, SEA_LEVEL, SKY, WORLD_SEED, glass, sky, state } from './config.js';
+import { RUNWAY_HALF_L, RUNWAY_HALF_W, SEA_LEVEL, SKY, WORLD_SEED, fx, glass, sky, state } from './config.js';
 import { AIRPORT_H, terrain } from './world.js';
 import { makePuffTexture, makeRunwayTexture } from './textures.js';
 import { mats } from './materials.js';
@@ -14,12 +14,14 @@ export function makeWater(){
   return m;
 }
 export function makeClouds(){
-  const cover=SKY.clouds*(.7+terrain.P.moistBias+.45),TILE=26000,base=AIRPORT_H+900+((WORLD_SEED>>3)%7)*160;
+  const {cover,tile:TILE,base,thresh}=fx.cloud,A=mats.noiseTex.image.data,NS=mats.noiseTex.image.width;
+  const coverage=(x,z)=>{const u=((x/TILE)%1+1)%1,v=((z/TILE)%1+1)%1;return A[((Math.floor(v*NS)%NS)*NS+Math.floor(u*NS)%NS)*4+3]/255;};
   const rnd=terrain.mulberry32(WORLD_SEED^0x5bd1e995);
   const puffs=[];
   const clusters=Math.round(clamp(cover,0,1.1)*190);
   for(let i=0;i<clusters;i++){
-    const cx=(rnd()-.5)*TILE,cz=(rnd()-.5)*TILE,big=rnd(),rx=180+big*520,ry=90+big*260,cy=base+(rnd()-.5)*260,np=Math.round(10+big*26);
+    let cx=0,cz=0;for(let t=0;t<60;t++){cx=(rnd()-.5)*TILE;cz=(rnd()-.5)*TILE;if(coverage(cx,cz)>thresh+.04)break;}
+    const big=rnd(),rx=180+big*520,ry=90+big*260,cy=base+(rnd()-.5)*260,np=Math.round(10+big*26);
     for(let k=0;k<np;k++){
       const a=rnd()*Math.PI*2,r=Math.sqrt(rnd()),ox=Math.cos(a)*r*rx,oz=Math.sin(a)*r*rx*.75,oy=Math.pow(rnd(),1.3)*ry*(1-r*.6);
       const size=(210+rnd()*260)*(.55+big*.65)*(1-r*.3);
@@ -71,7 +73,7 @@ export function makeClouds(){
   const order=new Int32Array(N),dist=new Float32Array(N),wx=new Float32Array(N),wz=new Float32Array(N);
   let timer=0,visibleN=N;
   const sys={mesh,base,
-    setDensity(k){visibleN=Math.max(0,Math.min(N,Math.round(N*k)));geo.instanceCount=visibleN;timer=1;},
+    setDensity(k){if(fx.cloudUniform)fx.cloudUniform.value.w=.6*Math.min(1,k);visibleN=Math.max(0,Math.min(N,Math.round(N*k)));geo.instanceCount=visibleN;timer=1;},
     update(dt,cam){
       timer-=dt;if(timer>0)return;timer=.18;
       const camX=cam.position.x,camZ=cam.position.z,cy=cam.position.y;

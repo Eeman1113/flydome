@@ -1,6 +1,7 @@
 // SKYBOUND · engine
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -130,7 +131,8 @@ export async function makeAircraft(){
   // aircraft geometry is generated here; physics remain independent of the mesh.
   plane=new THREE.Group();planeVisual=new THREE.Group();plane.add(planeVisual);
   const modelUrl='/models/cessna_182_skylane.glb';
-  const loader=new GLTFLoader();
+  // Shipped GLB is meshopt-compressed with WebP textures (~5 MB instead of ~31 MB).
+  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   let gltf;
   try{
     gltf=await loader.loadAsync(modelUrl,event=>{

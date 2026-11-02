@@ -2,23 +2,32 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { $, clamp } from './util.js';
-import { shared, sky } from './config.js';
-import { terrain } from './world.js';
+import { SKY, WORLD_SEED, fx, shared, sky } from './config.js';
+import { AIRPORT_H, terrain } from './world.js';
 import { makeNoiseTexture, makeWaterNormalTexture } from './textures.js';
 
 export const mats={};
 export function createMaterials(){
   const noiseTex=makeNoiseTexture();mats.noiseTex=noiseTex;
+  // One cloud field drives both the cumulus placement (scenery.js) and the terrain's
+  // cloud shadows, so every shadow on the ground has a cloud above it.
+  {
+    const cover=SKY.clouds*(.7+terrain.P.moistBias+.45),A=noiseTex.image.data,vals=[];
+    for(let i=3;i<A.length;i+=4)vals.push(A[i]);vals.sort((a,b)=>a-b);
+    const frac=clamp(cover*.32,.04,.4);
+    fx.cloud={cover,tile:26000,base:AIRPORT_H+900+((WORLD_SEED>>3)%7)*160,thresh:vals[Math.floor((1-frac)*(vals.length-1))]/255};
+    fx.cloudUniform={value:new THREE.Vector4(fx.cloud.tile,fx.cloud.thresh,fx.cloud.base,.6)};
+  }
   // Terrain: biome/slope/altitude splatting, farmland patchwork, baked sun visibility.
   const tm=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.95,metalness:0});
   tm.onBeforeCompile=(sh)=>{
-    sh.uniforms.tNoise={value:noiseTex};sh.uniforms.uTime=shared.time;sh.uniforms.uAutumn={value:terrain.P.autumn};
+    sh.uniforms.tNoise={value:noiseTex};sh.uniforms.uTime=shared.time;sh.uniforms.uAutumn={value:terrain.P.autumn};sh.uniforms.uCloud=fx.cloudUniform;sh.uniforms.uSunDirT={value:sky.sunDir};
     sh.vertexShader=sh.vertexShader.replace('#include <common>',`#include <common>
       attribute vec4 biome; attribute vec2 extra; varying vec4 vBiome; varying vec2 vExtra; varying vec3 vWPos; varying vec3 vWNormal;`)
       .replace('#include <begin_vertex>',`#include <begin_vertex>
       vBiome=biome; vExtra=extra; vWPos=(modelMatrix*vec4(transformed,1.0)).xyz; vWNormal=normalize(mat3(modelMatrix)*objectNormal);`);
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-      uniform sampler2D tNoise; uniform float uTime; uniform float uAutumn;
+      uniform sampler2D tNoise; uniform float uTime; uniform float uAutumn; uniform vec4 uCloud; uniform vec3 uSunDirT; float cloudVis=1.;
       varying vec4 vBiome; varying vec2 vExtra; varying vec3 vWPos; varying vec3 vWNormal;
       float hash12(vec2 p){vec3 p3=fract(vec3(p.xyx)*.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
       float terrRough; vec3 terrBump;
@@ -81,11 +90,13 @@ export function createMaterials(){
         terrBump=vec3((n2.r-.5)*.6+(n3.r-.5)*fade*.5,0.,(n2.g-.5)*.6+(n3.g-.5)*fade*.5)*(.12+rockAmt*.35)*(1.-snow*.6);
         return col;
       }`)
-      .replace('#include <map_fragment>',`vec3 tAlb=terrainAlbedo(); diffuseColor.rgb=tAlb;`)
+      .replace('#include <map_fragment>',`vec3 tAlb=terrainAlbedo(); diffuseColor.rgb=tAlb;
+        vec2 cuv=(vWPos.xz+uSunDirT.xz/max(uSunDirT.y,.08)*(uCloud.z-vWPos.y))/uCloud.x;
+        cloudVis=1.-uCloud.w*smoothstep(uCloud.y-.03,uCloud.y+.09,texture2D(tNoise,cuv).a);`)
       .replace('#include <roughnessmap_fragment>',`float roughnessFactor=terrRough;`)
       .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
         normal=normalize(normal+(viewMatrix*vec4(terrBump.x,0.,terrBump.z,0.)).xyz*.5);`)
-      .replace('#include <lights_fragment_begin>',THREE.ShaderChunk.lights_fragment_begin.replaceAll('RE_Direct( directLight,','directLight.color *= vExtra.x; RE_Direct( directLight,'))
+      .replace('#include <lights_fragment_begin>',THREE.ShaderChunk.lights_fragment_begin.replaceAll('RE_Direct( directLight,','directLight.color *= vExtra.x*cloudVis; RE_Direct( directLight,'))
       .replace('#include <aomap_fragment>',`reflectedLight.indirectDiffuse*=vExtra.y; reflectedLight.indirectSpecular*=vExtra.y*mix(.35,1.,vExtra.x);
         #include <aomap_fragment>`);
   };

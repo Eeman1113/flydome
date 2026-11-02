@@ -7,7 +7,7 @@ A browser flight simulator built with **Next.js** and **three.js**. **Every page
 - **New world on every refresh.** A random seed drives the continent: domain-warped continents and coastlines, ridged-multifractal mountain ranges, rolling hills, lowland rivers, lakes, temperature/moisture climate, summer or autumn seasons. The airfield is placed automatically at the flattest suitable site near the origin. Use `?seed=12345` to revisit a world, or **NEW WORLD** in the menu.
 - **HDR sky lighting.** Four CC0 pure-sky HDRIs from [Poly Haven](https://polyhaven.com) live in `skies/` (partly cloudy midday, clear noon, late afternoon, golden sunset); one is picked per world (`?sky=belfast` etc. to force one). The HDR is analysed at load: the sun disc is located and integrated for the sun light's direction, colour and irradiance; sky irradiance sets exposure; the sun is clamped out of the image-based lighting so it is not counted twice.
 - **Terrain.** Chunks are generated in Web Workers with distance LOD (64/32/16/8 segments) and crack-hiding skirts. Per-vertex biome data, baked terrain self-shadowing toward the HDR sun and ambient occlusion feed a splatting shader: grass/dry/desert/tundra, farmland patchwork, forest floor, slope rock with strata, snow line, beaches and wet shorelines.
-- **Forests** are instanced conifer and broadleaf trees with per-instance tint and wind sway. **Water** is PBR with layered scrolling normals reflecting the HDR sky. **Clouds** are camera-sorted, sun-lit billboard cumulus. **Atmosphere** is height fog with sun in-scattering.
+- **Forests** are instanced conifer and broadleaf trees with per-instance tint and wind sway; the airfield sits in a natural clearing with a ragged tree line. **Water** is PBR with layered scrolling normals reflecting the HDR sky. **Clouds** are camera-sorted, sun-lit billboard cumulus placed from the same noise field that casts matching **cloud shadows** on the terrain. **Atmosphere** is height fog with sun in-scattering.
 - **Post-processing** (High/Ultra): MSAA HDR render target, bloom, ACES tone mapping, vignette/grade. Aircraft shadow via a tight sun-aligned shadow map. In the cockpit the aircraft is rendered in a separate near-plane pass so the world keeps depth precision to the horizon.
 - **Automatic quality.** The GPU is detected (WebGL renderer string, core count) to pick Low/Medium/High/Ultra, then a runtime governor measures frame rate against the display refresh and adjusts render scale, view distance (4–20 km of streamed chunks) and the effects tier. Settings → Graphics quality allows a manual override.
 
@@ -23,6 +23,10 @@ npm run dev          # http://localhost:3000
 Production build: `npm run build && npm run start` (the build uses webpack). On macOS you can also double-click `launch-macos.command`, which installs dependencies on first run and starts the dev server.
 
 Desktop Chrome or Edge is recommended (WebHID gyro support). URL options: `?seed=12345` (world), `?sky=belfast` (sky), `?debug` (exposes `window.SKYB` for inspection).
+
+## Assets & optimisation
+
+The aircraft GLB is meshopt-compressed with WebP textures (glTF-Transform: dedup, prune, webp, meshopt), shrinking it from ~31 MB to ~5 MB with all node and material names preserved. three.js decodes it with `MeshoptDecoder`.
 
 ## Project layout
 

@@ -44,7 +44,7 @@ export function createTerrainLib(seed){
     let h=mix(seaH,landH,landT);
     const inland=sstep(.04,.16,cont);
     const lk=fbm(px/3200+90,pz/3200-40,3)+P.lakeBias;
-    if(lk>.36)h-=sstep(.36,.46,lk)*(Math.max(h,0)+7)*inland*(1-mmask)*(1-sstep(250,500,h));
+    if(lk>.36)h-=sstep(.36,.46,lk)*(Math.max(h,0)+7)*inland*(1-mmask)*(1-sstep(22,60,h));
     const rv=Math.abs(noise2(px*P.riverFreq+71.3,pz*P.riverFreq-19.1));
     const valley=(1-sstep(0,.2,rv))*inland*(1-sstep(500,1100,h));
     h-=valley*valley*valley*Math.min(Math.max(h,0)*.35,80);
@@ -60,6 +60,8 @@ export function createTerrainLib(seed){
   }
   function heightAt(wx,wz){return flatten(wx,wz,base(wx,wz));}
   function airportZone(wx,wz,pad){return Math.abs(wx)<AP.halfW+pad&&Math.abs(wz)<AP.halfL+pad;}
+  // 1 inside the mown airfield, fading to 0 across a ragged, noise-shaped tree line.
+  function airportClearing(wx,wz){const ax=Math.max(Math.abs(wx)-AP.halfW,0),az=Math.max(Math.abs(wz)-AP.halfL,0),d=Math.hypot(ax,az);if(d>520)return 0;return 1-sstep(90,330,d+fbm(wx/170+3.3,wz/170-8.1,3)*120);}
   function climate(h,o){
     const temp=clampT(.6+P.tempBias*.8+fbm(o.px/38000+400,o.pz/38000,2)*.45-Math.max(h,0)/4200,0,1);
     const moist=clampT(.52+P.moistBias+fbm(o.px/11000-200,o.pz/11000+90,3)*.7+o.river*.28+(1-sstep(0,.2,o.cont))*.12-o.mtn*.08,0,1);
@@ -89,7 +91,7 @@ export function createTerrainLib(seed){
     ox=best.x;oz=best.z;airportH=Math.max(10,best.h);
     return {airportH,ox,oz};
   }
-  return {P,AP,noise2,fbm,base,heightAt,climate,forestAt,init,airportZone,hashI,mulberry32,
+  return {P,AP,noise2,fbm,base,heightAt,climate,forestAt,init,airportZone,airportClearing,hashI,mulberry32,
     get airportH(){return airportH;},setFrame(o){ox=o.ox;oz=o.oz;airportH=o.airportH;}};
 }
 
@@ -112,7 +114,7 @@ export function buildChunkData(lib,req){
     if(h<minY)minY=h;if(h>maxY)maxY=h;
     lib.base(x,z,o);const [temp,moist]=lib.climate(h,o),slope=1-ny;
     let forest=lib.forestAt(x,z,h,slope,temp,moist);
-    if(lib.airportZone(x,z,180))forest=0;
+    forest*=1-lib.airportClearing(x,z);
     bio[v*4]=moist;bio[v*4+1]=temp;bio[v*4+2]=forest;bio[v*4+3]=0;
     const R1=45,c1=(lib.heightAt(x+R1,z)+lib.heightAt(x-R1,z)+lib.heightAt(x,z+R1)+lib.heightAt(x,z-R1))*.25-h;
     const ao=clampT(1-Math.max(c1,0)/R1*.9,.5,1)*(1-forest*.15);
@@ -154,7 +156,7 @@ export function buildChunkData(lib,req){
     const sp=req.detail.spacing,n=Math.floor(size/sp),tr=[];
     for(let j=0;j<n;j++)for(let i=0;i<n;i++){
       const x=x0+(i+rand())*sp,z=z0+(j+rand())*sp,r1=rand(),r2=rand(),r3=rand();
-      if(lib.airportZone(x,z,260))continue;
+      const clear=lib.airportClearing(x,z);if(lib.airportZone(x,z,40)||r2<clear)continue;
       const h=lib.heightAt(x,z);if(h<2.5)continue;
       const hx=lib.heightAt(x+5,z),hz=lib.heightAt(x,z+5),ny=5/Math.hypot(h-hx,5,h-hz),slope=1-ny;
       lib.base(x,z,o);const [temp,moist]=lib.climate(h,o);
