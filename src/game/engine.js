@@ -208,7 +208,9 @@ export function updateWorldFx(dt){
 }
 export function frame(){requestAnimationFrame(frame);frameStartTime=performance.now();const frameDt=Math.min(clock.getDelta(),.05);state.fpsAccum+=frameDt;state.fpsCount++;if(state.fpsAccum>=1){state.fps=state.fpsCount/state.fpsAccum;state.fpsAccum=0;state.fpsCount=0;}
   updateChunks();processChunkResults(4);diagnosticsTimer+=frameDt;if(diagnosticsTimer>.25){updateDiagnostics();diagnosticsTimer=0;}
-  if(state.started&&!state.paused){const ctrl=getControls(frameDt);physicsAccumulator=Math.min(physicsAccumulator+frameDt,.12);let steps=0;while(physicsAccumulator>=FIXED_STEP&&steps<5){stepPhysics(FIXED_STEP,ctrl);updateCamera(FIXED_STEP,ctrl);physicsAccumulator-=FIXED_STEP;steps++;}if(steps===5)physicsAccumulator=Math.min(physicsAccumulator,FIXED_STEP);hudTimer+=frameDt;if(hudTimer>.08){updateHud(frameDt);tutorialTick();hudTimer=0;}}
+  if(state.started&&!state.paused){const ctrl=getControls(frameDt);/* Equal sub-steps (each <= 1/60 s) that exactly cover the frame: no leftover accumulator, so motion
+    advances evenly every frame instead of alternating 1 and 2 steps (visible judder at 30-50 fps). */
+    const steps=Math.max(1,Math.ceil(frameDt/FIXED_STEP-1e-6)),h=frameDt/steps;for(let i=0;i<steps;i++){stepPhysics(h,ctrl);updateCamera(h,ctrl);}hudTimer+=frameDt;if(hudTimer>.08){updateHud(frameDt);tutorialTick();hudTimer=0;}}
   else if(!state.started)updateMenuCamera(frameDt);
   updateWorldFx(frameDt);
   perfTick(frameDt);

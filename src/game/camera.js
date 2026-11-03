@@ -11,10 +11,11 @@ export function updateCamera(dt,ctrl){const a=aircraft,q=plane.quaternion;camFor
   const targetFov=(state.camera===1?72:state.camera===2?62:state.camera===3?60:70)+speedK*5;
   camFov=lerp(camFov,targetFov,1-Math.exp(-dt*2));
   if(lastCameraMode!==state.camera||Math.abs(camera.fov-camFov)>.01){camera.fov=camFov;camera.updateProjectionMatrix();lastCameraMode=state.camera;}
-  // Subtle ground-roll and turbulence shake.
   const onGround=a.altAGL<aircraftGroundOffset+.4;
-  const shakeAmt=(onGround?smooth(2,30,a.airspeed)*.035:smooth(30,70,a.airspeed)*.008)*(state.camera===1?1:.6);
-  const t=worldTime;camShake.set(Math.sin(t*37.1)*Math.sin(t*5.3),Math.sin(t*43.7+1.3)*Math.sin(t*3.1),0).multiplyScalar(shakeAmt);
+  // Gentle runway rumble only (low frequency, a few millimetres); none in flight so the
+  // cockpit stays steady at any airspeed and frame rate.
+  const shakeAmt=onGround?smooth(3,30,a.airspeed)*(state.camera===1?.006:.012):0;
+  const t=worldTime;camShake.set(Math.sin(t*11.3)*Math.sin(t*2.1),Math.sin(t*13.7+1.3)*Math.sin(t*1.7),0).multiplyScalar(shakeAmt);
   if(state.camera===1){
     camPos.copy(cockpitEyeLocal).applyQuaternion(q).add(a.position).addScaledVector(camUp,camShake.y).addScaledVector(camRight,camShake.x);
     camTarget.copy(camPos).addScaledVector(camForward,100).addScaledVector(camUp,-7.0);
@@ -23,9 +24,9 @@ export function updateCamera(dt,ctrl){const a=aircraft,q=plane.quaternion;camFor
   else if(state.camera===2){
     camera.up.set(0,1,0);
     const flatF=new THREE.Vector3(camForward.x,0,camForward.z).normalize();
-    camPos.copy(a.position).addScaledVector(camForward,-17).addScaledVector(flatF,-3).addScaledVector(camUp,4.6).add(new THREE.Vector3(0,1.2,0));
+    camPos.copy(a.position).addScaledVector(camForward,-17).addScaledVector(flatF,-3).addScaledVector(camUp,4.6*Math.max(camUp.y,0)).add(new THREE.Vector3(0,1.2+4.6*(1-Math.max(camUp.y,0)),0));
     const gmin=groundLevelAt(camPos.x,camPos.z)+2;if(camPos.y<gmin)camPos.y=gmin;
-    camTarget.copy(a.position).addScaledVector(camForward,18).addScaledVector(camUp,1.2);
+    camTarget.copy(a.position).addScaledVector(camForward,18).add(new THREE.Vector3(0,1.2,0));
     camera.position.lerp(camPos,1-Math.exp(-dt*7.5));camera.position.add(camShake);camera.lookAt(camTarget);
   }
   else{camera.up.set(0,1,0);state.orbitYaw-=ctrl.camX*dt*1.8;state.orbitPitch=clamp(state.orbitPitch-ctrl.camY*dt*1.4,-.2,1.1);if(state.mouseDown){state.orbitYaw-=state.mouseDx*.004;state.orbitPitch=clamp(state.orbitPitch-state.mouseDy*.004,-.2,1.1);state.mouseDx=state.mouseDy=0;}const radius=state.camera===3?32:70,ox=Math.sin(state.orbitYaw)*Math.cos(state.orbitPitch)*radius,oy=Math.sin(state.orbitPitch)*radius+5,oz=Math.cos(state.orbitYaw)*Math.cos(state.orbitPitch)*radius;camPos.set(a.position.x+ox,a.position.y+oy,a.position.z+oz);const gmin=groundLevelAt(camPos.x,camPos.z)+1.5;if(camPos.y<gmin)camPos.y=gmin;camera.position.lerp(camPos,1-Math.exp(-dt*3));camera.lookAt(a.position);}

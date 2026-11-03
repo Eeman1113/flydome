@@ -38,7 +38,8 @@ export function stepPhysics(dt,ctrl){
   const pitchRateTarget=a.controlPitch*(31*DEG)*authority;
   const bankLimit=65*DEG;
   const rollRateTarget=a.controlRoll*(78*DEG)*authority-(wasOnGround?0:Math.sin(a.roll)*state.rollStability*.34);
-  const coordinatedYawRate=(!wasOnGround&&airspeed>7)?-9.81*Math.tan(clamp(a.roll,-bankLimit,bankLimit))/Math.max(airspeed,12):0;
+  // Coordinated turn yaw from bank; fades out past knife-edge so rolls and inverted flight stay clean.
+  const coordinatedYawRate=(!wasOnGround&&airspeed>7)?-9.81*Math.tan(clamp(a.roll,-bankLimit,bankLimit))*Math.max(Math.cos(a.roll),0)/Math.max(airspeed,12):0;
   const rudderAuthority=wasOnGround?clamp(airspeed/10,0,1):clamp(airspeed/24,.25,1.15);
   const slipDamper=wasOnGround?0:clamp(-preSlipAngle*.9,-.18,.18);
   const yawRateTarget=wasOnGround?a.controlYaw*.16*rudderAuthority:coordinatedYawRate+a.controlYaw*(22*DEG)*rudderAuthority+slipDamper;
@@ -49,7 +50,8 @@ export function stepPhysics(dt,ctrl){
   a.rollRate=lerp(a.rollRate,rollRateTarget,rollResponse);
   a.yawRate=lerp(a.yawRate,yawRateTarget,yawResponse);
   a.pitch=clamp(a.pitch+a.pitchRate*dt,-.38,.40);
-  a.roll=clamp(a.roll+a.rollRate*dt,-bankLimit,bankLimit);
+  // Airborne the aircraft can roll freely through 360° (barrel/aileron rolls); on the ground bank stays limited.
+  a.roll=wasOnGround?clamp(a.roll+a.rollRate*dt,-bankLimit,bankLimit):wrapAngle(a.roll+a.rollRate*dt);
   a.yaw=wrapAngle(a.yaw+a.yawRate*dt);
 
   simEuler.set(a.pitch,a.yaw,-a.roll,'YXZ');
