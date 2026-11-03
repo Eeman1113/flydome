@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { camera, frame } from './engine.js';
 
+// Prefix for files in public/ (empty locally, '/flydome' on GitHub Pages).
+export const BASE_PATH=process.env.NEXT_PUBLIC_BASE_PATH||'';
 export const urlParams=new URLSearchParams(typeof location!=='undefined'?location.search:'');
 export const WORLD_SEED=(()=>{const s=parseInt(urlParams.get('seed')||'',10);return Number.isFinite(s)&&s>0?s:(1+Math.floor(Math.random()*999999));})();
 export const SKIES=[

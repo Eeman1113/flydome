@@ -9,7 +9,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { Pass } from 'three/addons/postprocessing/Pass.js';
 import { $ } from './util.js';
-import { AIRCRAFT_VISUAL_SCALE, FIXED_STEP, SKY, START_Z, WORLD_SEED, aircraft, cockpitEyeLocal, fx, glass, shared, sky, state, urlParams } from './config.js';
+import { BASE_PATH, AIRCRAFT_VISUAL_SCALE, FIXED_STEP, SKY, START_Z, WORLD_SEED, aircraft, cockpitEyeLocal, fx, glass, shared, sky, state, urlParams } from './config.js';
 import { AIRPORT_H, terrain } from './world.js';
 import { TIERS, applyTier, detectHardware, perf, perfTick, updateCameraFar, viewDistanceM } from './perf.js';
 import { installAtmosphereShaderChunks, loadSky, makeSkyDome } from './sky.js';
@@ -130,7 +130,7 @@ export async function makeAircraft(){
   // The aircraft visual is the supplied Cessna 182 Skylane GLB. No procedural
   // aircraft geometry is generated here; physics remain independent of the mesh.
   plane=new THREE.Group();planeVisual=new THREE.Group();plane.add(planeVisual);
-  const modelUrl='/models/cessna_182_skylane.glb';
+  const modelUrl=`${BASE_PATH}/models/cessna_182_skylane.glb`;
   // Shipped GLB is meshopt-compressed with WebP textures (~5 MB instead of ~31 MB).
   const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   let gltf;

@@ -2,14 +2,14 @@
 import * as THREE from 'three';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { $, DEG, clamp, lerp } from './util.js';
-import { SKY, fx, sky } from './config.js';
+import { BASE_PATH, SKY, fx, sky } from './config.js';
 import { terrain } from './world.js';
 
 export async function loadSky(onProgress){
   let tex=null;
   try{
     const loader=new RGBELoader();
-    tex=await loader.loadAsync(`/skies/${SKY.id}_2k.hdr`,e=>{if(e.lengthComputable)onProgress(e.loaded/e.total);});
+    tex=await loader.loadAsync(`${BASE_PATH}/skies/${SKY.id}_2k.hdr`,e=>{if(e.lengthComputable)onProgress(e.loaded/e.total);});
   }catch(err){console.warn('[SKYBOUND] HDR sky unavailable, using procedural sky',err);tex=makeFallbackSky();sky.name='Procedural sky';}
   tex.mapping=THREE.EquirectangularReflectionMapping;tex.minFilter=THREE.LinearFilter;tex.magFilter=THREE.LinearFilter;tex.generateMipmaps=false;
   analyseSky(tex);sky.texture=tex;

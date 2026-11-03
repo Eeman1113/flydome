@@ -11,7 +11,11 @@ A browser flight simulator built with **Next.js** and **three.js**. **Every page
 - **Post-processing** (High/Ultra): MSAA HDR render target, bloom, ACES tone mapping, vignette/grade. Aircraft shadow via a tight sun-aligned shadow map. In the cockpit the aircraft is rendered in a separate near-plane pass so the world keeps depth precision to the horizon.
 - **Automatic quality.** The GPU is detected (WebGL renderer string, core count) to pick Low/Medium/High/Ultra, then a runtime governor measures frame rate against the display refresh and adjusts render scale, view distance (4–20 km of streamed chunks) and the effects tier. Settings → Graphics quality allows a manual override.
 
-## Running
+## Play online
+
+**https://eeman1113.github.io/flydome/** — deployed automatically to GitHub Pages by `.github/workflows/pages.yml` on every push to `main` (static export with base path `/flydome`).
+
+## Running locally
 
 Requires Node.js 20+.
 
