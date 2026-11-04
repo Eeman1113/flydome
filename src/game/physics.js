@@ -9,6 +9,8 @@ import { groundLevelAt, isWaterAt, onRunway } from './chunks.js';
 import { aircraftGroundOffset, plane, syncPlaneTransform } from './engine.js';
 import { setHud, toast } from './ui.js';
 import { radioEvent } from './radio.js';
+import * as THREE from 'three';
+const simWind=new THREE.Vector3();
 import { sfx } from './sfx.js';
 
 export function crashAircraft(title,text,msg){
@@ -23,6 +25,8 @@ export function crashAircraft(title,text,msg){
 export function stepPhysics(dt,ctrl){
   if(state.crashed)return;
   const a=aircraft;
+  // Forgiving flight (stall simulation off, the default) feels half the wind.
+  const forgiving=!state.stallSim;simWind.copy(state.wind).multiplyScalar(forgiving?.5:1);
   const groundBefore=groundLevelAt(a.position.x,a.position.z);
   const contactOffset=aircraftGroundOffset;
   const wasOnGround=a.position.y<=groundBefore+contactOffset+.35;
@@ -38,7 +42,7 @@ export function stepPhysics(dt,ctrl){
   simForward.set(0,0,-1).applyQuaternion(simQuaternion);
   simUp.set(0,1,0).applyQuaternion(simQuaternion);
   simRight.set(1,0,0).applyQuaternion(simQuaternion);
-  simAirVelocity.copy(a.velocity).sub(state.wind);
+  simAirVelocity.copy(a.velocity).sub(simWind);
   const airspeed=Math.max(.05,simAirVelocity.length());
   const authority=clamp(.28+airspeed/34,.28,1.12)*(wasOnGround?0.62:1);
   const preSlipAngle=Math.atan2(simAirVelocity.dot(simRight),Math.max(airspeed,.1));
@@ -68,7 +72,7 @@ export function stepPhysics(dt,ctrl){
   simUp.set(0,1,0).applyQuaternion(simQuaternion);
   simRight.set(1,0,0).applyQuaternion(simQuaternion);
 
-  simAirVelocity.copy(a.velocity).sub(state.wind);
+  simAirVelocity.copy(a.velocity).sub(simWind);
   const airspeedNow=Math.max(.05,simAirVelocity.length());
   simDirection.copy(simAirVelocity).normalize();
   const alpha=-Math.asin(clamp(simDirection.dot(simUp),-1,1));
@@ -111,6 +115,16 @@ export function stepPhysics(dt,ctrl){
 
   a.velocity.addScaledVector(simForce,dt/AIRCRAFT_MASS_KG);
   a.velocity.multiplyScalar(Math.exp(-.002*dt));
+  // Forgiving flight: the aircraft never sinks unless the nose is pointed down. Below about 45 kt
+  // the engine holds the speed up, and near the ground the help fades so landings still settle.
+  if(forgiving&&!wasOnGround&&a.engineRunning){
+    const help=smooth(3,22,heightAGL)*clamp(Math.cos(a.roll)*1.4,0,1);
+    if(help>0){
+      const hs=Math.hypot(a.velocity.x,a.velocity.z),target=Math.min(0,hs*Math.tan(a.pitch)*.9);
+      if(a.velocity.y<target)a.velocity.y+=(target-a.velocity.y)*(1-Math.exp(-dt*30))*help;
+      if(airspeedNow<23){const k=(23-airspeedNow)*dt*.9*help;a.velocity.addScaledVector(simForward,k);}
+    }
+  }
   a.position.addScaledVector(a.velocity,dt);
   if(a.stall&&!wasOnGround){
     a.velocity.y-=clamp(2.4+stallBlend*4.0,2.4,6.4)*dt;
@@ -130,7 +144,8 @@ export function stepPhysics(dt,ctrl){
     const paved=onRunway(a.position.x,a.position.z),floats=AIRCRAFT[aircraftState.variant].floats,onWater=isWaterAt(a.position.x,a.position.z);
     // Floats plane water hard but hold more drag than tarmac; grass strips sit in between.
     const rollingV=forwardV*Math.exp(-(paved?.028:onWater&&floats?.12:.16)*dt);
-    const lateralAfter=lateralV*Math.exp(-1.35*dt);
+    // Tyres grip sideways (no sliding across the runway in a crosswind); floats slip more.
+    const lateralAfter=lateralV*Math.exp(-(onWater&&floats?3:14)*dt);
     a.velocity.x=fx*rollingV+rx*lateralAfter;
     a.velocity.z=fz*rollingV+rz*lateralAfter;
     a.pitchRate*=Math.exp(-dt*1.1);
@@ -144,7 +159,7 @@ export function stepPhysics(dt,ctrl){
     }
   }
 
-  simAirVelocity.copy(a.velocity).sub(state.wind);
+  simAirVelocity.copy(a.velocity).sub(simWind);
   a.airspeed=simAirVelocity.length();
   a.verticalSpeed=a.velocity.y;
   a.altAGL=Math.max(0,a.position.y-ground);

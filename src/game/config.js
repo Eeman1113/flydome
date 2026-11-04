@@ -71,7 +71,7 @@ export const aircraftState={variant:'skylane',livery:'factory'};
 export const WEATHER=(()=>{
   let a=(WORLD_SEED*2654435761)>>>0;const r=()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};
   const calm=r()<.22,dir=Math.round(r()*36)*10||360;
-  const kt=calm?2+r()*4:6+r()*(SKY.overcast?16:12),gust=calm?0:r()<.55?kt*(.3+r()*.5):0;
+  const kt=calm?2+r()*4:5+r()*(SKY.overcast?10:8),gust=calm?0:r()<.5?kt*(.2+r()*.35):0;
   const rain=!!SKY.rain&&r()<SKY.rain;
   return {dir,kt,gust,rain,lowCloud:!!SKY.overcast};
 })();
