@@ -1,5 +1,8 @@
 // SKYBOUND · engine
 import * as THREE from 'three';
+import { initSurvey, beginMission, surveyTick, respawnPoint, mission } from './survey.js';
+import { initHud, hudFrame, hudEvents } from './hud.js';
+import { renderMenu } from './menu.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -15,7 +18,7 @@ import { TIERS, applyTier, detectHardware, perf, perfTick, updateCameraFar, view
 import { installAtmosphereShaderChunks, loadSky, makeSkyDome } from './sky.js';
 import { createGeometries, createMaterials, mats } from './materials.js';
 import { chunks, initWorkers, processChunkResults, updateChunks } from './chunks.js';
-import { buildAirport, makeClouds, makeWater } from './scenery.js';
+import { buildAirport, buildStrips, makeClouds, makeWater } from './scenery.js';
 import { getControls } from './input.js';
 import { ensureAircraftAudio, updateAircraftAudio } from './audio.js';
 import { cameraName, setHud, setLoading, toast, updateDiagnostics, updateHud, updateWorldInfo } from './ui.js';
@@ -65,7 +68,7 @@ export async function setupScene(){
   createMaterials();createGeometries();
   terrainGroup=new THREE.Group();detailGroup=new THREE.Group();scene.add(terrainGroup);scene.add(detailGroup);
   waterMesh=makeWater();scene.add(waterMesh);
-  buildAirport();
+  buildAirport();buildStrips();
   cloudSystem=makeClouds();scene.add(cloudSystem.mesh);cloudSystem.setDensity(perf.tier.clouds);
   setupPost();
   updateCameraFar();
@@ -85,6 +88,8 @@ export async function setupScene(){
       if((done>=near.length&&near.length)||performance.now()-t0>20000)resolve();else setTimeout(tick,16);
     };tick();
   });
+  setLoading('SURVEYING LANDMARKS',98);
+  await initSurvey();initHud();renderMenu();hudEvents.nextCharter=()=>{const i=(mission.charters.indexOf(mission.charter)+1)%Math.max(1,mission.charters.length);beginMission('charter',i);};
   camera.layers.enable(1);renderer.compile(scene,camera);
   clock=new THREE.Clock();
   updateWorldInfo();
@@ -210,22 +215,23 @@ export function frame(){requestAnimationFrame(frame);frameStartTime=performance.
   updateChunks();processChunkResults(4);diagnosticsTimer+=frameDt;if(diagnosticsTimer>.25){updateDiagnostics();diagnosticsTimer=0;}
   if(state.started&&!state.paused){const ctrl=getControls(frameDt);/* Equal sub-steps (each <= 1/60 s) that exactly cover the frame: no leftover accumulator, so motion
     advances evenly every frame instead of alternating 1 and 2 steps (visible judder at 30-50 fps). */
-    const steps=Math.max(1,Math.ceil(frameDt/FIXED_STEP-1e-6)),h=frameDt/steps;for(let i=0;i<steps;i++){stepPhysics(h,ctrl);updateCamera(h,ctrl);}hudTimer+=frameDt;if(hudTimer>.08){updateHud(frameDt);tutorialTick();hudTimer=0;}}
+    const steps=Math.max(1,Math.ceil(frameDt/FIXED_STEP-1e-6)),h=frameDt/steps;for(let i=0;i<steps;i++){stepPhysics(h,ctrl);updateCamera(h,ctrl);}surveyTick(frameDt);hudTimer+=frameDt;if(hudTimer>.08){updateHud(frameDt);tutorialTick();hudTimer=0;}}
   else if(!state.started)updateMenuCamera(frameDt);
   updateWorldFx(frameDt);
+  hudFrame();
   perfTick(frameDt);
   updateAircraftAudio(frameDt);
   renderFrame(frameDt);
 }
-export function startFlight(){camera.clearViewOffset();ensureAircraftAudio();state.started=true;state.paused=false;state.crashed=false;physicsAccumulator=0;$('mainMenu').style.display='none';$('pauseMenu').style.display='none';$('flightTag').textContent=`FREE FLIGHT · WORLD #${WORLD_SEED}`;state.camera=2;setHud();cameraName();toast('Flight controls active. Advance throttle and rotate to take off.');}
-export function restart(){state.crashed=false;state.paused=false;physicsAccumulator=0;$('pauseMenu').querySelector('h2').textContent='Take a breath.';$('pauseMenu').querySelector('.intro').textContent='Your aircraft is holding its current state. Ready when you are.';state.throttle=0;aircraft.position.set(0,AIRPORT_H+.06+aircraftGroundOffset,START_Z);aircraft.velocity.set(0,0,0);aircraft.pitch=aircraft.roll=aircraft.yaw=aircraft.pitchRate=aircraft.rollRate=aircraft.yawRate=0;aircraft.controlPitch=aircraft.controlRoll=aircraft.controlYaw=0;aircraft.enginePower=0;aircraft.airspeed=0;aircraft.stall=false;state.flightTime=0;state.gear=true;$('pauseMenu').style.display='none';state.started=true;setHud();syncPlaneTransform();updateChunks(true);toast('Aircraft reset on runway 36.');}
+export function startFlight(mode='free',charterIndex=0){camera.clearViewOffset();ensureAircraftAudio();state.started=true;state.paused=false;state.crashed=false;physicsAccumulator=0;$('mainMenu').style.display='none';$('pauseMenu').style.display='none';beginMission(mode,charterIndex);$('flightTag').textContent=mission.charter?`${mode==='daily'?'DAILY CHARTER':'CHARTER'} · WORLD #${WORLD_SEED}`:`FREE FLIGHT · WORLD #${WORLD_SEED}`;state.camera=2;setHud();toast(mission.charter?`${mission.charter.title}: survey ${mission.charter.ids.length} landmarks, then land. Shift for throttle.`:'Free flight. Fly low over ? markers to chart them. Shift for throttle.');}
+export function restart(){state.crashed=false;state.paused=false;physicsAccumulator=0;$('pauseMenu').querySelector('h2').textContent='Take a breath.';$('pauseMenu').querySelector('.intro').textContent='Your aircraft is holding its current state. Ready when you are.';state.throttle=0;const rp=respawnPoint(aircraftGroundOffset);aircraft.position.set(rp.x,rp.y,rp.z);aircraft.velocity.set(0,0,0);aircraft.pitch=aircraft.roll=aircraft.pitchRate=aircraft.rollRate=aircraft.yawRate=0;aircraft.yaw=rp.yaw;aircraft.controlPitch=aircraft.controlRoll=aircraft.controlYaw=0;aircraft.enginePower=0;aircraft.airspeed=0;aircraft.stall=false;state.flightTime=0;state.gear=true;$('pauseMenu').style.display='none';state.started=true;setHud();syncPlaneTransform();updateChunks(true);toast(mission.respawn?`Aircraft reset at ${mission.respawn.name}.`:'Aircraft reset on the home runway.');}
 window.addEventListener('resize',()=>{if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);if(composer){composer.setPixelRatio(renderer.getPixelRatio());composer.setSize(innerWidth,innerHeight);}});
 export let booted=false;
 export async function startGame(){
   if(booted)return;booted=true;
   try{
     await setupScene();
-    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx};
+    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx,mission};
     $('loading').classList.add('hidden');
     setTimeout(()=>{const l=$('loading');if(l)l.style.display='none';},500);
     frame();

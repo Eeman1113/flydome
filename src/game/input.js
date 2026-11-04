@@ -1,3 +1,4 @@
+import { toggleChart, closeChart } from './hud.js';
 // SKYBOUND · input
 import { $, clamp } from './util.js';
 import { state } from './config.js';
@@ -76,7 +77,7 @@ export function getControls(dt){
   state.throttle=clamp(state.throttle+throttleDelta,0,1);
   return{pitch:clamp(pitch*state.stickSensitivity,-1,1),roll:clamp(roll*state.stickSensitivity,-1,1),yaw:clamp(yaw,-1,1),camX,camY};
 }
-window.addEventListener('keydown',e=>{state.keys[e.code]=true;if(state.tutorial.active&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyQ','KeyE','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyG'].includes(e.code))setTutorialInputMode('keyboardMouse');if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(e.code==='Escape'||e.code==='Space'){if(state.started)togglePause();}if(e.code==='KeyH'){state.hud=!state.hud;setHud();}if(e.code==='KeyC')nextCamera();});window.addEventListener('keyup',e=>state.keys[e.code]=false);
+window.addEventListener('keydown',e=>{state.keys[e.code]=true;if(state.tutorial.active&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyQ','KeyE','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyG'].includes(e.code))setTutorialInputMode('keyboardMouse');if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(e.code==='KeyM'&&state.started){toggleChart();return;}if(e.code==='Escape'&&document.getElementById('chartOverlay')?.style.display==='grid'){closeChart();return;}if(e.code==='Escape'||e.code==='Space'){if(state.started)togglePause();}if(e.code==='KeyH'){state.hud=!state.hud;setHud();}if(e.code==='KeyC')nextCamera();});window.addEventListener('keyup',e=>state.keys[e.code]=false);
 $('sim').addEventListener('pointerdown',e=>{
   if(e.button===0){
     // Left-drag always flies, even when a controller is connected. This makes

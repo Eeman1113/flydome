@@ -1,0 +1,66 @@
+// SKYBOUND · menu — charter board, pilot card, daily charter, resume and logbook.
+import { $ } from './util.js';
+import { DAILY_NUMBER, IS_DAILY, WORLD_SEED } from './config.js';
+import { mission, dailyCharter, landmarkById } from './survey.js';
+import { progress, previousWorld, rankInfo, averageGrade, RANKS } from './progress.js';
+import { iconSvg, TYPE_LABEL } from './icons.js';
+import { openModal } from './ui.js';
+
+export const menuState={charter:0};
+
+function goTo(params){const u=new URL(location.href);u.search='';for(const [k,v] of Object.entries(params))u.searchParams.set(k,v);location.href=u.toString();}
+
+export function renderMenu(){
+  renderBoard();renderPilot();renderDaily();
+  const prev=previousWorld,btn=$('resumeWorldBtn');
+  if(prev&&prev.seed!==WORLD_SEED&&!prev.daily){btn.style.display='';btn.querySelector('small').textContent=`World #${prev.seed}`;btn.onclick=()=>goTo({seed:prev.seed});}
+  else btn.style.display='none';
+}
+function renderBoard(){
+  const el=$('charterBoard');
+  if(IS_DAILY){
+    const c=dailyCharter();el.innerHTML=c?cardHtml(c,0,true):'';menuState.charter=0;
+    $('startBtn').innerHTML=`FLY DAILY CHARTER&nbsp; ↗`;return;
+  }
+  el.innerHTML=mission.charters.map((c,i)=>cardHtml(c,i,i===menuState.charter)).join('')||'<div class="board-empty">No landmarks found — try a new world.</div>';
+  for(const b of el.querySelectorAll('.charter')){b.onclick=()=>{menuState.charter=+b.dataset.i;renderBoard();};b.ondblclick=()=>$('startBtn').click();}
+}
+function cardHtml(c,i,sel){
+  const ls=c.ids.map(landmarkById).filter(Boolean),done=ls.filter(l=>mission.discovered.has(l.id)).length;
+  const chips=ls.map(l=>`<span class="chip${mission.discovered.has(l.id)?' done':''}" title="${TYPE_LABEL[l.type]}">${iconSvg(l.type,'chip-ico')}${l.name}</span>`).join('');
+  const dots=[1,2,3].map(d=>`<i class="${d<=c.difficulty?'on':''}"></i>`).join('');
+  return `<button class="charter${sel?' selected':''}" data-i="${i}"><div class="ch-top"><span class="ch-title">${c.title}</span><span class="ch-diff" title="Difficulty">${dots}</span></div><div class="ch-chips">${chips}</div><div class="ch-meta">${c.km.toFixed(0)} km route · ≈ ${c.minutes} min${done?` · ${done}/${ls.length} charted`:''}</div></button>`;
+}
+function renderPilot(){
+  const r=rankInfo(),p=progress.pilot;
+  $('pilotRank').textContent=r.name;
+  $('pilotXp').textContent=r.next?`${p.xp.toLocaleString()} / ${r.next.toLocaleString()} XP`:`${p.xp.toLocaleString()} XP · max rank`;
+  $('pilotXpBar').style.width=`${Math.round(r.pct*100)}%`;
+  $('pilotStats').innerHTML=`<span><b>${p.discoveries}</b> charted</span><span><b>${p.charters}</b> charters</span><span><b>${averageGrade()}</b> avg landing</span>`;
+}
+function renderDaily(){
+  const res=progress.daily[DAILY_NUMBER];
+  $('dailyTitle').textContent=`Daily Charter #${DAILY_NUMBER}`;
+  $('dailyStatus').textContent=res?`Completed · landing ${res.grade} · ${Math.floor(res.time/60)}:${String(res.time%60).padStart(2,'0')}`:'One shared world for every pilot today';
+  const b=$('dailyBtn');
+  if(IS_DAILY){b.textContent='EXIT DAILY';b.onclick=()=>goTo({});}
+  else{b.textContent=res?'FLY AGAIN':'PLAY DAILY';b.onclick=()=>goTo({daily:'1'});}
+}
+
+export function logbookModal(){
+  const r=rankInfo(),p=progress.pilot,h=Math.floor(p.flightTime/3600),m=Math.floor(p.flightTime%3600/60);
+  const stamps=['peak','lake','island','forest','river','pass'].map(t=>`<div class="stamp${p.stamps[t]?' got':''}">${iconSvg(t,'st-ico')}<span>${TYPE_LABEL[t]}</span><b>${p.stamps[t]||0}</b></div>`).join('')+`<div class="stamp rare${p.stamps.rare?' got':''}">★<span>Rare finds</span><b>${p.stamps.rare||0}</b></div>`;
+  const ranks=RANKS.map(([xp,n],i)=>`<li class="${i<=r.index?'got':''}"><span>${n}</span><em>${xp.toLocaleString()} XP</em></li>`).join('');
+  const g=p.grades,total=Object.values(g).reduce((a,b)=>a+b,0)||1;
+  const bars=['S','A','B','C','D'].map(k=>`<div class="gb"><span>${k}</span><i style="width:${g[k]/total*100}%"></i><b>${g[k]}</b></div>`).join('');
+  openModal('Pilot logbook',`
+    <div class="lb-head"><div><div class="kicker">${r.name.toUpperCase()}</div><div class="lb-xp">${p.xp.toLocaleString()} XP</div></div><div class="lb-bar"><i style="width:${Math.round(r.pct*100)}%"></i></div></div>
+    <div class="lb-grid">
+      <div><span>Worlds flown</span><b>${p.worlds}</b></div><div><span>Landmarks charted</span><b>${p.discoveries}</b></div>
+      <div><span>Charters complete</span><b>${p.charters}</b></div><div><span>Flight time</span><b>${h}h ${m}m</b></div>
+      <div><span>Landings</span><b>${p.landings}</b></div><div><span>Best landing</span><b>${p.best||'—'}</b></div>
+    </div>
+    <h3 class="lb-h">Discovery stamps</h3><div class="stamps">${stamps}</div>
+    <h3 class="lb-h">Landing grades</h3><div class="grades">${bars}</div>
+    <h3 class="lb-h">Ranks</h3><ul class="ranks">${ranks}</ul>`);
+}

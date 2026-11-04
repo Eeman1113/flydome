@@ -1,3 +1,4 @@
+import { beginMission } from './survey.js';
 // SKYBOUND · tutorial
 import { $, DEG, FT_PER_M, KTS_PER_MS, clamp } from './util.js';
 import { TAKEOFF_ROTATE_KTS, aircraft, state } from './config.js';
@@ -90,7 +91,7 @@ export function tutorialFeedback(index){
     default:return 'Basic flight lesson complete. The instructor will close automatically.';
   }
 }
-export function startTutorial(){camera.clearViewOffset();
+export function startTutorial(){camera.clearViewOffset();beginMission('free');
   ensureAircraftAudio();state.tutorial.active=true;state.tutorial.index=0;state.tutorial.timer=0;state.tutorial.readySince=0;state.tutorial.startedAt=performance.now();state.tutorial.lastStep=-1;state.tutorial.lastMode='';
   state.tutorial.inputMode=hasConnectedGamepad()?'controller':'keyboardMouse';state.tutorial.mode=tutorialInputMode();
   $('mainMenu').style.display='none';restart();$('flightTag').textContent='FLIGHT SCHOOL · NORTH RIDGE';$('tutorialPanel').style.display='block';updateTutorialPanel();toast(`Flight school started · ${state.tutorial.mode==='controller'?'DualSense':'keyboard + mouse'} instructions`);

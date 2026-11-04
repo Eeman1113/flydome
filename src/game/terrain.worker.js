@@ -5,6 +5,11 @@ let lib=null;
 self.onmessage=(e)=>{
   const m=e.data;
   if(m.type==='init'){lib=createTerrainLib(m.seed);lib.setFrame(m.frame);self.postMessage({type:'ready'});return;}
+  if(m.type==='scan'){
+    const s=lib.scanWorld(m.R,m.step);
+    self.postMessage({type:'scan',data:s},[s.rgba.buffer]);
+    return;
+  }
   if(m.type==='chunk'){
     const r=buildChunkData(lib,m.req);
     const tr=[r.pos.buffer,r.nor.buffer,r.bio.buffer,r.ext.buffer,r.idx.buffer];

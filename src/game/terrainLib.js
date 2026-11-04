@@ -27,7 +27,7 @@ export function createTerrainLib(seed){
     tempBias:(rnd()-.5)*.34,moistBias:(rnd()-.5)*.3,autumn:rnd()<.3?1:0,
     o1:(rnd()-.5)*4000,o2:(rnd()-.5)*4000
   };
-  let ox=0,oz=0,airportH=40;
+  let ox=0,oz=0,airportH=40,strips=[];
   const AP={halfW:240,halfL:830,blend:540};
   function base(wx,wz,o){
     const x=wx+ox,z=wz+oz;
@@ -56,7 +56,28 @@ export function createTerrainLib(seed){
   function flatten(wx,wz,h){
     const ax=Math.max(Math.abs(wx)-AP.halfW,0),az=Math.max(Math.abs(wz)-AP.halfL,0),ad=Math.hypot(ax,az);
     if(ad<AP.blend)h=mix(h,airportH-.06,1-sstep(0,AP.blend,ad));
+    for(let i=0;i<strips.length;i++){
+      const s=strips[i],dx=wx-s.x,dz=wz-s.z;if(dx*dx+dz*dz>(s.halfL+280)*(s.halfL+280))continue;
+      const u=dx*s.cos+dz*s.sin,v=-dx*s.sin+dz*s.cos;
+      const d=Math.hypot(Math.max(Math.abs(u)-s.halfL-25,0),Math.max(Math.abs(v)-s.halfW-26,0));
+      if(d<230)h=mix(h,s.h,1-sstep(0,230,d));
+    }
     return h;
+  }
+  // Local strip coordinates: u along the strip, v across it.
+  function stripLocal(s,wx,wz){const dx=wx-s.x,dz=wz-s.z;return [dx*s.cos+dz*s.sin,-dx*s.sin+dz*s.cos];}
+  function stripClearing(wx,wz){
+    let c=0;
+    for(let i=0;i<strips.length;i++){
+      const s=strips[i],dx=wx-s.x,dz=wz-s.z;if(dx*dx+dz*dz>(s.halfL+420)*(s.halfL+420))continue;
+      const [u,v]=stripLocal(s,wx,wz),d=Math.hypot(Math.max(Math.abs(u)-s.halfL-50,0),Math.max(Math.abs(v)-s.halfW-34,0));
+      c=Math.max(c,1-sstep(20,190,d+fbm(wx/130-4.1,wz/130+2.7,3)*90));
+    }
+    return c;
+  }
+  function stripAt(wx,wz,pad=0){
+    for(let i=0;i<strips.length;i++){const s=strips[i],[u,v]=stripLocal(s,wx,wz);if(Math.abs(u)<=s.halfL+pad&&Math.abs(v)<=s.halfW+pad)return s;}
+    return null;
   }
   function heightAt(wx,wz){return flatten(wx,wz,base(wx,wz));}
   function airportZone(wx,wz,pad){return Math.abs(wx)<AP.halfW+pad&&Math.abs(wz)<AP.halfL+pad;}
@@ -89,10 +110,154 @@ export function createTerrainLib(seed){
     }
     if(!best)best={x:0,z:0,h:Math.max(30,base(0,0))};
     ox=best.x;oz=best.z;airportH=Math.max(10,best.h);
-    return {airportH,ox,oz};
+    strips=findStrips();
+    return {airportH,ox,oz,strips};
   }
-  return {P,AP,noise2,fbm,base,heightAt,climate,forestAt,init,airportZone,airportClearing,hashI,mulberry32,
-    get airportH(){return airportH;},setFrame(o){ox=o.ox;oz=o.oz;airportH=o.airportH;}};
+  // Grass bush strips: the flattest seeded sites 2.6-9.8 km out, tested at 8 headings.
+  function findStrips(relax=0){
+    const rr=mulberry32((seed^0xA1F3)>>>0),cands=[];
+    for(let R=2600;R<=9800+relax*3000;R+=600){
+      const n=Math.floor(2*Math.PI*R/800),off=rr()*6.283;
+      for(let k=0;k<n;k++){
+        const a=off+k/n*6.283,cx=Math.cos(a)*R,cz=Math.sin(a)*R;
+        if(airportZone(cx,cz,1600))continue;
+        const o={},h0=base(cx,cz,o);if(h0<14||h0>1100||o.river>.2)continue;
+        let mn=h0,mx=h0;
+        for(const [dx,dz] of [[230,0],[-230,0],[0,230],[0,-230]]){const hh=base(cx+dx,cz+dz);mn=Math.min(mn,hh);mx=Math.max(mx,hh);}
+        if(mx-mn>18+relax*12||mn<10)continue;
+        cands.push({cx,cz,R});
+      }
+    }
+    const scored=[];
+    for(const c of cands){
+      let best=null;
+      for(let hi=0;hi<8;hi++){
+        const ang=hi/8*Math.PI,ca=Math.cos(ang),sa=Math.sin(ang);let mn=1e9,mx=-1e9,sum=0,n=0;
+        for(const u of [-345,-172,0,172,345])for(const v of [-32,0,32]){const hh=base(c.cx+ca*u-sa*v,c.cz+sa*u+ca*v);mn=Math.min(mn,hh);mx=Math.max(mx,hh);sum+=hh;n++;}
+        if(mn<8)continue;
+        if(!best||mx-mn<best.rng)best={rng:mx-mn,ang,h:sum/n};
+      }
+      if(best&&best.rng<14+relax*10)scored.push({x:c.cx,z:c.cz,ang:best.ang,h:best.h,score:best.rng+c.R*.0006});
+    }
+    scored.sort((a,b)=>a.score-b.score);
+    const out=[];
+    for(const s of scored){
+      if(out.length>=3)break;
+      if(out.some(o=>Math.hypot(o.x-s.x,o.z-s.z)<3200))continue;
+      out.push(s);
+    }
+    if(out.length<2&&relax<1)return findStrips(1);
+    return out.map((s,i)=>({id:i,x:s.x,z:s.z,h:s.h,ang:s.ang,cos:Math.cos(s.ang),sin:Math.sin(s.ang),halfL:320,halfW:13,name:placeName(900+i)+' Strip'}));
+  }
+  // Deterministic, pronounceable place names.
+  function placeName(k){
+    const r=mulberry32(((seed*2654435761)^(k*40503+977))>>>0);
+    const A=['Ka','Ver','Thal','Mor','Es','Ald','Brin','Cor','Dun','Fen','Gal','Har','Is','Jor','Kel','Lor','Mar','Nor','Os','Pen','Ros','Sel','Tor','Ul','Vel','Wyn','Yr','Zan','Ash','Bel','Cal','Eld','Hal','Ivr','Kes','Lun','Rav','Sor','Tam','Ves'];
+    const M=['','','a','e','i','o','ar','en','is','or','un','ae','el'];
+    const Z=['th','n','ra','ss','dale','wick','ford','holt','den','ia','on','ir','ek','ryn','mar','vik','set','wen','dor','loch'];
+    const pick=l=>l[Math.floor(r()*l.length)];
+    let s=pick(A)+pick(M)+pick(Z);if(s.length>9)s=s.slice(0,9);
+    return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase();
+  }
+  // Survey of the region around the airfield: relief map for the chart plus named landmarks
+  // detected from real terrain features (peaks, lakes, islands, forest, river, mountain pass).
+  function scanWorld(R,step){
+    const N=Math.round(2*R/step)+1,H=new Float32Array(N*N),TP=new Float32Array(N*N),MO=new Float32Array(N*N),RV=new Float32Array(N*N),FO=new Float32Array(N*N),o={};
+    const X=i=>-R+i*step;
+    for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+      const x=X(i),z=X(j),k=j*N+i,h=flatten(x,z,base(x,z,o));H[k]=h;
+      const [t,m]=climate(h,o);TP[k]=t;MO[k]=m;RV[k]=o.river*(o.cont>.06?1:0);
+    }
+    const at=(i,j)=>H[Math.min(N-1,Math.max(0,j))*N+Math.min(N-1,Math.max(0,i))];
+    for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+      const k=j*N+i,gx=(at(i+1,j)-at(i-1,j))/(2*step),gz=(at(i,j+1)-at(i,j-1))/(2*step),ny=1/Math.hypot(gx,1,gz);
+      FO[k]=forestAt(X(i),X(j),H[k],1-ny,TP[k],MO[k])*(1-airportClearing(X(i),X(j)))*(1-stripClearing(X(i),X(j)));
+    }
+    // Cartographic relief: hypsometric tint, forest, snow, hillshade and 100 m contours.
+    const rgba=new Uint8ClampedArray(N*N*4),L=[-.55,.62,-.56],ll=Math.hypot(...L);
+    const lerp3=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+    for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+      const k=j*N+i,h=H[k];let c;
+      if(h<-.3){c=lerp3([86,148,176],[22,58,86],sstep(0,70,-h));}
+      else{
+        c=lerp3([122,150,84],[168,156,104],sstep(.5,.2,MO[k]));
+        c=lerp3(c,[176,166,128],sstep(300,1200,h)*.6);
+        c=lerp3(c,[52,86,52],sstep(.15,.7,FO[k]));
+        const gx=(at(i+1,j)-at(i-1,j))/(2*step),gz=(at(i,j+1)-at(i,j-1))/(2*step);
+        c=lerp3(c,[140,132,122],sstep(.45,.9,Math.hypot(gx,gz)));
+        c=lerp3(c,[236,240,244],sstep(mix(1500,3400,TP[k]),mix(1500,3400,TP[k])+250,h));
+        if(h<2.5)c=lerp3(c,[204,190,146],.7);
+        const nx=-gx,nz=-gz,nl=Math.hypot(nx,1,nz),sh=Math.max(0,(nx*L[0]+L[1]+nz*L[2])/(nl*ll));
+        const s=.62+.55*sh;c=[c[0]*s,c[1]*s,c[2]*s];
+        if(Math.floor(h/100)!==Math.floor(at(i+1,j)/100)||Math.floor(h/100)!==Math.floor(at(i,j+1)/100))c=[c[0]*.84,c[1]*.84,c[2]*.84];
+      }
+      rgba[k*4]=c[0];rgba[k*4+1]=c[1];rgba[k*4+2]=c[2];rgba[k*4+3]=255;
+    }
+    // Connected components on the grid.
+    const comps=(test)=>{
+      const lab=new Int32Array(N*N).fill(-1),out=[];const q=new Int32Array(N*N);
+      for(let s=0;s<N*N;s++){
+        if(lab[s]>=0||!test(s))continue;
+        let qh=0,qt=0,size=0,sx=0,sz=0,border=false;q[qt++]=s;lab[s]=out.length;
+        while(qh<qt){const c=q[qh++],ci=c%N,cj=(c/N)|0;size++;sx+=ci;sz+=cj;if(ci===0||cj===0||ci===N-1||cj===N-1)border=true;
+          for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){const ni=ci+di,nj=cj+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const n=nj*N+ni;if(lab[n]<0&&test(n)){lab[n]=out.length;q[qt++]=n;}}}
+        out.push({id:out.length,size,ci:sx/size,cj:sz/size,border});
+      }
+      // snap each centroid to a member cell
+      for(const c of out){let best=1e9,bk=-1;const r=8;const i0=Math.round(c.ci),j0=Math.round(c.cj);
+        for(let j=Math.max(0,j0-r*6);j<=Math.min(N-1,j0+r*6);j++)for(let i=Math.max(0,i0-r*6);i<=Math.min(N-1,i0+r*6);i++){const k=j*N+i;if(lab[k]!==c.id)continue;const d=(i-c.ci)**2+(j-c.cj)**2;if(d<best){best=d;bk=k;}}
+        c.k=bk;}
+      return out.filter(c=>c.k>=0);
+    };
+    const cand=[];const km2=step*step/1e6;
+    const pos=k=>({x:X(k%N),z:X((k/N)|0)});
+    // peaks
+    const pr=Math.round(500/step),wr=Math.round(1400/step),peaks=[];
+    for(let j=wr;j<N-wr;j+=1)for(let i=wr;i<N-wr;i+=1){
+      const h=H[j*N+i];if(h<220)continue;let top=true;
+      for(let dj=-pr;dj<=pr&&top;dj++)for(let di=-pr;di<=pr;di++){if((di||dj)&&H[(j+dj)*N+i+di]>h){top=false;break;}}
+      if(!top)continue;let mn=h;
+      for(let dj=-wr;dj<=wr;dj+=2)for(let di=-wr;di<=wr;di+=2)mn=Math.min(mn,H[(j+dj)*N+i+di]);
+      if(h-mn>170)peaks.push({k:j*N+i,h,prom:h-mn});
+    }
+    peaks.sort((a,b)=>b.h-a.h);
+    peaks.forEach((p,n)=>cand.push({type:'peak',k:p.k,score:p.h,elev:p.h,rank:n}));
+    const water=comps(k=>H[k]<-.5).filter(c=>!c.border&&c.size>=8);
+    water.sort((a,b)=>b.size-a.size).forEach((c,n)=>cand.push({type:'lake',k:c.k,score:c.size,area:c.size*km2,rank:n}));
+    const isl=comps(k=>H[k]>=-.5).filter(c=>!c.border&&c.size>=4&&c.size<6000);
+    isl.sort((a,b)=>b.size-a.size).forEach((c,n)=>cand.push({type:'island',k:c.k,score:c.size,area:c.size*km2,rank:n}));
+    const fo=comps(k=>FO[k]>.6&&H[k]>0).filter(c=>c.size>=60);
+    fo.sort((a,b)=>b.size-a.size).forEach((c,n)=>cand.push({type:'forest',k:c.k,score:c.size,area:c.size*km2,rank:n}));
+    const rv=comps(k=>RV[k]>.62&&H[k]<70&&H[k]>-8).filter(c=>c.size>=8);
+    rv.sort((a,b)=>b.size-a.size).forEach((c,n)=>cand.push({type:'river',k:c.k,score:c.size,rank:n}));
+    const sk=Math.round(650/step),passes=[];
+    for(let j=sk;j<N-sk;j+=2)for(let i=sk;i<N-sk;i+=2){
+      const h=H[j*N+i];if(h<280)continue;
+      for(const [[ai,aj],[bi,bj]] of [[[1,0],[0,1]],[[0,1],[1,0]],[[1,1],[1,-1]],[[1,-1],[1,1]]]){
+        const hi=Math.min(at(i+ai*sk,j+aj*sk),at(i-ai*sk,j-aj*sk)),lo=Math.max(at(i+bi*sk,j+bj*sk),at(i-bi*sk,j-bj*sk));
+        if(hi>h+110&&lo<h-70){passes.push({k:j*N+i,h,score:(hi-h)+(h-lo)*.5});break;}
+      }
+    }
+    passes.sort((a,b)=>b.score-a.score);
+    passes.forEach((p,n)=>cand.push({type:'pass',k:p.k,score:p.score,elev:p.h,rank:n}));
+    // Choose up to 8: the best of each type first, then runners-up, spaced across the region.
+    const chosen=[],order=['peak','lake','island','forest','river','pass'];
+    const ok=c=>{const p=pos(c.k),d=Math.hypot(p.x,p.z);if(d<1500||d>R-1200)return false;return !chosen.some(o=>Math.hypot(o.x-p.x,o.z-p.z)<(o.type===c.type?2600:1600));};
+    for(let round=0;round<3&&chosen.length<8;round++)for(const t of order){
+      if(chosen.length>=8)break;
+      const list=cand.filter(c=>c.type===t&&!c.used);
+      for(const c of list){if(ok(c)){c.used=true;const p=pos(c.k);chosen.push({...c,x:p.x,z:p.z,y:Math.max(H[c.k],0)});break;}c.used=true;}
+    }
+    const TPL={peak:['Mount {N}','{N} Peak','{N} Spire'],lake:['Lake {N}','{N} Mere','{N} Water'],island:['{N} Isle','Isle of {N}'],forest:['{N} Wood','{N} Forest','The {N} Weald'],river:['{N} River','River {N}'],pass:['{N} Pass','{N} Gap','{N} Saddle']};
+    const highest=chosen.filter(c=>c.type==='peak').sort((a,b)=>b.elev-a.elev)[0];
+    const landmarks=chosen.map((c,i)=>{
+      const tpl=TPL[c.type],nm=placeName(i+1),t=(c===highest)?'Mount {N}':tpl[Math.floor(mulberry32((seed+i*7919)>>>0)()*tpl.length)];
+      return {id:i,type:c.type,name:t.replace('{N}',nm),x:c.x,z:c.z,y:c.y,elev:c.elev??c.y,area:c.area||0,highest:c===highest,rare:(c.type==='island'&&c.rank===0&&c.area<2)||(c.type==='pass'&&c.score>450)||(c===highest&&c.elev>2200)};
+    });
+    return {N,step,R,rgba,landmarks};
+  }
+  return {P,AP,noise2,fbm,base,heightAt,climate,forestAt,init,airportZone,airportClearing,stripClearing,stripAt,stripLocal,scanWorld,placeName,hashI,mulberry32,
+    get airportH(){return airportH;},get strips(){return strips;},setFrame(o){ox=o.ox;oz=o.oz;airportH=o.airportH;strips=o.strips||[];}};
 }
 
 /* Chunk mesh + detail builder. Runs inside workers (stringified) or on main thread as fallback. */
@@ -114,7 +279,7 @@ export function buildChunkData(lib,req){
     if(h<minY)minY=h;if(h>maxY)maxY=h;
     lib.base(x,z,o);const [temp,moist]=lib.climate(h,o),slope=1-ny;
     let forest=lib.forestAt(x,z,h,slope,temp,moist);
-    forest*=1-lib.airportClearing(x,z);
+    forest*=(1-lib.airportClearing(x,z))*(1-lib.stripClearing(x,z));
     bio[v*4]=moist;bio[v*4+1]=temp;bio[v*4+2]=forest;bio[v*4+3]=0;
     const R1=45,c1=(lib.heightAt(x+R1,z)+lib.heightAt(x-R1,z)+lib.heightAt(x,z+R1)+lib.heightAt(x,z-R1))*.25-h;
     const ao=clampT(1-Math.max(c1,0)/R1*.9,.5,1)*(1-forest*.15);
@@ -156,7 +321,7 @@ export function buildChunkData(lib,req){
     const sp=req.detail.spacing,n=Math.floor(size/sp),tr=[];
     for(let j=0;j<n;j++)for(let i=0;i<n;i++){
       const x=x0+(i+rand())*sp,z=z0+(j+rand())*sp,r1=rand(),r2=rand(),r3=rand();
-      const clear=lib.airportClearing(x,z);if(lib.airportZone(x,z,40)||r2<clear)continue;
+      const clear=Math.max(lib.airportClearing(x,z),lib.stripClearing(x,z));if(lib.airportZone(x,z,40)||lib.stripAt(x,z,30)||r2<clear)continue;
       const h=lib.heightAt(x,z);if(h<2.5)continue;
       const hx=lib.heightAt(x+5,z),hz=lib.heightAt(x,z+5),ny=5/Math.hypot(h-hx,5,h-hz),slope=1-ny;
       lib.base(x,z,o);const [temp,moist]=lib.climate(h,o);
@@ -164,7 +329,7 @@ export function buildChunkData(lib,req){
       const p=f*.92+(moist>.38&&slope<.3?.018:0);
       if(r1>p)continue;
       const conifer=(temp<.42||h>900||r2<.22*(1-moist))?1:0;
-      const s=(conifer?15:12)*(.65+r3*.75);
+      const s=(conifer?15:13)*(.7+r3*.85);
       tr.push(x,h,z,s,conifer,rand(),temp,moist);
     }
     out.trees=new Float32Array(tr);

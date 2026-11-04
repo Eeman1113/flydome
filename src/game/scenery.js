@@ -126,3 +126,50 @@ export function buildAirport(){
   for(let i=0;i<4;i++){const p=new THREE.Mesh(new THREE.BoxGeometry(1.2,.8,.6),mk(i<2?0xffffff:0xff2a1a,5));p.position.set(-RUNWAY_HALF_W-14-i*3,H+.5,RUNWAY_HALF_L-300);g.add(p);}
   scene.add(g);
 }
+
+// Bush strips: edge cones, threshold boards, windsock and a small cabin with fuel drums.
+export function buildStrips(){
+  const strips=terrain.strips;if(!strips.length)return;
+  const g=new THREE.Group();
+  const cone=new THREE.ConeGeometry(.32,.75,10).translate(0,.375,0);
+  const coneMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.6});
+  const board=new THREE.BoxGeometry(2.4,.12,.9).translate(0,.06,0);
+  const boardMat=new THREE.MeshStandardMaterial({color:0xf2efe6,roughness:.7});
+  let nCones=0,nBoards=0;for(const s of strips){nCones+=2*(Math.floor(2*s.halfL/64)+1);nBoards+=8;}
+  const cones=new THREE.InstancedMesh(cone,coneMat,nCones),boards=new THREE.InstancedMesh(board,boardMat,nBoards);
+  const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),V=new THREE.Vector3(),S1=new THREE.Vector3(1,1,1),C=new THREE.Color();
+  const place=(s,u,v,y)=>V.set(s.x+s.cos*u-s.sin*v,y,s.z+s.sin*u+s.cos*v);
+  let ci=0,bi=0;
+  const wood=new THREE.MeshStandardMaterial({color:0x7a5a3c,roughness:.85});
+  const tin=new THREE.MeshStandardMaterial({color:0x51695a,roughness:.45,metalness:.55});
+  const drumMat=new THREE.MeshStandardMaterial({color:0xa8332a,roughness:.5,metalness:.4});
+  const sockMat=new THREE.MeshStandardMaterial({color:0xff6a1a,roughness:.7,side:THREE.DoubleSide});
+  const poleMat=new THREE.MeshStandardMaterial({color:0xd8d8d8,roughness:.4,metalness:.6});
+  const roofShape=new THREE.Shape();roofShape.moveTo(-2.6,0);roofShape.lineTo(2.6,0);roofShape.lineTo(0,1.5);roofShape.lineTo(-2.6,0);
+  const roofGeo=new THREE.ExtrudeGeometry(roofShape,{depth:5.6,bevelEnabled:false}).translate(0,0,-2.8);
+  for(const s of strips){
+    const rot=-s.ang;Q.setFromAxisAngle(new THREE.Vector3(0,1,0),rot);
+    for(let u=-s.halfL;u<=s.halfL+.1;u+=64)for(const side of [-1,1]){
+      place(s,u,side*(s.halfW+1.6),s.h);M.compose(V,Q,S1);cones.setMatrixAt(ci,M);
+      C.set(((u/64)|0)%2?0xffffff:0xff6b1f);cones.setColorAt(ci++,C);
+    }
+    for(const end of [-1,1])for(let k=0;k<4;k++){
+      place(s,end*(s.halfL-8),(k-1.5)*5.2,s.h+.02);M.compose(V,Q,S1);boards.setMatrixAt(bi++,M);
+    }
+    // cabin + roof + drums beside the strip
+    const cab=new THREE.Group();place(s,s.halfL*.35,s.halfW+24,s.h);cab.position.copy(V);cab.rotation.y=rot;
+    const hut=new THREE.Mesh(new THREE.BoxGeometry(4.6,3,5.2).translate(0,1.5,0),wood);hut.castShadow=true;hut.receiveShadow=true;cab.add(hut);
+    const roof=new THREE.Mesh(roofGeo,tin);roof.position.y=3;roof.castShadow=true;cab.add(roof);
+    const door=new THREE.Mesh(new THREE.PlaneGeometry(1.1,2),new THREE.MeshStandardMaterial({color:0x3b2a1c,roughness:.9}));door.position.set(0,1,-2.61);door.rotation.y=Math.PI;cab.add(door);
+    const drum=new THREE.CylinderGeometry(.3,.3,.9,14).translate(0,.45,0);
+    for(let k=0;k<3;k++){const d=new THREE.Mesh(drum,drumMat);d.position.set(3.2+(k%2)*.65,0,-1+k*.62);d.castShadow=true;cab.add(d);}
+    g.add(cab);
+    // windsock near the threshold
+    place(s,-s.halfL+70,-(s.halfW+12),s.h);
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,6.5,8).translate(0,3.25,0),poleMat);pole.position.copy(V);g.add(pole);
+    const sock=new THREE.Mesh(new THREE.CylinderGeometry(.6,.25,3.4,12,1,true).rotateZ(Math.PI/2).translate(1.8,0,0),sockMat);
+    sock.position.set(V.x,V.y+6.2,V.z);sock.rotation.y=Math.atan2(state.wind.z,-state.wind.x);g.add(sock);
+  }
+  for(const m of [cones,boards]){m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;m.computeBoundingSphere();m.receiveShadow=true;g.add(m);}
+  scene.add(g);
+}

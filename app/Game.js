@@ -43,54 +43,97 @@ function Simulator({ start }) {
       <div id="sim"></div><div className="grain"></div>
       <div className="loading" id="loading"><div className="loader-inner"><div className="loader-mark">SB</div><div className="loader-text">INITIALISING RENDERER</div><div className="loader-bar"><i></i></div></div></div>
       <header className="topbar">
-        <div className="brand"><div className="brand-mark">SB</div><div><div className="brand-name">SKYBOUND</div><div className="brand-sub">HDR PROCEDURAL WORLD · CESSNA 182 SKYLANE</div></div></div>
-        <div className="top-actions"><button id="hudBtn">HUD / H</button><button id="soundBtn" aria-pressed="true">SOUND ON</button><button id="settingsBtn">SETTINGS</button><button id="pauseBtn">PAUSE / ESC</button></div>
+        <div className="brand"><div className="brand-mark">SB</div><div><div className="brand-name">SKYBOUND</div><div className="brand-sub">FIRST CHARTER · CESSNA 182 SKYLANE</div></div></div>
+        <div className="top-actions"><button id="hudBtn" title="Toggle HUD (H)">HUD</button><button id="soundBtn" aria-pressed="true">SOUND ON</button><button id="settingsBtn">SETTINGS</button><button id="pauseBtn" title="Pause (Esc)">PAUSE</button></div>
       </header>
-      <div className="flight-tag" id="flightTag">FREE FLIGHT</div>
       <section className="hud" id="hud">
-        <div className="panel hud-left">
-          <div className="eyebrow">Flight telemetry</div>
-          <div className="metric"><div className="metric-label">Indicated airspeed</div><div><span className="metric-value" id="speed">0</span><span className="metric-unit">KTS</span></div></div>
-          <div className="metric"><div className="metric-label">Altitude AGL</div><div><span className="metric-value" id="altitude">0</span><span className="metric-unit">FT</span></div></div>
-          <div className="metric-row"><span>ALTITUDE MSL</span><strong id="altMsl">0 FT</strong></div>
-          <div className="metric-row"><span>VERTICAL SPEED</span><strong id="vspeed">0 FPM</strong></div>
-          <div className="metric-row"><span>LOAD FACTOR</span><strong id="gLoad">1.0 G</strong></div>
-          <div className="metric-row"><span>SIDESLIP</span><strong id="slipAngle">0.0°</strong></div>
-          <div className="metric-row"><span>WORLD POSITION</span><strong id="position">0 / 0</strong></div>
-          <div className="status-pill"><i className="dot"></i><span id="flightStatus">ON RUNWAY</span></div>
+        <div className="hud-compass">
+          <div className="hdg"><span id="hdgVal">000</span>°</div>
+          <canvas id="compassTape"></canvas>
+          <div className="flight-tag" id="flightTag"></div>
         </div>
-        <div className="panel compass"><div className="eyebrow">Magnetic heading</div><div className="heading" id="heading">000°</div><div className="ticks">N · NE · E · SE · S · SW · W · NW</div></div>
-        <div className="panel hud-right">
-          <div className="eyebrow">Aircraft systems</div>
-          <div className="instrument"><div className="instrument-head"><span>THROTTLE</span><strong id="throttleText">0%</strong></div><div className="bar"><i id="throttleBar"></i></div></div>
-          <div className="instrument"><div className="instrument-head"><span>ENGINE</span><strong id="engineText">IDLE</strong></div><div className="bar"><i id="engineBar"></i></div></div>
-          <div className="instrument"><div className="instrument-head"><span>LANDING GEAR</span><strong id="gearText">FIXED GEAR</strong></div><div className="bar"><i id="gearBar" style={{width:'100%',background:'var(--lime)'}}></i></div></div>
-          <div className="instrument"><div className="instrument-head"><span>WIND</span><strong id="windText">240° / 04 KT</strong></div></div>
-          <div className="instrument"><div className="instrument-head"><span>SIM RATE</span><strong id="fpsText">60 FPS</strong></div></div>
-          <div className="instrument"><div className="instrument-head"><span>GFX</span><strong id="gfxText">AUTO</strong></div></div>
+        <div className="hud-readout left">
+          <div className="ro-label">IAS</div>
+          <div className="ro-main"><span id="spdVal">0</span><small>KT</small></div>
+          <div className="thr"><div className="thr-track"><i id="thrFill"></i></div><span id="thrVal">0%</span></div>
+        </div>
+        <div className="hud-readout right">
+          <div className="ro-label">ALT AGL</div>
+          <div className="ro-main"><span id="altVal">0</span><small>FT</small></div>
+          <div className="ro-sub"><span id="mslVal">MSL 0</span><span id="vsVal">• 0</span></div>
         </div>
         <div className="center-reticle"></div>
-        <div className="attitude-wrap"><div className="attitude-sky" id="attitudeSky"></div><div className="attitude-mark"></div></div>
-        <div className="bottom-left">
-          <div className="panel mini-panel"><div className="eyebrow">Camera</div><div className="big" id="cameraName">CHASE</div></div>
-          <div className="panel mini-panel"><div className="eyebrow">Controller</div><div className="big" id="controllerStatus">KEYBOARD + MOUSE</div></div>
-          <div className="panel mini-panel"><div className="eyebrow">Gyroscope</div><div className="big" id="gyroStatus">OFFLINE</div></div>
+        <div className="survey-ring" id="surveyRing">
+          <svg viewBox="0 0 100 100"><circle className="sr-bg" cx="50" cy="50" r="44" /><circle className="sr-fg" cx="50" cy="50" r="44" /></svg>
+          <div className="sr-text"><div className="sr-kicker">SURVEYING</div><div className="sr-name" id="surveyName"></div><div className="sr-hint" id="surveyHint"></div></div>
         </div>
-        <div className="bottom-right"><span className="hint">WASD FLIGHT · LMB DRAG STEER · RMB DRAG LOOK · G GEAR INFO · SPACE PAUSE</span></div>
+        <div className="flight-status" id="flightStatus"></div>
+        <aside className="charter-card" id="charterCard"></aside>
+        <div className="hud-map"><canvas id="minimap"></canvas><div className="map-hint">M · CHART</div></div>
+        <div className="cam-label" id="cameraName"></div>
+        <div className="discovery-banner" id="discoveryBanner"></div>
+        <div className="landing-stamp" id="landingStamp"></div>
+        <span id="controllerStatus" hidden></span><span id="gyroStatus" hidden></span>
       </section>
-      
+
       <div className="overlay" id="mainMenu">
         <div className="menu-card">
           <div className="menu-grid">
-            <div className="menu-main"><div className="kicker">A NEW WORLD EVERY TIME</div><h1 className="hero-title">Find your<br /><em>own horizon.</em></h1><p className="intro">Take the controls of your imported Cessna 182 Skylane and explore a brand-new procedural continent, lit by a real HDR sky, with mountains, rivers, lakes and forests. Every refresh generates a different world. Start free flight, or choose Teach Me to Fly for a guided lesson with live, device-specific control instructions.</p><div className="menu-buttons"><button className="primary" id="startBtn">START FLIGHT{"\u00a0"} ↗</button><button id="teachBtn">TEACH ME TO FLY</button><button id="controlsBtn">CONTROLS</button><button id="newWorldBtn">NEW WORLD ⟳</button></div><div style={{marginTop:'18px',color:'#7f95a8',fontSize:'10px',lineHeight:1.6}}>No controller required: use WASD and mouse-drag flight controls. Connect a DualSense for controller input.</div></div>
-            <aside className="menu-side"><h3>Flight configuration</h3><div className="spec"><span>Aircraft</span><strong>Cessna 182 Skylane</strong></div><div className="spec"><span>World seed</span><strong id="worldSeed">—</strong></div><div className="spec"><span>Climate</span><strong id="worldBiome">—</strong></div><div className="spec"><span>Sky (HDR)</span><strong id="worldSky">—</strong></div><div className="spec"><span>Airfield</span><strong id="worldAirfield">—</strong></div><div className="spec"><span>Simulation</span><strong>Real-time aerodynamics</strong></div><div style={{marginTop:'20px',padding:'12px',borderRadius:'9px',background:'rgba(113,216,238,.07)',border:'1px solid rgba(113,216,238,.16)',fontSize:'10px',lineHeight:1.6,color:'#a9c3d4'}}><strong style={{color:'var(--cyan)'}}>DUALSENSE READY</strong><br />Sticks, triggers and buttons use the Gamepad API. Pair the controller's gyro separately through WebHID in Settings.</div></aside>
-          </div><div className="menu-foot"><span>SKYBOUND SIMULATION LABS</span><span>CESSNA 182 · MAC / WEB</span></div>
+            <div className="menu-main">
+              <div className="kicker">FIRST CHARTER · WORLD <span id="worldSeed">—</span></div>
+              <h1 className="hero-title">Every world is<br /><em>uncharted.</em></h1>
+              <p className="intro">A brand-new wilderness every time you load. Take a charter, find its landmarks from the air, survey them low and slow, then bring your Cessna home with a clean landing.</p>
+              <div className="board-head"><span>CHARTER BOARD</span><span className="board-sub" id="worldBiome">—</span></div>
+              <div className="charter-board" id="charterBoard"><div className="board-empty">Surveying this world…</div></div>
+              <div className="menu-buttons">
+                <button className="primary" id="startBtn">FLY CHARTER{'\u00a0'} ↗</button>
+                <button id="freeBtn">FREE FLIGHT</button>
+                <button id="teachBtn">FLIGHT SCHOOL</button>
+                <button id="controlsBtn">CONTROLS</button>
+              </div>
+            </div>
+            <aside className="menu-side">
+              <div className="side-block pilot">
+                <div className="side-kicker">PILOT</div>
+                <div className="pilot-rank" id="pilotRank">Student Pilot</div>
+                <div className="xp-bar"><i id="pilotXpBar"></i></div>
+                <div className="pilot-xp" id="pilotXp">0 XP</div>
+                <div className="pilot-stats" id="pilotStats"></div>
+                <button className="ghost" id="logbookBtn">OPEN LOGBOOK</button>
+              </div>
+              <div className="side-block daily">
+                <div className="side-kicker">DAILY</div>
+                <div className="daily-title" id="dailyTitle">Daily Charter</div>
+                <div className="daily-status" id="dailyStatus"></div>
+                <button className="ghost" id="dailyBtn">PLAY DAILY</button>
+              </div>
+              <div className="side-block world">
+                <div className="side-kicker">THIS WORLD</div>
+                <div className="spec"><span>Sky</span><strong id="worldSky">—</strong></div>
+                <div className="spec"><span>Airfield</span><strong id="worldAirfield">—</strong></div>
+                <div className="world-actions">
+                  <button className="ghost" id="newWorldBtn">NEW WORLD ⟳</button>
+                  <button className="ghost" id="resumeWorldBtn" style={{display:'none'}}>RESUME LAST WORLD<small></small></button>
+                </div>
+              </div>
+            </aside>
+          </div>
+          <div className="menu-foot"><span>SKYBOUND · FIRST CHARTER</span><span>REFRESH FOR A NEW WORLD</span></div>
         </div>
       </div>
-      
+
       <div className="overlay" id="pauseMenu" style={{display:'none'}}>
-        <div className="modal-card" style={{width:'min(420px,100%)',textAlign:'center'}}><div className="kicker">FLIGHT PAUSED</div><h2 style={{fontSize:'32px',letterSpacing:'-.06em',margin:'12px 0'}}>Take a breath.</h2><p className="intro" style={{margin:'0 auto'}}>Your aircraft is holding its current state. Ready when you are.</p><div className="modal-actions" style={{justifyContent:'center'}}><button className="primary" id="resumeBtn">RESUME FLIGHT</button><button id="restartBtn">RESTART</button><button id="returnBtn">MAIN MENU</button></div></div>
+        <div className="modal-card pause-card"><div className="kicker">FLIGHT PAUSED</div><h2>Take a breath.</h2><p className="intro">Your aircraft is holding its current state. Ready when you are.</p><div className="modal-actions"><button className="primary" id="resumeBtn">RESUME</button><button id="chartBtn">CHART</button><button id="restartBtn">RESTART</button><button id="returnBtn">MAIN MENU</button></div></div>
       </div>
+
+      <div className="overlay" id="chartOverlay" style={{display:'none'}}>
+        <div className="chart-card">
+          <div className="chart-head"><div><div className="kicker">EXPEDITION CHART</div><h2 id="chartTitle">Chart</h2><div className="chart-meta" id="chartMeta"></div></div><div className="chart-actions"><button id="chartSave">SAVE PNG ↓</button><button className="close" id="chartClose">✕</button></div></div>
+          <canvas id="chartCanvas"></canvas>
+        </div>
+      </div>
+
+      <div className="overlay" id="completeOverlay" style={{display:'none'}}><div className="modal-card complete-card" id="completeCard"></div></div>
       
       <aside className="tutorial-panel" id="tutorialPanel" style={{display:'none'}} aria-live="polite">
         <div className="tutorial-top"><span className="tutorial-step" id="tutorialStep">FLIGHT SCHOOL · 01 / 08</span><button id="tutorialClose" aria-label="Close lesson">✕</button></div>

@@ -22,12 +22,14 @@ export function createMaterials(){
   const tm=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.95,metalness:0});
   tm.onBeforeCompile=(sh)=>{
     sh.uniforms.tNoise={value:noiseTex};sh.uniforms.uTime=shared.time;sh.uniforms.uAutumn={value:terrain.P.autumn};sh.uniforms.uCloud=fx.cloudUniform;sh.uniforms.uSunDirT={value:sky.sunDir};
+    const S=terrain.strips;sh.uniforms.uStripA={value:[0,1,2].map(i=>S[i]?new THREE.Vector4(S[i].x,S[i].z,S[i].cos,S[i].sin):new THREE.Vector4(1e9,1e9,1,0))};
+    sh.uniforms.uStripB={value:[0,1,2].map(i=>S[i]?new THREE.Vector4(S[i].halfL,S[i].halfW,0,0):new THREE.Vector4(0,0,0,0))};
     sh.vertexShader=sh.vertexShader.replace('#include <common>',`#include <common>
       attribute vec4 biome; attribute vec2 extra; varying vec4 vBiome; varying vec2 vExtra; varying vec3 vWPos; varying vec3 vWNormal;`)
       .replace('#include <begin_vertex>',`#include <begin_vertex>
       vBiome=biome; vExtra=extra; vWPos=(modelMatrix*vec4(transformed,1.0)).xyz; vWNormal=normalize(mat3(modelMatrix)*objectNormal);`);
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-      uniform sampler2D tNoise; uniform float uTime; uniform float uAutumn; uniform vec4 uCloud; uniform vec3 uSunDirT; float cloudVis=1.;
+      uniform sampler2D tNoise; uniform float uTime; uniform float uAutumn; uniform vec4 uCloud; uniform vec3 uSunDirT; float cloudVis=1.; uniform vec4 uStripA[3]; uniform vec4 uStripB[3];
       varying vec4 vBiome; varying vec2 vExtra; varying vec3 vWPos; varying vec3 vWNormal;
       float hash12(vec2 p){vec3 p3=fract(vec3(p.xyx)*.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
       float terrRough; vec3 terrBump;
@@ -64,6 +66,24 @@ export function createMaterials(){
         vec3 forestCol=mix(vec3(.045,.085,.03),vec3(.07,.11,.035),n3.b)*(.75+.5*n2.r);
         forestCol=mix(forestCol,vec3(.16,.08,.03),uAutumn*.5*smoothstep(.4,.7,temp));
         col=mix(col,forestCol,smoothstep(.05,.8,forest));
+        // bush airstrips: mown apron, mowing bands and two worn wheel tracks
+        for(int si=0;si<3;si++){
+          vec2 d=P.xz-uStripA[si].xy; float su=dot(d,uStripA[si].zw), sv=dot(d,vec2(-uStripA[si].w,uStripA[si].z));
+          vec2 sb=uStripB[si].xy; if(sb.x<1.) continue;
+          float apron=1.-smoothstep(0.,14.,max(abs(su)-sb.x-30.,abs(sv)-sb.y-24.));
+          float strip=1.-smoothstep(0.,2.5,max(abs(su)-sb.x,abs(sv)-sb.y));
+          if(apron<=0.) continue;
+          vec3 mown=mix(col,vec3(.12,.2,.055),.55)*(.94+.12*n3.r);
+          col=mix(col,mown,apron*.6);
+          float bw=fwidth(sv/6.5);float band=smoothstep(.5-bw,.5+bw,fract(sv/6.5));
+          vec3 s2=mown*mix(.95,1.06,band);
+          float wear=smoothstep(sb.x,sb.x-60.,abs(su));
+          float tracks=(1.-smoothstep(.25,.75,abs(abs(sv)-1.7)))*wear*(.7+.3*n3.b);
+          s2=mix(s2,vec3(.27,.22,.14)*(.85+.3*n4.r),tracks*.6);
+          float ends=smoothstep(sb.x-40.,sb.x,abs(su))*(1.-smoothstep(sb.y-1.,sb.y,abs(sv)));
+          s2=mix(s2,vec3(.28,.25,.16),ends*.25*n3.g);
+          col=mix(col,s2,strip);
+        }
         // beaches and wet shoreline
         vec3 sand=vec3(.46,.40,.28)*(.88+.24*n3.r);
         float beach=(1.-smoothstep(.8,2.2+n2.r*2.5,h))*(1.-smoothstep(.1,.35,slope));
@@ -74,6 +94,7 @@ export function createMaterials(){
         rock*=.9+.12*sin(h*.045+n2.b*9.+n1.g*14.);
         rock=mix(rock,rock*vec3(.75,.85,.7),smoothstep(.55,.35,slope)*.6);
         rock=mix(rock,rock*vec3(1.15,1.,.85),smoothstep(.6,.8,temp));
+        rock*=1.+(n4.r-.5)*.45*(1.-smoothstep(120.,900.,dist))+(n4.b-.5)*.25*(1.-smoothstep(40.,300.,dist));
         float highRock=smoothstep(mix(1300.,2400.,temp),mix(1600.,2800.,temp),h+n1.r*260.);
         col=mix(col,rock,max(rockAmt,highRock*(1.-smoothstep(.0,.2,forest))));
         // snow
@@ -87,7 +108,7 @@ export function createMaterials(){
         terrRough=mix(.97,.82,rockAmt); terrRough=mix(terrRough,.55,snow); terrRough=mix(terrRough,.45,wet);
         // micro relief from the detail noise
         float fade=1.-smoothstep(150.,700.,dist);
-        terrBump=vec3((n2.r-.5)*.6+(n3.r-.5)*fade*.5,0.,(n2.g-.5)*.6+(n3.g-.5)*fade*.5)*(.12+rockAmt*.35)*(1.-snow*.6);
+        terrBump=vec3((n2.r-.5)*.6+(n3.r-.5)*fade*.5+(n4.r-.5)*rockAmt*fade*.8,0.,(n2.g-.5)*.6+(n3.g-.5)*fade*.5+(n4.g-.5)*rockAmt*fade*.8)*(.12+rockAmt*.35)*(1.-snow*.6);
         return col;
       }`)
       .replace('#include <map_fragment>',`vec3 tAlb=terrainAlbedo(); diffuseColor.rgb=tAlb;
@@ -147,11 +168,14 @@ export const geos={};
 export function createGeometries(){
   const trunkC=[.16,.1,.06];
   const conTrunk=colorize(new THREE.CylinderGeometry(.035,.06,.3,5).translate(0,.15,0),()=>trunkC);
-  const cones=[[.40,.42,.28],[.32,.38,.5],[.22,.32,.7],[.12,.24,.88]].map(([r,h,y],i)=>colorize(new THREE.ConeGeometry(r,h,7,1).translate(0,y,0),(x,yy)=>{const t=(yy-y+h/2)/h;const k=.55+t*.6+i*.05;return[.035*k,.075*k,.04*k];}));
+  const cones=[[.40,.42,.28],[.32,.38,.5],[.22,.32,.7],[.12,.24,.88]].map(([r,h,y],i)=>colorize(new THREE.ConeGeometry(r,h,9,1).translate(0,y,0),(x,yy)=>{const t=(yy-y+h/2)/h;const k=.38+t*.75+i*.06;return[.032*k,.07*k,.038*k];}));
   geos.conifer=mergeGeometries([conTrunk,...cones].map(strip));
   const brTrunk=colorize(new THREE.CylinderGeometry(.04,.07,.48,5).translate(0,.24,0),()=>trunkC);
-  const blob1=colorize(jitterVerts(new THREE.IcosahedronGeometry(.34,1),.09,3).scale(1,.82,1).translate(0,.64,0),(x,y)=>{const k=.55+(y-.36)*1.1;return[.09*k,.16*k,.04*k];});
-  const blob2=colorize(jitterVerts(new THREE.IcosahedronGeometry(.25,1),.08,5).translate(.13,.82,.06),(x,y)=>{const k=.6+(y-.6)*1.2;return[.1*k,.17*k,.045*k];});
-  const blob3=colorize(jitterVerts(new THREE.IcosahedronGeometry(.22,0),.06,7).translate(-.15,.74,-.08),(x,y)=>{const k=.6+(y-.55)*1.1;return[.085*k,.15*k,.04*k];});
-  geos.broadleaf=mergeGeometries([brTrunk,blob1,blob2,blob3].map(strip));
+  // Broadleaf crown: five lumpy lobes with self-shadowed undersides and sunlit tops.
+  // Soft spherical normals (from the whole tree's crown centre) make the lobes light as one leafy mass.
+  const soften=(g,cx,cy,cz)=>{const p=g.attributes.position,n=g.attributes.normal;for(let i=0;i<p.count;i++){const v=new THREE.Vector3(p.getX(i)-cx,(p.getY(i)-cy)*1.25,p.getZ(i)-cz).normalize();const fn=new THREE.Vector3(n.getX(i),n.getY(i),n.getZ(i));v.lerp(fn,.22).normalize();n.setXYZ(i,v.x,v.y,v.z);}return g;};
+  const crown=(r,det,j,seed,x,y,z,sy=1)=>colorize(soften(jitterVerts(new THREE.IcosahedronGeometry(r,det),j,seed).scale(1,sy,1).translate(x,y,z),0,.72,0),(px,py,pz)=>{
+    const up=(py-(y-r*sy))/(2*r*sy),out=Math.hypot(px-x,pz-z)/r;const k=.34+up*.74+out*.12;return[.075*k,.14*k,.038*k];});
+  const blobs=[crown(.33,1,.1,3,0,.62,0,.8),crown(.24,1,.08,5,.15,.8,.07),crown(.22,1,.08,7,-.16,.74,-.09),crown(.2,1,.07,11,.02,.92,-.13),crown(.18,0,.06,13,-.05,.55,.18)];
+  geos.broadleaf=mergeGeometries([brTrunk,...blobs].map(strip));
 }

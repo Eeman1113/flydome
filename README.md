@@ -4,8 +4,21 @@ A browser flight simulator built with **Next.js** and **three.js**. Every visit 
 
 **Play: [eeman1113.github.io/flydome](https://eeman1113.github.io/flydome/)** — on a laptop or desktop with Chrome or Edge. Phones and tablets are not supported.
 
+## How to play: First Charter
+
+Every world is uncharted wilderness, and you're its first survey pilot.
+
+1. **Pick a charter** on the menu's charter board. Each one lists three real landmarks of this world (peaks, lakes, islands, forests, rivers, mountain passes), generated from the terrain itself.
+2. **Fly to them.** The compass tape and minimap show `?` markers, and the charter card shows live distances.
+3. **Survey each landmark** with a controlled pass inside its envelope: low over a lake or forest, close to a summit, or threading a pass. Hold it steady until the ring fills, and the landmark is inked onto your chart.
+4. **Land** at any bush strip or the home field to file the charter. Landings are graded **S–D** on sink rate, centreline, alignment and bounces.
+5. A crash keeps your discoveries but costs the charter's landing bonus, and you respawn at the last strip you landed on.
+
+Your **pilot logbook** (rank, XP, discovery stamps, landing grades) is saved in the browser and carries across worlds. **Refresh for a brand-new world.** The URL always carries the seed, so you can share it, and **Resume last world** reopens the last world you flew. The **Daily Charter** gives every pilot the same world and charter each day, with a shareable result line. Press **M** for the full expedition chart, which can be saved as a PNG. **Free Flight** lets you explore and chart at will.
+
 ## Features
 
+- **Survey gameplay.** Seeded grass bush strips, each with a cabin, windsock and edge cones, sit on flat sites found by a rotated flatness search. A worker-side scanner names 7–8 landmarks per world, and charters, survey envelopes, landing grades, a fog-of-war chart and the logbook turn exploration into the goal.
 - **A new world on every visit.** A random seed drives domain-warped continents and coastlines, ridged mountain ranges, rolling hills, lowland rivers, lakes, temperature/moisture climate and summer or autumn seasons. The airfield is placed automatically at the flattest suitable site and sits in a natural forest clearing. Use `?seed=12345` to revisit a world, or **NEW WORLD** in the menu.
 - **Real HDR skies.** Four CC0 pure-sky HDRIs from [Poly Haven](https://polyhaven.com) (partly cloudy midday, clear noon, late afternoon, golden sunset); one is picked per world, or force one with `?sky=belfast`. Each HDR is analysed at load: the sun disc is located and integrated for the sun light's direction, colour and strength, sky irradiance sets exposure, and the sun is clamped out of the image-based lighting so it is not counted twice.
 - **Streaming terrain.** Chunks are generated in Web Workers with distance LOD (64/32/16/8 segments) and crack-hiding skirts. Baked terrain self-shadowing, ambient occlusion and a splatting shader give grassland, farmland patchwork, forest, rock with strata, snow lines, beaches and wet shorelines.
@@ -28,6 +41,7 @@ A browser flight simulator built with **Next.js** and **three.js**. Every visit 
 | Steer like a joystick | Hold left mouse + drag | — |
 | Look around | Hold right mouse + drag | Right stick |
 | HUD | H | □ |
+| Expedition chart | M | — |
 | Pause | Esc / Space | OPTIONS |
 
 **Taking off:** hold Shift to full throttle, wait for about 58 kt, then gently pull back with W.
@@ -68,8 +82,13 @@ src/game/
   camera.js          camera rigs
   input.js           keyboard, mouse, gamepad, WebHID gyro
   audio.js           procedural engine audio
+  survey.js          FIRST CHARTER: landmarks, charters, survey envelopes, landing grades
+  hud.js             minimal HUD: compass tape, minimap, charter card, banners, chart + PNG
+  menu.js            charter board, pilot card, daily charter, logbook
+  progress.js        pilot logbook persistence (localStorage)
+  icons.js           shared vector icon set
   tutorial.js        Flight School
-  ui.js              HUD, menus, settings
+  ui.js              settings, modals, button wiring
 public/models/       Cessna 182 GLB (meshopt + WebP, ~5 MB)
 public/skies/        CC0 HDR skies
 ```

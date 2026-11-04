@@ -1,3 +1,4 @@
+import { onCrash, mission } from './survey.js';
 // SKYBOUND · physics
 import { $, DEG, clamp, lerp, smooth, wrapAngle } from './util.js';
 import { AIRCRAFT_MASS_KG, MAX_ENGINE_THRUST_N, SEA_LEVEL, WING_AREA_M2, aircraft, fx, simAirVelocity, simDirection, simEuler, simForce, simForward, simGravity, simLiftDirection, simQuaternion, simRight, simUp, state } from './config.js';
@@ -7,9 +8,9 @@ import { aircraftGroundOffset, plane, syncPlaneTransform } from './engine.js';
 import { setHud, toast } from './ui.js';
 
 export function crashAircraft(title,text,msg){
-  state.crashed=true;state.paused=true;$('pauseMenu').style.display='grid';
+  state.crashed=true;state.paused=true;$('pauseMenu').style.display='grid';onCrash();
   $('pauseMenu').querySelector('h2').textContent=title;
-  $('pauseMenu').querySelector('.intro').textContent=text;
+  $('pauseMenu').querySelector('.intro').textContent=mission.charter&&!mission.complete?`${text.replace(' Restart the flight to try again.','')} Your discoveries are saved; this charter's landing bonus is lost. Restart to continue the charter.`:text;
   toast(msg);setHud();
 }
 export function stepPhysics(dt,ctrl){

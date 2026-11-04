@@ -10,18 +10,27 @@ import { detailGroup, frame, terrainGroup } from './engine.js';
 
 export const chunks=new Map();
 export const workerPool={workers:[],idle:[],queue:[],pending:new Map(),nextId:1,results:[],fallback:false,ready:0};
+// Region survey (chart relief + landmarks), produced once per world by a worker.
+export const SCAN_R=14000,SCAN_STEP=125;
+let scanRequested=false,resolveScan=null;
+export const worldScan=new Promise(r=>{resolveScan=r;});
 export function initWorkers(){
   const n=clamp((navigator.hardwareConcurrency||4)-2,1,4);
   try{
     for(let i=0;i<n;i++){
       const w=new Worker(new URL('./terrain.worker.js',import.meta.url),{type:'module'});
-      w.onmessage=(e)=>{const m=e.data;if(m.type==='ready'){workerPool.ready++;workerPool.idle.push(w);pumpWorkers();return;}
+      w.onmessage=(e)=>{const m=e.data;
+        if(m.type==='ready'){workerPool.ready++;
+          // The first worker to come up surveys the region (landmarks + chart relief) before taking chunks.
+          if(!scanRequested){scanRequested=true;w.postMessage({type:'scan',R:SCAN_R,step:SCAN_STEP});return;}
+          workerPool.idle.push(w);pumpWorkers();return;}
+        if(m.type==='scan'){resolveScan(m.data);workerPool.idle.push(w);pumpWorkers();return;}
         if(m.type==='chunk'){workerPool.pending.delete(m.id);workerPool.results.push(m.data);workerPool.idle.push(w);pumpWorkers();}};
       w.onerror=(err)=>{console.error('[SKYBOUND worker]',err);};
       w.postMessage({type:'init',seed:WORLD_SEED,frame:terrainFrame});
       workerPool.workers.push(w);
     }
-  }catch(err){console.warn('[SKYBOUND] Workers unavailable; generating terrain on the main thread',err);workerPool.fallback=true;}
+  }catch(err){console.warn('[SKYBOUND] Workers unavailable; generating terrain on the main thread',err);workerPool.fallback=true;resolveScan(terrain.scanWorld(SCAN_R,SCAN_STEP));}
 }
 export function lodForRing(d){const L=perf.tier.lod;return d<=L[0]?0:d<=L[1]?1:d<=L[2]?2:3;}
 export const LOD_SEG=[64,32,16,8];
@@ -94,7 +103,7 @@ export function buildDetail(c){
     const idx=[0,0];const autumn=terrain.P.autumn;
     for(let i=0;i<n;i+=stride){
       const o=i*8,type=T[o+4],s=T[o+3],r=T[o+5],temp=T[o+6],moist=T[o+7];
-      _v.set(T[o],T[o+1]-.4,T[o+2]);_q.setFromEuler(_e.set((r-.5)*.08,r*6.283,(r*7%1-.5)*.08));_s.set(s*(type?.62:.95),s,s*(type?.62:.95));
+      _v.set(T[o],T[o+1]-.4,T[o+2]);_q.setFromEuler(_e.set((r-.5)*.08,r*6.283,(r*7%1-.5)*.08));_s.set(s*(type?.62:1.18),s,s*(type?.62:1.18));
       _m4.compose(_v,_q,_s);meshes[type].setMatrixAt(idx[type],_m4);
       const v=.72+r*.5;
       if(type===0){
@@ -137,6 +146,7 @@ export function meshHeightAt(x,z){
 export const groundCache={x:1e9,z:1e9,h:0};
 export function terrainGroundAt(x,z){if(Math.abs(x-groundCache.x)<.05&&Math.abs(z-groundCache.z)<.05)return groundCache.h;groundCache.x=x;groundCache.z=z;groundCache.h=meshHeightAt(x,z);return groundCache.h;}
 export function onRunway(x,z){return Math.abs(x)<=RUNWAY_HALF_W&&Math.abs(z)<=RUNWAY_HALF_L;}
+export function stripAtPos(x,z,pad=0){return terrain.stripAt(x,z,pad);}
 export function groundLevelAt(x,z){
   if(onRunway(x,z))return AIRPORT_H+.06;
   return Math.max(terrainGroundAt(x,z),SEA_LEVEL);

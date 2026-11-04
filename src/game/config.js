@@ -5,7 +5,21 @@ import { camera, frame } from './engine.js';
 // Prefix for files in public/ (empty locally, '/flydome' on GitHub Pages).
 export const BASE_PATH=process.env.NEXT_PUBLIC_BASE_PATH||'';
 export const urlParams=new URLSearchParams(typeof location!=='undefined'?location.search:'');
-export const WORLD_SEED=(()=>{const s=parseInt(urlParams.get('seed')||'',10);return Number.isFinite(s)&&s>0?s:(1+Math.floor(Math.random()*999999));})();
+// World selection. A plain refresh always rolls a brand-new world; a shared ?seed link,
+// back/forward navigation or "Resume last world" reopens that exact world. ?daily uses the
+// day's shared seed (UTC). The URL always carries the active seed so it can be shared.
+export const DAILY_EPOCH=Date.UTC(2026,10,1);
+export const DAILY_NUMBER=Math.floor((Date.now()-DAILY_EPOCH)/86400000)+1;
+export const IS_DAILY=urlParams.has('daily');
+export const WORLD_SEED=(()=>{
+  if(IS_DAILY){let h=2166136261;for(const c of `skybound-daily-${DAILY_NUMBER}`){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return 1+((h>>>0)%999999);}
+  let reload=false;try{reload=performance.getEntriesByType('navigation')[0]?.type==='reload';}catch{}
+  const s=parseInt(urlParams.get('seed')||'',10);
+  return !reload&&Number.isFinite(s)&&s>0?s:(1+Math.floor(Math.random()*999999));
+})();
+if(typeof window!=='undefined'&&!IS_DAILY){
+  try{const u=new URL(location.href);if(u.searchParams.get('seed')!==String(WORLD_SEED)){u.searchParams.set('seed',String(WORLD_SEED));history.replaceState(history.state,'',u);}}catch{}
+}
 export const SKIES=[
   {id:'kloofendal_48d_partly_cloudy_puresky',name:'Partly cloudy · midday',clouds:.55,haze:1},
   {id:'qwantani_noon_puresky',name:'Clear · noon',clouds:.22,haze:.8},
