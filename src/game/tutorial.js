@@ -5,6 +5,7 @@ import { TAKEOFF_ROTATE_KTS, aircraft, state } from './config.js';
 import { camera, restart } from './engine.js';
 import { ensureAircraftAudio } from './audio.js';
 import { toast } from './ui.js';
+import { radioEvent } from './radio.js';
 
 export const flightLesson=[
   {title:'Power up',objective:'You are lined up on the runway. Bring engine power up smoothly to at least 90%.',controller:'Hold R2 to increase throttle. Use L2 if you overshoot.',keyboard:'Hold LEFT SHIFT to increase throttle. Hold LEFT CTRL to reduce it.',mouse:'No mouse movement is needed for throttle.',done:()=>state.throttle>=.9,status:'WAITING FOR 90% THROTTLE'},
@@ -102,7 +103,7 @@ export function tutorialFeedback(index){
 export function startTutorial(){camera.clearViewOffset();beginMission('free');
   ensureAircraftAudio();state.tutorial.active=true;state.tutorial.index=0;state.tutorial.timer=0;state.tutorial.readySince=0;state.tutorial.startedAt=performance.now();state.tutorial.lastStep=-1;state.tutorial.lastMode='';
   state.tutorial.inputMode=hasConnectedGamepad()?'controller':'keyboardMouse';state.tutorial.mode=tutorialInputMode();
-  $('mainMenu').style.display='none';restart();$('flightTag').textContent='FLIGHT SCHOOL · NORTH RIDGE';$('tutorialPanel').style.display='block';updateTutorialPanel();toast(`Flight school started · ${state.tutorial.mode==='controller'?'DualSense':'keyboard + mouse'} instructions`);
+  $('mainMenu').style.display='none';restart();$('flightTag').textContent='FLIGHT SCHOOL · NORTH RIDGE';$('tutorialPanel').style.display='block';updateTutorialPanel();radioEvent('start',{mode:'tutorial'});radioEvent('tutStep',{index:0,first:true});toast(`Flight school started · ${state.tutorial.mode==='controller'?'DualSense':'keyboard + mouse'} instructions`);
 }
 export function updateTutorialPanel(){
   if(!state.tutorial.active)return;
@@ -131,7 +132,7 @@ export function advanceTutorial(){
   if(!state.tutorial.active)return;
   const next=state.tutorial.index+1;
   if(next>=flightLesson.length){finishTutorial();return;}
-  state.tutorial.index=next;state.tutorial.readySince=0;state.tutorial.stepStart=performance.now();if(next===7)state.tutorial.discStart=mission.discovered.size;updateTutorialPanel();
+  state.tutorial.index=next;state.tutorial.readySince=0;state.tutorial.stepStart=performance.now();if(next===7)state.tutorial.discStart=mission.discovered.size;updateTutorialPanel();radioEvent('tutStep',{index:next});
 }
 export function exitTutorial(){state.tutorial.active=false;state.tutorial.readySince=0;$('tutorialPanel').style.display='none';toast('Flight school closed. Free flight remains active.');}
 export function tutorialTick(){

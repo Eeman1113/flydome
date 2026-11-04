@@ -7,6 +7,7 @@ import { AIRPORT_H, terrain } from './world.js';
 import { mission, charterTargets, nextTarget, charterSurveyed, landmarkById, fmtTime, rankInfo, acceptJob } from './survey.js';
 import { progress, averageGrade } from './progress.js';
 import { drawIcon, iconSvg, TYPE_LABEL } from './icons.js';
+import { radioReady } from './radio.js';
 
 const C={cyan:'#71d8ee',ink:'#eef6fc',muted:'rgba(214,232,244,.62)',dim:'rgba(214,232,244,.28)',cream:'#f3e7c9',warn:'#ffb86b',red:'#ff8d83'};
 const REVEAL_R=2300;
@@ -215,7 +216,7 @@ export function hudBanner(b){
   el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
   clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>el.classList.remove('show'),5200);
   playChime(b.rare?2:1);
-  speak(`${b.rare?'Rare find. ':''}${b.name}, charted.${b.charterLeft===0?(mission.charter?.water?' Charter surveyed. Alight on the lake.':' Charter surveyed. Return and land.'):''}`);
+  if(!radioReady())speak(`${b.rare?'Rare find. ':''}${b.name}, charted.`);
 }
 let stampTimer=0;
 export function hudLanding(l){
@@ -333,8 +334,9 @@ export function hudCamera(name){const el=$('cameraName');if(!el)return;el.textCo
 // ---------------------------------------------------------------- approach guide
 // Appears when lined up with the home runway or a bush strip: diamond markers show deviation
 // from a 3° glide path to a point 60 m past the threshold, and from the centreline.
+export const approachState={active:false,along:0,dev:0,cross:0};
 function approachGuide(){
-  const el=$('approachGuide'),a=aircraft,p=a.position;
+  const el=$('approachGuide'),a=aircraft,p=a.position;approachState.active=false;
   if(!state.started||a.altAGL<3||a.altAGL>520){el.classList.remove('show');return;}
   const fx=-Math.sin(a.yaw),fz=-Math.cos(a.yaw),sites=[{name:'Home Field',x:0,z:0,cos:0,sin:1,halfL:RUNWAY_HALF_L,h:AIRPORT_H}];
   for(const s of mission.strips)sites.push({name:s.name,x:s.x,z:s.z,cos:s.cos,sin:s.sin,halfL:s.halfL,h:s.h});
@@ -348,6 +350,7 @@ function approachGuide(){
   if(!best){el.classList.remove('show');return;}
   el.classList.add('show');
   const target=best.s.h+best.along*Math.tan(3*DEG),dev=(p.y-target)/Math.max(6,best.along*Math.tan(1*DEG));
+  approachState.active=true;approachState.along=best.along;approachState.dev=dev;approachState.cross=best.cross;
   $('apName').textContent=best.s.name.toUpperCase();
   $('apGlide').style.top=`${50-clamp(dev,-1,1)*44}%`;
   $('apLoc').style.left=`${50+clamp(best.cross/Math.max(12,best.along*.06),-1,1)*46}%`;

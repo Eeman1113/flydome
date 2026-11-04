@@ -8,10 +8,13 @@ import { terrain } from './world.js';
 import { groundLevelAt, isWaterAt, onRunway } from './chunks.js';
 import { aircraftGroundOffset, plane, syncPlaneTransform } from './engine.js';
 import { setHud, toast } from './ui.js';
+import { radioEvent } from './radio.js';
+import { sfx } from './sfx.js';
 
 export function crashAircraft(title,text,msg){
   // Fire/debris/crumple and a short crash-cam orbit before the menu appears.
-  state.crashed=true;onCrash();triggerCrash(/ditch/i.test(title)?'water':'impact');
+  const water=/ditch/i.test(title);
+  state.crashed=true;onCrash();triggerCrash(water?'water':'impact');sfx.crash(water,aircraft.position.clone());radioEvent('crash',{water});
   clearTimeout(crashAircraft.t);crashAircraft.t=setTimeout(()=>{if(!state.crashed)return;state.paused=true;$('pauseMenu').style.display='grid';setHud();},3400);
   $('pauseMenu').querySelector('h2').textContent=title;$('pauseMenu').querySelector('.kicker').textContent='AIRCRAFT LOST';$('resumeBtn').style.display='none';$('restartBtn').classList.add('primary');
   $('pauseMenu').querySelector('.intro').textContent=mission.charter&&!mission.complete?`${text.replace(' Restart the flight to try again.','')} Your discoveries are saved; this charter's landing bonus is lost. Restart to continue the charter.`:text;

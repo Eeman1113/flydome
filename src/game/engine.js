@@ -1,4 +1,8 @@
-import { updateCrash, clearCrash, crashActive } from './crash.js';
+import { updateCrash, clearCrash, crashActive, firePos } from './crash.js';
+import { radioEvent, radioUpdate } from './radio.js';
+import { sfx, sfxUpdate } from './sfx.js';
+import { approachState } from './hud.js';
+import { onRunway, isWaterAt } from './chunks.js';
 import { setGhost, updateGhost } from './ghost.js';
 import { initialLoadout } from './menu.js';
 import { updatePhotoCamera, afterRender, bindPhotoUi } from './photo.js';
@@ -100,7 +104,7 @@ export async function setupScene(){
   });
   setLoading('SURVEYING LANDMARKS',98);
   await initSurvey();buildLandmarkProps(mission.landmarks);for(const id of mission.discovered){const l=mission.landmarks.find(x=>x.id===id);if(l)addBeacon(l);}
-  hudEvents.beacon=addBeacon;hudEvents.crash=crashAircraft;hudEvents.ghost=setGhost;hudEvents.jobBoard=hudJobBoard;hudEvents.setHud=setHud;hudEvents.fuelOut=()=>toast('Fuel exhausted — glide to a landing.');initWeather();bindPhotoUi();
+  hudEvents.beacon=addBeacon;hudEvents.crash=crashAircraft;hudEvents.ghost=setGhost;hudEvents.jobBoard=hudJobBoard;hudEvents.setHud=setHud;hudEvents.fuelOut=()=>{toast('Fuel exhausted — glide to a landing.');radioEvent('fuelOut');};initWeather();bindPhotoUi();
   initHud();renderMenu();hudEvents.nextCharter=()=>{const i=(mission.charters.indexOf(mission.charter)+1)%Math.max(1,mission.charters.length);beginMission('charter',i);};
   camera.layers.enable(1);renderer.compile(scene,camera);
   clock=new THREE.Clock();
@@ -302,6 +306,8 @@ export function frame(){requestAnimationFrame(frame);frameStartTime=performance.
   else if(!state.started)updateMenuCamera(frameDt);
   if(state.photo)updatePhotoCamera(frameDt);
   updateWorldFx(frameDt);
+  {const a=aircraft,p=a.position,onGround=a.altAGL<aircraftGroundOffset+.3,surface=!onGround?null:onRunway(p.x,p.z)?'runway':isWaterAt(p.x,p.z)?'water':terrain.stripAt(p.x,p.z,6)?'strip':'field';
+   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
   updateWeather(frameDt);updateBeacons(worldTime);updateLandmarkFx(worldTime);updateGhost();updateCrash(frameDt);
   hudFrame();
   perfTick(frameDt);
@@ -309,8 +315,8 @@ export function frame(){requestAnimationFrame(frame);frameStartTime=performance.
   renderFrame(frameDt);
   afterRender();
 }
-export function startFlight(mode='free',charterIndex=0){camera.clearViewOffset();ensureAircraftAudio();state.started=true;state.paused=false;state.crashed=false;physicsAccumulator=0;$('mainMenu').style.display='none';$('pauseMenu').style.display='none';beginMission(mode,charterIndex);$('flightTag').textContent=mode==='cargo'?`BUSH PILOT · WORLD #${WORLD_SEED}`:mission.charter?`${mode==='daily'?'DAILY CHARTER':'CHARTER'} · WORLD #${WORLD_SEED}`:`EXPLORER · WORLD #${WORLD_SEED}`;state.camera=2;setHud();if(mode!=='cargo')toast(mission.charter?`${mission.charter.title}: survey ${mission.charter.ids.length} landmarks, then land. Shift for throttle.`:'Explorer. Fly low over ? markers to chart them. Shift for throttle.');}
-export function restart(){const rebuild=crashActive();clearCrash();if(rebuild)makeAircraft(aircraftState.variant).then(()=>syncPlaneTransform());state.crashed=false;state.paused=false;aircraft.engineRunning=true;if(mission.hardcore)mission.fuel=Math.max(mission.fuel,.5);physicsAccumulator=0;$('pauseMenu').querySelector('h2').textContent='Take a breath.';$('pauseMenu').querySelector('.kicker').textContent='FLIGHT PAUSED';$('resumeBtn').style.display='';$('restartBtn').classList.remove('primary');$('pauseMenu').querySelector('.intro').textContent='Your aircraft is holding its current state. Ready when you are.';state.throttle=0;const rp=respawnPoint(aircraftGroundOffset);aircraft.position.set(rp.x,rp.y,rp.z);aircraft.velocity.set(0,0,0);aircraft.pitch=aircraft.roll=aircraft.pitchRate=aircraft.rollRate=aircraft.yawRate=0;aircraft.yaw=rp.yaw;aircraft.controlPitch=aircraft.controlRoll=aircraft.controlYaw=0;aircraft.enginePower=0;aircraft.airspeed=0;aircraft.stall=false;state.flightTime=0;state.gear=true;$('pauseMenu').style.display='none';state.started=true;setHud();syncPlaneTransform();updateChunks(true);toast(mission.respawn?`Aircraft reset at ${mission.respawn.name}.`:'Aircraft reset on the home runway.');}
+export function startFlight(mode='free',charterIndex=0){camera.clearViewOffset();ensureAircraftAudio();state.started=true;state.paused=false;state.crashed=false;physicsAccumulator=0;$('mainMenu').style.display='none';$('pauseMenu').style.display='none';beginMission(mode,charterIndex);sfx.resume();sfx.starter();radioEvent('start',{mode});$('flightTag').textContent=mode==='cargo'?`BUSH PILOT · WORLD #${WORLD_SEED}`:mission.charter?`${mode==='daily'?'DAILY CHARTER':'CHARTER'} · WORLD #${WORLD_SEED}`:`EXPLORER · WORLD #${WORLD_SEED}`;state.camera=2;setHud();if(mode!=='cargo')toast(mission.charter?`${mission.charter.title}: survey ${mission.charter.ids.length} landmarks, then land. Shift for throttle.`:'Explorer. Fly low over ? markers to chart them. Shift for throttle.');}
+export function restart(){const rebuild=crashActive();if(rebuild||state.crashed)radioEvent('respawn',{strip:!!mission.respawn});clearCrash();if(rebuild)makeAircraft(aircraftState.variant).then(()=>syncPlaneTransform());state.crashed=false;state.paused=false;aircraft.engineRunning=true;if(mission.hardcore)mission.fuel=Math.max(mission.fuel,.5);physicsAccumulator=0;$('pauseMenu').querySelector('h2').textContent='Take a breath.';$('pauseMenu').querySelector('.kicker').textContent='FLIGHT PAUSED';$('resumeBtn').style.display='';$('restartBtn').classList.remove('primary');$('pauseMenu').querySelector('.intro').textContent='Your aircraft is holding its current state. Ready when you are.';state.throttle=0;const rp=respawnPoint(aircraftGroundOffset);aircraft.position.set(rp.x,rp.y,rp.z);aircraft.velocity.set(0,0,0);aircraft.pitch=aircraft.roll=aircraft.pitchRate=aircraft.rollRate=aircraft.yawRate=0;aircraft.yaw=rp.yaw;aircraft.controlPitch=aircraft.controlRoll=aircraft.controlYaw=0;aircraft.enginePower=0;aircraft.airspeed=0;aircraft.stall=false;state.flightTime=0;state.gear=true;$('pauseMenu').style.display='none';state.started=true;setHud();syncPlaneTransform();updateChunks(true);toast(mission.respawn?`Aircraft reset at ${mission.respawn.name}.`:'Aircraft reset on the home runway.');}
 window.addEventListener('resize',()=>{if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);if(composer){composer.setPixelRatio(renderer.getPixelRatio());composer.setSize(innerWidth,innerHeight);}});
 export let booted=false;
 export async function startGame(){

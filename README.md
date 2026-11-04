@@ -63,6 +63,17 @@ Your **pilot logbook** saves in the browser and carries across every world: rank
 
 ![The Caravan Amphibian on a lake](public/screenshots/amphibian.jpg)
 
+### Skybound Ground
+
+You're never flying alone. **Skybound Ground**, the controller back at the home field, is on the radio for the whole flight:
+- **On the ground:** she clears you for takeoff with the live wind and weather.
+- **On a charter:** she gives you the bearing and range to each target, talks you through survey passes, and cheers the rare finds.
+- **Landing:** she clears you to land, warns you when you're high, low or fast on final, and grades your touchdown out loud.
+- **Emergencies:** she shouts when you stall or get too close to the ground, and calls a mayday when it all goes wrong.
+- **Flight School:** she teaches every lesson.
+
+Each call is built from hundreds of recorded variants (callsigns, numbers, landmark types and lines for every situation), so she rarely repeats herself. Everything plays through a live radio filter with static and squelch. Other pilots chat on the frequency in the background. Every transmission is subtitled, and **Settings** lets you turn the radio, the chatter or the subtitles off.
+
 ### A new world every time
 
 **Refresh for a brand-new world.** The address bar always carries the world's seed (`?seed=48213`), so you can send a friend the exact world you flew. **Resume last world** on the menu takes you back to where you left off. Each world also rolls its own season, sky and weather: seven real HDR skies from dawn to dusk, gusting wind you can feel in the controls, low cloud, and rain on overcast days, with drops on the windshield.
@@ -103,7 +114,8 @@ SKYBOUND is built with **three.js** and **Next.js**, runs entirely in the browse
 - **A real flight model.** Lift, induced drag, ground effect, progressive stall, propeller thrust that falls with airspeed, and density altitude, all tuned against the Cessna 182's real numbers (about 270 m to clear the runway, about 1,000 fpm climb, about 145 kt cruise at 75% power). Barrel rolls are allowed.
 - **Crashes.** A fireball, a smoke plume that drifts with the wind, parts torn away with physics, a crumpled airframe and a shock-distortion pulse.
 - **Automatic quality.** The game detects your GPU, then a runtime governor tunes render scale, view distance (4–20 km) and effects to hold the frame rate.
-- **Procedural audio.** Engine, propeller, airflow, rain and birdsong are synthesised live, and a radio voice calls out your discoveries.
+- **Procedural audio.** The engine, propeller and airflow are synthesised live. So are the sound effects: tyre chirps on touchdown, rumble on grass strips, spray on the floats, the reed stall horn, gust buffeting, rain on the airframe, thunder, the starter and engine catch, crash impacts, fire and debris, and UI clicks.
+- **The radio.** Over 400 voice clips were generated offline on a GPU with Orpheus TTS (`tools/radio/`). Each line was rendered four times, and Whisper transcribed every take so the clip closest to the script won. The game assembles calls from these clips and runs them through a band-pass, saturation, compression and static chain in Web Audio.
 
 ![A hard landing, with fire, debris and a shock pulse](public/screenshots/crash.jpg)
 
@@ -138,6 +150,8 @@ src/game/
   menu.js            charter board, pilot card, hangar, logbook
   progress.js        pilot logbook (localStorage)
   weather.js         wind, gusts, rain, windshield drops, ambience
+  radio.js           Skybound Ground: call assembly, radio filter, subtitles, chatter
+  sfx.js             synthesised sound effects
   crash.js           fire, smoke, debris, deformation
   photo.js           photo mode
   ghost.js           Daily Charter ghost replays
@@ -145,7 +159,9 @@ src/game/
   camera.js, input.js, audio.js, perf.js, icons.js, ui.js
 public/models/       aircraft (glTF, meshopt + WebP compressed)
 public/skies/        CC0 HDR skies
+public/radio/        Skybound Ground voice clips (Opus) + manifest
 public/screenshots/  the images on this page
+tools/radio/         radio script (lines.py) and GPU voice generator (gen.py)
 ```
 
 </details>
@@ -180,6 +196,10 @@ CC0 HDRIs from [Poly Haven](https://polyhaven.com):
 | [Qwantani Late Afternoon (Pure Sky)](https://polyhaven.com/a/qwantani_late_afternoon_puresky) | Greg Zaal, Jarod Guest |
 | [Qwantani Dusk 2 (Pure Sky)](https://polyhaven.com/a/qwantani_dusk_2_puresky) | Greg Zaal, Jarod Guest |
 | [Belfast Sunset (Pure Sky)](https://polyhaven.com/a/belfast_sunset_puresky) | Greg Zaal, Dimitrios Savva, Jarod Guest |
+
+### Voices
+
+The radio voices were generated with [Orpheus TTS](https://github.com/canopyai/Orpheus-TTS) by Canopy Labs (Apache-2.0; weights via [unsloth/orpheus-3b-0.1-ft](https://huggingface.co/unsloth/orpheus-3b-0.1-ft)), decoded with [SNAC](https://github.com/hubertsiuzdak/snac) (MIT), and checked with OpenAI [Whisper](https://github.com/openai/whisper) large-v3-turbo (MIT). The script and the generator are in `tools/radio/`.
 
 ### Software and fonts
 

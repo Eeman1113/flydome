@@ -7,6 +7,8 @@ import { DAILY_NUMBER, IS_DAILY, RUNWAY_HALF_L, RUNWAY_HALF_W, START_Z, WORLD_SE
 import { onRunway, worldScan, isWaterAt } from './chunks.js';
 import { AIRCRAFT, aircraftState } from './config.js';
 import { aircraftGroundOffset } from './engine.js';
+import { radioEvent } from './radio.js';
+import { sfx } from './sfx.js';
 import { addXP, markWorldFlown, progress, rankInfo, recordLanding, saveProgress, worldEntry } from './progress.js';
 import { TYPE_LABEL } from './icons.js';
 import { hudBanner, hudLanding, hudCharterComplete, hudCharterUpdate, hudRevealTick, hudEvents } from './hud.js';
@@ -188,6 +190,8 @@ function discover(l,clean){
   const pl=progress.pilot;pl.discoveries++;pl.stamps[l.type]=(pl.stamps[l.type]||0)+1;if(l.rare)pl.stamps.rare=(pl.stamps.rare||0)+1;
   const xp=80+(l.rare?60:0)+(l.highest?40:0)+(clean?30:0);
   const res=addXP(xp);
+  if(l.type==='gorge'&&l.runTime)radioEvent('gorge');
+  radioEvent('discovery',{rare:l.rare,rankUp:res.rankUp?res.rank.index:null});
   if(l.type==='gorge'&&l.runTime)l.metaExtra=` · RUN ${l.runTime.toFixed(1)} S`;
   hudEvents.beacon?.(l);
   const meta=l.type==='peak'||l.type==='pass'||l.type==='gorge'||l.type==='spire'||l.type==='falls'?`${l.highest?'HIGHEST PEAK':TYPE_LABEL[l.type].toUpperCase()} · ${Math.round(l.type==='spire'?l.height:l.elev).toLocaleString()} M${l.metaExtra||''}`:l.area?`${TYPE_LABEL[l.type].toUpperCase()} · ${l.area.toFixed(1)} KM²`:TYPE_LABEL[l.type].toUpperCase();
@@ -222,6 +226,7 @@ function trackLanding(dt){
     }
     if(mission.touchdown&&performance.now()-mission.touchdown.t<4000){mission.bounces++;mission.touchdown.sink=Math.max(mission.touchdown.sink,sink);}
     else{mission.bounces=0;mission.touchdown={sink,offset,headingErr,site,t:performance.now()};}
+    sfx.touchdown(sink,site.kind);
     mission.airborne=false;
   }
   mission.airborneT=0;
@@ -248,7 +253,7 @@ function landed(td){
   if(proper)mission.respawn=td.site.kind==='runway'?null:td.site.ref;
   const fpm=Math.round(td.sink*196.85);
   const label=td.site.kind==='field'?'BUSH LANDING':{S:'BUTTER',A:'SMOOTH',B:'GOOD',C:'FIRM',D:'HARD'}[grade];
-  if(mission.mode==='cargo'&&mission.job&&proper&&Math.hypot(td.site.x-mission.job.to.x,td.site.z-mission.job.to.z)<(td.site.kind==='water'?2500:900)){recordLandingOnly(grade);completeJob(td,grade);hudCharterUpdate();return;}
+  if(mission.mode==='cargo'&&mission.job&&proper&&Math.hypot(td.site.x-mission.job.to.x,td.site.z-mission.job.to.z)<(td.site.kind==='water'?2500:900)){recordLandingOnly(grade);radioEvent('landed',{grade,kind:td.site.kind});completeJob(td,grade);hudCharterUpdate();return;}
   let xp=proper?{S:60,A:40,B:25,C:12,D:5}[grade]:20;
   const alightOk=!mission.charter?.water||(td.site.kind==='water'&&(()=>{const l=landmarkById(mission.charter.alight);return l&&Math.hypot(td.site.x-l.x,td.site.z-l.z)<Math.max(1500,(l.r||0)*1.4,Math.sqrt(l.area||0)*1000);})());
   if(mission.charter&&!mission.complete&&charterSurveyed()&&proper&&alightOk){
@@ -265,9 +270,11 @@ function landed(td){
       share=`SKYBOUND Daily Charter #${DAILY_NUMBER} · ${r.found}/${r.found} charted · landing ${grade} · ${fmtTime(time)}${mission.bonusLost?' · 1 crash':''}`;
     }
     saveProgress();
+    radioEvent('landed',{grade,kind:td.site.kind,charterComplete:true,rankUp:res.rankUp?res.rank.index:null});if(res.rankUp)sfx.fanfare();
     hudCharterComplete({grade,label,fpm,site:td.site.name,time,xp:total+xp,bonusLost:mission.bonusLost,rankUp:res.rankUp?res.rank.name:null,share});
   }else{
     const res=addXP(xp);
+    radioEvent('landed',{grade,kind:td.site.kind,rankUp:res.rankUp?res.rank.index:null});if(res.rankUp)sfx.fanfare();
     hudLanding({grade,label,fpm,site:td.site.name,xp,rankUp:res.rankUp?res.rank.name:null,hint:mission.charter&&!mission.complete&&charterSurveyed()&&!alightOk?`Alight on ${landmarkById(mission.charter.alight)?.name} to file this charter`:mission.charter&&!mission.complete&&charterSurveyed()&&!proper?'Charters complete at a strip or the home field':null});
   }
   hudCharterUpdate();
@@ -315,7 +322,7 @@ export function generateJobs(fromKey='home'){
   return jobs;
 }
 export function acceptJob(job){
-  mission.job={...job,start:mission.flightTime};mission.cargoKg=job.kg;mission.complete=false;hudCharterUpdate();
+  mission.job={...job,start:mission.flightTime};radioEvent('job',{cargoId:job.cargoId});mission.cargoKg=job.kg;mission.complete=false;hudCharterUpdate();
 }
 function completeJob(td,grade){
   const j=mission.job,elapsed=mission.flightTime-j.start,late=j.limit&&elapsed>j.limit;
@@ -323,6 +330,7 @@ function completeJob(td,grade){
   const pay=Math.round(j.pay*gradeMul*(late?.6:1)/5)*5+timeBonus,xp=Math.round(pay/3);
   progress.pilot.cash=(progress.pilot.cash||0)+pay;progress.pilot.deliveries=(progress.pilot.deliveries||0)+1;
   const res=addXP(xp);saveProgress();
+  radioEvent('delivered',{late,rankUp:res.rankUp?res.rank.index:null});sfx.cash();if(res.rankUp)sfx.fanfare();
   mission.job=null;mission.cargoKg=0;
   const next=generateJobs(td.site.kind==='runway'?'home':td.site.kind==='strip'?`s${td.site.ref.id}`:`w${td.site.ref?.id}`);
   hudEvents.jobBoard?.({delivered:{...j,elapsed,late,pay,timeBonus,grade,xp,rankUp:res.rankUp?res.rank.name:null},jobs:next});

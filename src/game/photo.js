@@ -5,6 +5,7 @@ import { WORLD_SEED, aircraft, state } from './config.js';
 import { camera, renderer, bokehPass } from './engine.js';
 import { setHud, toast } from './ui.js';
 import { mission } from './survey.js';
+import { sfx } from './sfx.js';
 
 const P={yaw:.6,pitch:.18,dist:26,drag:null,dof:true,capture:false,shots:0};
 export function togglePhoto(){if(state.photo)exitPhoto();else enterPhoto();}
@@ -42,7 +43,7 @@ export function updatePhotoCamera(dt){
   if(bokehPass){bokehPass.enabled=P.dof;bokehPass.uniforms.focus.value=P.dist;bokehPass.uniforms.aperture.value=.00012*(30/Math.max(P.dist,8));bokehPass.uniforms.maxblur.value=.008;}
 }
 export function afterRender(){
-  if(!P.capture)return;P.capture=false;
+  if(!P.capture)return;P.capture=false;sfx.shutter();
   renderer.domElement.toBlob(b=>{if(!b)return;const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`skybound-${WORLD_SEED}-${++P.shots}.png`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);},'image/png');
   const f=$('photoFlash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');toast('Photo saved to your downloads.');
 }

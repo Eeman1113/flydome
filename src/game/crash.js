@@ -125,3 +125,5 @@ export function clearCrash(){
   scene.remove(fx.group);fx=null;if(gradePass?.uniforms.uShock)gradePass.uniforms.uShock.value=0;
 }
 export function crashActive(){return !!fx;}
+// Where the wreck is burning (for the fire sound), or null.
+export function firePos(){return fx&&!fx.water&&fx.t<44?fx.p:null;}

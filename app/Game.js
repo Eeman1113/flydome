@@ -40,7 +40,7 @@ function Simulator({ start }) {
 
   return (
     <>
-      <div id="sim"></div><canvas id="rainDrops" className="rain-drops"></canvas><div className="grain"></div>
+      <div id="sim"></div><canvas id="rainDrops" className="rain-drops"></canvas><div className="radio-sub" id="radioSub"></div><div className="grain"></div>
       <div className="loading" id="loading"><div className="loader-inner"><div className="loader-mark">SB</div><div className="loader-text">INITIALISING RENDERER</div><div className="loader-bar"><i></i></div></div></div>
       <header className="topbar">
         <div className="brand"><div className="brand-mark">SB</div><div><div className="brand-name">SKYBOUND</div><div className="brand-sub">FIRST CHARTER · CESSNA 182 SKYLANE</div></div></div>
