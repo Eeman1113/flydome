@@ -43,7 +43,7 @@ add('w_km1', ['one kilometre.'])
 # ------------------------------------------------------------------ landmark types
 TYPES = {'peak': 'the summit', 'lake': 'the lake', 'crater': 'the crater lake', 'island': 'the island',
          'forest': 'the forest', 'river': 'the river', 'pass': 'the mountain pass', 'gorge': 'the gorge',
-         'falls': 'the waterfall', 'stacks': 'the sea stacks', 'cape': 'the cape', 'glacier': 'the glacier',
+         'falls': 'the waterfall', 'stacks': 'the sea stacks', 'cape': 'the headland', 'glacier': 'the glacier',
          'spire': 'the rock spire', 'lighthouse': 'the lighthouse', 'wreck': 'the old wreck', 'arch': 'the stone arch'}
 for k, v in TYPES.items():
     add(f'type_{k}', [v])
