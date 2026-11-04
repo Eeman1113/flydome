@@ -2,9 +2,9 @@
 // Compass tape, speed/altitude readouts, circular relief minimap with fog of war, charter card,
 // survey ring, discovery banners, landing stamps, the full chart and the shareable chart card.
 import { $, DEG, FT_PER_M, KTS_PER_MS, clamp } from './util.js';
-import { DAILY_NUMBER, IS_DAILY, RUNWAY_HALF_L, WORLD_SEED, aircraft, sky, state } from './config.js';
+import { DAILY_NUMBER, IS_DAILY, RUNWAY_HALF_L, RUNWAY_HALF_W, WORLD_SEED, WEATHER, aircraft, sky, state } from './config.js';
 import { AIRPORT_H, terrain } from './world.js';
-import { mission, charterTargets, nextTarget, charterSurveyed, landmarkById, fmtTime, rankInfo } from './survey.js';
+import { mission, charterTargets, nextTarget, charterSurveyed, landmarkById, fmtTime, rankInfo, acceptJob } from './survey.js';
 import { progress, averageGrade } from './progress.js';
 import { drawIcon, iconSvg, TYPE_LABEL } from './icons.js';
 
@@ -30,6 +30,8 @@ export function initHud(){
   tapeW=tape.clientWidth||460;tapeH=tape.clientHeight||46;tape.width=tapeW*dpr;tape.height=tapeH*dpr;tapeCtx=tape.getContext('2d');
   mapS=map.clientWidth||184;map.width=map.height=mapS*dpr;mapCtx=map.getContext('2d');
   window.addEventListener('resize',()=>{tapeW=tape.clientWidth||tapeW;tape.width=tapeW*dpr;tape.height=tapeH*dpr;});
+  map.addEventListener('wheel',e=>{e.preventDefault();cycleMapZoom(e.deltaY>0?1:-1);},{passive:false});
+  map.addEventListener('click',()=>toggleChart());
 }
 function revealAt(x,z,r,rebuild=true){
   if(!fogMask)return;const g=fogMask.getContext('2d'),px=(x+R)/STEP,pz=(z+R)/STEP,pr=r/STEP;
@@ -58,6 +60,12 @@ function markerSet(){
   for(const l of mission.landmarks){
     if(mission.discovered.has(l.id))continue;
     out.push({x:l.x,z:l.z,kind:cset.has(l.id)?'target':'unknown',active:tgt&&tgt.id===l.id,l});
+  }
+  if(mission.mode==='cargo'){
+    const j=mission.job;out.push({x:0,z:0,kind:'home',active:!!j&&j.to.key==='home'});
+    for(const s of mission.strips)out.push({x:s.x,z:s.z,kind:'strip',active:!!j&&j.to.key===`s${s.id}`,s});
+    if(j&&j.to.kind==='water')out.push({x:j.to.x,z:j.to.z,kind:'strip',active:true});
+    return out;
   }
   if(mission.charter&&charterSurveyed()){
     out.push({x:0,z:0,kind:'home',active:true});for(const s of mission.strips)out.push({x:s.x,z:s.z,kind:'strip',active:false,s});
@@ -90,8 +98,10 @@ function drawTape(){
   // centre caret
   g.fillStyle=C.ink;g.beginPath();g.moveTo(W/2-5,0);g.lineTo(W/2+5,0);g.lineTo(W/2,6);g.closePath();g.fill();
 }
+export const MAP_RANGES=[2500,4500,9000];let mapZoom=1;
+export function cycleMapZoom(dir=1){mapZoom=(mapZoom+dir+MAP_RANGES.length)%MAP_RANGES.length;}
 function drawMinimap(){
-  const g=mapCtx,S=mapS,rng=4500,a=aircraft.position;
+  const g=mapCtx,S=mapS,rng=MAP_RANGES[mapZoom],a=aircraft.position;
   g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,S,S);
   g.save();g.beginPath();g.arc(S/2,S/2,S/2-1,0,Math.PI*2);g.clip();
   g.fillStyle='#0b1622';g.fillRect(0,0,S,S);
@@ -107,6 +117,11 @@ function drawMinimap(){
   for(const s of mission.strips)runway(s.x,s.z,s.cos,s.sin,s.halfL,'rgba(243,231,201,.85)');
   // landmarks
   const tgt=nextTarget(),cset=new Set(mission.charter?mission.charter.ids:[]);
+  if(mission.mode==='cargo'&&mission.job){
+    const [sx,sz]=toS(mission.job.to.x,mission.job.to.z),d=Math.hypot(sx-S/2,sz-S/2);
+    if(d>S/2-9){const ang=Math.atan2(sz-S/2,sx-S/2),rx=S/2+Math.cos(ang)*(S/2-9),rz=S/2+Math.sin(ang)*(S/2-9);g.save();g.translate(rx,rz);g.rotate(ang);g.fillStyle=C.cyan;g.beginPath();g.moveTo(6,0);g.lineTo(-3,-5);g.lineTo(-3,5);g.closePath();g.fill();g.restore();}
+    else{g.strokeStyle=C.cyan;g.lineWidth=2;g.beginPath();g.arc(sx,sz,9,0,Math.PI*2);g.stroke();}
+  }
   for(const l of mission.landmarks){
     const [sx,sz]=toS(l.x,l.z),d=Math.hypot(sx-S/2,sz-S/2),disc=mission.discovered.has(l.id),isT=cset.has(l.id);
     if(d>S/2-9){
@@ -133,7 +148,9 @@ export function hudReadouts(){
   $('spdVal').textContent=kts;$('altVal').textContent=agl.toLocaleString();$('mslVal').textContent=`MSL ${msl.toLocaleString()}`;
   $('vsVal').textContent=`${vs>0?'▲':vs<0?'▼':'•'} ${Math.abs(vs).toLocaleString()}`;
   $('thrFill').style.height=`${state.throttle*100}%`;$('thrVal').textContent=`${Math.round(state.throttle*100)}%`;
-  const st=$('flightStatus'),warn=state.crashed?'DAMAGED':a.stall&&a.altAGL>8?'STALL':'';st.textContent=warn;st.classList.toggle('show',!!warn);
+  const fr=$('fuelRow');fr.style.display=mission.hardcore?'':'none';
+  if(mission.hardcore){const fu=mission.fuel;$('fuelFill').style.width=`${fu*100}%`;$('fuelFill').style.background=fu<.15?'var(--red)':fu<.3?'var(--amber)':'var(--lime)';$('fuelVal').textContent=`FUEL ${Math.round(fu*100)}%`;}
+  const st=$('flightStatus'),warn=state.crashed?'DAMAGED':a.stall&&a.altAGL>8?'STALL':mission.hardcore&&mission.fuel<=0?'FUEL EXHAUSTED':mission.hardcore&&mission.fuel<.12&&a.altAGL>5?'LOW FUEL':'';st.textContent=warn;st.classList.toggle('show',!!warn);
   // survey ring
   const sv=mission.survey,ring=$('surveyRing');
   if(sv&&state.started){
@@ -144,11 +161,24 @@ export function hudReadouts(){
     ring.classList.toggle('active',!sv.why);
   }else ring.classList.remove('show');
   cardTimer+=.08;if(cardTimer>.25){cardTimer=0;updateCardDistances();}
+  // wind: arrow shows where the air is going relative to the nose
+  const wkt=state.wind.length()*KTS_PER_MS,wInd=$('windInd');
+  if(wkt<2.5){wInd.style.opacity=0;}else{
+    wInd.style.opacity=1;$('windArrow').style.transform=`rotate(${WEATHER.dir+180-headingDeg()+180}deg)`;
+    $('windTxt').innerHTML=`${String(WEATHER.dir).padStart(3,'0')}° ${Math.round(WEATHER.kt)}${WEATHER.gust>0?`<span class="gust">G${Math.round(WEATHER.kt+WEATHER.gust)}</span>`:''} KT`;
+  }
+  approachGuide();
 }
 
 // ---------------------------------------------------------------- charter card
 export function hudCharterUpdate(){
   const el=$('charterCard');if(!el)return;
+  if(mission.mode==='cargo'){
+    const j=mission.job;
+    el.innerHTML=j?`<div class="cc-kicker">BUSH PILOT · DELIVERY</div><div class="cc-title">${j.cargo}</div><ul class="cc-list"><li class="target">${iconSvg(j.to.kind==='runway'?'home':j.to.kind==='water'?'lake':'strip','cc-ico')}<span class="cc-name">${j.to.name}</span><span class="cc-dist" id="jobDist"></span></li><li>${iconSvg('wreck','cc-ico')}<span class="cc-name">Payload ${j.kg} kg</span><span class="cc-dist">$${j.pay}</span></li>${j.limit?`<li><span class="cc-name" style="padding-left:25px">Medical deadline</span><span class="cc-dist" id="jobTimer"></span></li>`:''}</ul><div class="cc-foot">Land at <b>${j.to.name}</b> to deliver</div>`
+      :`<div class="cc-kicker">BUSH PILOT</div><div class="cc-title">Awaiting a job</div><div class="cc-foot">Pick a delivery from the job board</div>`;
+    updateCardDistances();return;
+  }
   const c=mission.charter;
   if(!c){
     const n=mission.discovered.size,t=mission.landmarks.length;
@@ -162,7 +192,13 @@ export function hudCharterUpdate(){
   updateCardDistances();
 }
 function updateCardDistances(){
-  const el=$('charterCard');if(!el||!mission.charter)return;
+  const el=$('charterCard');if(!el)return;
+  if(mission.mode==='cargo'&&mission.job){
+    const j=mission.job,d=Math.hypot(j.to.x-aircraft.position.x,j.to.z-aircraft.position.z)/1000,dd=$('jobDist');if(dd)dd.textContent=`${d<10?d.toFixed(1):Math.round(d)} km`;
+    const tt=$('jobTimer');if(tt&&j.limit){const left=j.limit-(mission.flightTime-j.start);tt.textContent=left>0?fmtTime(left):'LATE';tt.style.color=left<30?'var(--red)':'';}
+    return;
+  }
+  if(!mission.charter)return;
   for(const li of el.querySelectorAll('li[data-id]')){
     const l=landmarkById(+li.dataset.id);if(!l||mission.discovered.has(l.id))continue;
     const d=Math.hypot(l.x-aircraft.position.x,l.z-aircraft.position.z)/1000;li.querySelector('.cc-dist').textContent=`${d<10?d.toFixed(1):Math.round(d)} km`;
@@ -177,6 +213,7 @@ export function hudBanner(b){
   el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
   clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>el.classList.remove('show'),5200);
   playChime(b.rare?2:1);
+  speak(`${b.rare?'Rare find. ':''}${b.name}, charted.${b.charterLeft===0?' Charter surveyed. Return and land.':''}`);
 }
 let stampTimer=0;
 export function hudLanding(l){
@@ -184,6 +221,7 @@ export function hudLanding(l){
   el.innerHTML=`<div class="ls-stamp g-${l.grade}"><span class="ls-grade">${l.grade}</span><span class="ls-word">${l.label}</span></div><div class="ls-meta">${l.fpm} fpm · ${l.site}</div><div class="ls-xp">+${l.xp} XP${l.rankUp?` · ${l.rankUp.toUpperCase()}`:''}</div>${l.hint?`<div class="ls-hint">${l.hint}</div>`:''}`;
   el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
   clearTimeout(stampTimer);stampTimer=setTimeout(()=>el.classList.remove('show'),4600);
+  speak(`${l.label.toLowerCase()} landing, ${l.site}.`);
 }
 export function hudCharterComplete(r){
   const c=mission.charter,ts=charterTargets(),rk=rankInfo();
@@ -289,3 +327,53 @@ export function downloadChart(){
 // ---------------------------------------------------------------- camera label
 let camTimer=0;
 export function hudCamera(name){const el=$('cameraName');if(!el)return;el.textContent=name;el.classList.add('show');clearTimeout(camTimer);camTimer=setTimeout(()=>el.classList.remove('show'),1600);}
+
+// ---------------------------------------------------------------- approach guide
+// Appears when lined up with the home runway or a bush strip: diamond markers show deviation
+// from a 3° glide path to a point 60 m past the threshold, and from the centreline.
+function approachGuide(){
+  const el=$('approachGuide'),a=aircraft,p=a.position;
+  if(!state.started||a.altAGL<3||a.altAGL>520){el.classList.remove('show');return;}
+  const fx=-Math.sin(a.yaw),fz=-Math.cos(a.yaw),sites=[{name:'Home Field',x:0,z:0,cos:0,sin:1,halfL:RUNWAY_HALF_L,h:AIRPORT_H}];
+  for(const s of mission.strips)sites.push({name:s.name,x:s.x,z:s.z,cos:s.cos,sin:s.sin,halfL:s.halfL,h:s.h});
+  let best=null;
+  for(const s of sites)for(const dir of [1,-1]){
+    const dx=s.cos*dir,dz=s.sin*dir;if(fx*dx+fz*dz<Math.cos(35*DEG))continue;
+    const tx=s.x-dx*(s.halfL-60),tz=s.z-dz*(s.halfL-60),rx=tx-p.x,rz=tz-p.z,along=rx*dx+rz*dz,cross=-rx*dz+rz*dx;
+    if(along<120||along>4500||Math.abs(cross)>along*.35+60)continue;
+    if(!best||along<best.along)best={s,along,cross};
+  }
+  if(!best){el.classList.remove('show');return;}
+  el.classList.add('show');
+  const target=best.s.h+best.along*Math.tan(3*DEG),dev=(p.y-target)/Math.max(6,best.along*Math.tan(1*DEG));
+  $('apName').textContent=best.s.name.toUpperCase();
+  $('apGlide').style.top=`${50-clamp(dev,-1,1)*44}%`;
+  $('apLoc').style.left=`${50+clamp(best.cross/Math.max(12,best.along*.06),-1,1)*46}%`;
+  $('apDist').textContent=`${(best.along/1000).toFixed(1)} km · ${dev>.35?'high':dev<-.35?'low':'on path'}`;
+}
+
+// Radio-style voice callouts (Web Speech API), optional in settings.
+export function speak(text){
+  if(state.voice===false||!state.audioEnabled||!('speechSynthesis' in window))return;
+  try{const u=new SpeechSynthesisUtterance(text);u.rate=1.04;u.pitch=.92;u.volume=.75*state.audioVolume;
+    const v=speechSynthesis.getVoices().find(v=>/en-(GB|US)/.test(v.lang)&&/Daniel|Samantha|Google UK|Serena|Alex/.test(v.name));if(v)u.voice=v;
+    speechSynthesis.cancel();speechSynthesis.speak(u);}catch{}
+}
+
+// ---------------------------------------------------------------- Bush Pilot job board
+export function hudJobBoard({delivered,jobs}){
+  const rows=jobs.map((j,i)=>`<button class="job" data-i="${i}"><div class="job-top"><span class="job-cargo">${j.cargo}</span><span class="job-pay">$${j.pay}</span></div><div class="job-route">${iconSvg(j.to.kind==='runway'?'home':j.to.kind==='water'?'lake':'strip','cc-ico')}<span>${j.from.name} → <b>${j.to.name}</b></span></div><div class="job-meta">${(j.dist/1000).toFixed(1)} km ${j.dir} · ${j.kg} kg${j.limit?` · <span class="job-timed">⏱ ${fmtTime(j.limit)}</span>`:''}</div></button>`).join('');
+  const head=delivered?`<div class="kicker">DELIVERED · ${delivered.to.name.toUpperCase()}</div><h2 class="cp-title">${delivered.cargo}</h2>
+    <div class="job-receipt"><div><span>Landing</span><strong>${delivered.grade}</strong></div><div><span>Time</span><strong>${fmtTime(delivered.elapsed)}${delivered.late?' · late':''}</strong></div><div><span>Paid</span><strong>$${delivered.pay}${delivered.timeBonus?` <em>(+$${delivered.timeBonus} on time)</em>`:''}</strong></div><div><span>XP</span><strong>+${delivered.xp}${delivered.rankUp?` · ${delivered.rankUp}`:''}</strong></div></div>
+    <div class="board-head"><span>NEXT JOBS</span><span class="board-sub">Wallet $${(progress.pilot.cash||0).toLocaleString()}</span></div>`
+    :`<div class="kicker">BUSH PILOT · JOB BOARD</div><h2 class="cp-title">Pick a delivery</h2><div class="board-head"><span>AVAILABLE JOBS</span><span class="board-sub">Wallet $${(progress.pilot.cash||0).toLocaleString()}</span></div>`;
+  $('completeCard').innerHTML=`${head}<div class="jobs">${rows}</div><div class="modal-actions"><button id="jbExplore">EXPLORE INSTEAD</button></div>`;
+  $('completeOverlay').style.display='grid';state.paused=true;
+  for(const b of $('completeCard').querySelectorAll('.job'))b.onclick=()=>{acceptJob(jobs[+b.dataset.i]);$('completeOverlay').style.display='none';state.paused=false;hudEvents.setHud?.();};
+  $('jbExplore').onclick=()=>{mission.mode='free';mission.job=null;mission.cargoKg=0;hudCharterUpdate();$('completeOverlay').style.display='none';state.paused=false;hudEvents.setHud?.();};
+  if(delivered){playChime(3);speak(`Delivery complete at ${delivered.to.name}. ${delivered.pay} dollars.`);}
+}
+export function explorerShare(){
+  const n=mission.discovered.size,t=mission.landmarks.length;
+  return `SKYBOUND · World #${WORLD_SEED}: ${n}/${t} discovered · ${location.origin+location.pathname}?seed=${WORLD_SEED}`;
+}

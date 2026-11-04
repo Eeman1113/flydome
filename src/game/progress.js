@@ -29,8 +29,10 @@ export function addXP(n){
   const before=rankInfo().index;progress.pilot.xp+=Math.round(n);saveProgress();
   const after=rankInfo();return {rankUp:after.index>before,rank:after};
 }
+// Per-world logs are keyed by generator version so old saves never mark the wrong landmarks.
+const GEN='g2';
 export function worldEntry(seed){
-  const log=progress.worldLog;
+  seed=`${seed}:${GEN}`;const log=progress.worldLog;
   if(!log[seed]){
     log[seed]={discovered:[],charters:[],ts:Date.now()};
     const keys=Object.keys(log).sort((a,b)=>log[b].ts-log[a].ts);
@@ -41,7 +43,7 @@ export function worldEntry(seed){
 }
 export function markWorldFlown(seed,meta){
   const isNew=!progress.lastWorld||progress.lastWorld.seed!==seed;
-  if(isNew&&!progress.worldLog[seed]?.flown)progress.pilot.worlds++;
+  if(isNew&&!progress.worldLog[`${seed}:${GEN}`]?.flown)progress.pilot.worlds++;
   progress.lastWorld={seed,ts:Date.now(),...meta};
   worldEntry(seed).flown=true;saveProgress();
 }

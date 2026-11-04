@@ -1,4 +1,5 @@
-import { toggleChart, closeChart } from './hud.js';
+import { toggleChart, closeChart, cycleMapZoom } from './hud.js';
+import { togglePhoto } from './photo.js';
 // SKYBOUND · input
 import { $, clamp } from './util.js';
 import { state } from './config.js';
@@ -51,6 +52,8 @@ export function getControls(dt){
     if(b[14]?.pressed&&!state.dpadLeftLatch){state.camera=(state.camera+2)%4+1;cameraName();state.dpadLeftLatch=true;}if(!b[14]?.pressed)state.dpadLeftLatch=false;
     if(b[15]?.pressed&&!state.dpadRightLatch){nextCamera();state.dpadRightLatch=true;}if(!b[15]?.pressed)state.dpadRightLatch=false;
     if(b[9]?.pressed&&!state.startLatch){togglePause();state.startLatch=true;}if(!b[9]?.pressed)state.startLatch=false;
+    if(b[17]?.pressed&&!state.padLatch){toggleChart();state.padLatch=true;}if(!b[17]?.pressed)state.padLatch=false;
+    if(b[8]?.pressed&&!state.shareLatch){cycleMapZoom(1);state.shareLatch=true;}if(!b[8]?.pressed)state.shareLatch=false;
   }
   // Digital controls remain available alongside a connected controller.
   const k=state.keys;
@@ -77,7 +80,7 @@ export function getControls(dt){
   state.throttle=clamp(state.throttle+throttleDelta,0,1);
   return{pitch:clamp(pitch*state.stickSensitivity,-1,1),roll:clamp(roll*state.stickSensitivity,-1,1),yaw:clamp(yaw,-1,1),camX,camY};
 }
-window.addEventListener('keydown',e=>{state.keys[e.code]=true;if(state.tutorial.active&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyQ','KeyE','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyG'].includes(e.code))setTutorialInputMode('keyboardMouse');if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(e.code==='KeyM'&&state.started){toggleChart();return;}if(e.code==='Escape'&&document.getElementById('chartOverlay')?.style.display==='grid'){closeChart();return;}if(e.code==='Escape'||e.code==='Space'){if(state.started)togglePause();}if(e.code==='KeyH'){state.hud=!state.hud;setHud();}if(e.code==='KeyC')nextCamera();});window.addEventListener('keyup',e=>state.keys[e.code]=false);
+window.addEventListener('keydown',e=>{state.keys[e.code]=true;if(state.tutorial.active&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyQ','KeyE','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyG'].includes(e.code))setTutorialInputMode('keyboardMouse');if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(e.code==='KeyM'&&state.started){toggleChart();return;}if(e.code==='KeyN'&&state.started){cycleMapZoom(1);return;}if(e.code==='KeyP'&&state.started){togglePhoto();return;}if(e.code==='Escape'&&document.getElementById('chartOverlay')?.style.display==='grid'){closeChart();return;}if(e.code==='Escape'||e.code==='Space'){if(state.started)togglePause();}if(e.code==='KeyH'){state.hud=!state.hud;setHud();}if(e.code==='KeyC')nextCamera();});window.addEventListener('keyup',e=>state.keys[e.code]=false);
 $('sim').addEventListener('pointerdown',e=>{
   if(e.button===0){
     // Left-drag always flies, even when a controller is connected. This makes

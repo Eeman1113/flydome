@@ -1,4 +1,4 @@
-import { beginMission } from './survey.js';
+import { beginMission, mission, nextTarget } from './survey.js';
 // SKYBOUND · tutorial
 import { $, DEG, FT_PER_M, KTS_PER_MS, clamp } from './util.js';
 import { TAKEOFF_ROTATE_KTS, aircraft, state } from './config.js';
@@ -14,6 +14,8 @@ export const flightLesson=[
   {title:'Stabilise the climb',objective:'The Cessna 182 Skylane has fixed landing gear, so there is no gear-retraction action. Hold a steady climb with a positive vertical speed and nearly level wings.',controller:'Use small LEFT STICK corrections. Keep the wings within about 10° of level and maintain a positive climb.',keyboard:'Use short W/A/D corrections. Keep the wings within about 10° of level and maintain a positive climb.',mouse:'Hold LEFT MOUSE BUTTON and make tiny drags. Drag UP for pitch; LEFT/RIGHT for roll corrections.',done:()=>aircraft.verticalSpeed>1.2&&Math.abs(aircraft.roll)<.18&&aircraft.airspeed>25,status:'WAITING FOR A STABLE CLIMB'},
   {title:'Make a gentle turn',objective:'Aircraft turn by banking. Try a shallow 15° bank, then release the controls.',controller:'Move the LEFT STICK LEFT or RIGHT to bank. L1/R1 provide rudder input.',keyboard:'Press A to bank left or D to bank right. Q/E control rudder.',mouse:'Hold LEFT MOUSE BUTTON and drag LEFT or RIGHT to bank.',done:()=>Math.abs(aircraft.roll)>.22,status:'WAITING FOR A 13° BANK'},
   {title:'Level the wings',objective:'Stop the turn by easing the wings back to level. Avoid large opposite inputs.',controller:'Ease the LEFT STICK toward the opposite side, then return it to the centre.',keyboard:'Tap the opposite A/D key briefly, then release both keys.',mouse:'Hold LEFT MOUSE BUTTON and drag gently in the opposite direction, then release.',done:()=>Math.abs(aircraft.roll)<.09,status:'WAITING FOR WINGS LEVEL'},
+  {title:'Survey a landmark',objective:'Every world hides uncharted landmarks. Follow the cyan diamond on the compass tape to the nearest ? marker, then fly a low, steady pass until the survey ring fills.',controller:'Steer toward the cyan diamond with the LEFT STICK. Ease the nose down to descend, keep the wings level over the landmark.',keyboard:'Steer toward the cyan diamond with A/D. Use S to descend gently and keep the wings level as the ring fills.',mouse:'Hold LEFT MOUSE and drag toward the cyan diamond; keep the wings level as the ring fills.',done:()=>mission.discovered.size>(state.tutorial.discStart??99),status:'WAITING FOR A SURVEY'},
+  {title:'Land on a strip',objective:'Charters end with a landing. Turn toward the nearest bush strip or the home runway; when you are lined up the approach guide appears: keep both diamonds centred, reduce power and touch down gently.',controller:'Use L2 to reduce power, the LEFT STICK to hold the diamonds centred, and flare gently just above the ground.',keyboard:'Hold CTRL to reduce power, use W/S and A/D to keep the approach diamonds centred, and flare gently with W just above the ground.',mouse:'Hold LEFT MOUSE to steer the diamonds to centre; use CTRL for power and drag up gently to flare.',done:()=>(mission.lastLandingT||0)>(state.tutorial.stepStart||0)&&mission.lastLandingProper,status:'WAITING FOR A LANDING'},
   {title:'You are flying',objective:'You have practised throttle, takeoff, climb, fixed-gear checks, banking and recovery. Keep exploring, or practise a landing when you are ready.',controller:'Left stick: pitch/roll · R2/L2: throttle · L1/R1: rudder · ✕: fixed-gear info · ○: camera · OPTIONS: pause.',keyboard:'W/S: pitch · A/D: roll · Q/E: rudder · SHIFT/CTRL: throttle · G: fixed-gear info · 1–4: camera · ESC: pause.',mouse:'LMB + drag: pitch/roll · RMB + drag: camera look. Use the keyboard for throttle; landing gear is fixed.',done:()=>true,status:'BASIC FLIGHT LESSON COMPLETE'}
 ];
 export function hasConnectedGamepad(){try{return Array.from(navigator.getGamepads?.()||[]).some(p=>p&&p.connected);}catch{return false;}}
@@ -45,6 +47,8 @@ export function keyboardMouseLessonInstruction(step,index){
     'The Cessna 182 has fixed landing gear. No gear input is needed; focus on maintaining a steady climb.',
     'Press A or D to bank, OR hold LEFT MOUSE BUTTON and drag left/right until the bank reaches about 13°.',
     'Tap the opposite A/D key, OR use a small opposite LEFT MOUSE BUTTON drag. Release the controls as the wings level.',
+    'Steer toward the cyan diamond on the compass tape with A/D (or LEFT MOUSE drag). Ease down with S and keep the wings level until the survey ring fills.',
+    'Line up with a strip until the approach guide appears. Hold CTRL to reduce power, keep both diamonds centred with W/S and A/D, and flare gently with W.',
     'W/S: pitch · A/D: roll · Q/E: rudder · SHIFT/CTRL: throttle · G: fixed-gear info · 1–4: camera. LEFT MOUSE + drag: pitch/roll; RIGHT MOUSE + drag: camera look.'
   ];
   return instructions[index] || `${step.keyboard} ${step.mouse}`;
@@ -59,6 +63,8 @@ export function tutorialProgressFor(index){
     case 4:return clamp(.35+Math.min(aircraft.verticalSpeed/1.2,1)*.4+(Math.abs(aircraft.roll)<.18?.25:0),0,1);
     case 5:return clamp(roll/.22,0,1);
     case 6:return clamp(1-roll/.22,0,1);
+    case 7:return mission.survey?clamp(mission.survey.prog,0,.95):0;
+    case 8:return aircraft.altAGL<3?.85:clamp(1-aircraft.altAGL/400,0,.8);
     default:return 1;
   }
 }
@@ -88,6 +94,8 @@ export function tutorialFeedback(index){
       return rollDeg>13?`Bank detected: ${Math.round(rollDeg)}° ${aircraft.roll>0?'right':'left'}. Ease off the control.`:'Apply a gentle left or right bank until the aircraft reaches about 13°.';
     case 6:
       return rollDeg>7?`Still banked ${aircraft.roll>0?'right':'left'} by ${Math.round(rollDeg)}°. Apply a small opposite input.`:'Wings nearly level. Release the controls and let the aircraft settle.';
+    case 7:{const t=nextTarget()||mission.landmarks.find(l=>!mission.discovered.has(l.id));if(mission.survey)return mission.survey.why?`${mission.survey.why}.`:'Hold it steady — the survey ring is filling.';if(!t)return 'No uncharted landmarks left nearby.';const d=Math.hypot(t.x-aircraft.position.x,t.z-aircraft.position.z)/1000;return `Nearest uncharted landmark: ${d.toFixed(1)} km. Follow the diamond.`;}
+    case 8:return document.getElementById('approachGuide')?.classList.contains('show')?'Approach guide active: keep both diamonds centred and reduce power.':'Turn toward a strip or the home runway until the approach guide appears.';
     default:return 'Basic flight lesson complete. The instructor will close automatically.';
   }
 }
@@ -123,7 +131,7 @@ export function advanceTutorial(){
   if(!state.tutorial.active)return;
   const next=state.tutorial.index+1;
   if(next>=flightLesson.length){finishTutorial();return;}
-  state.tutorial.index=next;state.tutorial.readySince=0;updateTutorialPanel();
+  state.tutorial.index=next;state.tutorial.readySince=0;state.tutorial.stepStart=performance.now();if(next===7)state.tutorial.discStart=mission.discovered.size;updateTutorialPanel();
 }
 export function exitTutorial(){state.tutorial.active=false;state.tutorial.readySince=0;$('tutorialPanel').style.display='none';toast('Flight school closed. Free flight remains active.');}
 export function tutorialTick(){

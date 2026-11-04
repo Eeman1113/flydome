@@ -1,3 +1,4 @@
+import { WEATHER } from './config.js';
 // SKYBOUND · materials
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -15,7 +16,7 @@ export function createMaterials(){
     const cover=SKY.clouds*(.7+terrain.P.moistBias+.45),A=noiseTex.image.data,vals=[];
     for(let i=3;i<A.length;i+=4)vals.push(A[i]);vals.sort((a,b)=>a-b);
     const frac=clamp(cover*.32,.04,.4);
-    fx.cloud={cover,tile:26000,base:AIRPORT_H+900+((WORLD_SEED>>3)%7)*160,thresh:vals[Math.floor((1-frac)*(vals.length-1))]/255};
+    fx.cloud={cover,tile:26000,base:AIRPORT_H+(WEATHER.lowCloud?420+((WORLD_SEED>>3)%5)*60:900+((WORLD_SEED>>3)%7)*160),thresh:vals[Math.floor((1-frac)*(vals.length-1))]/255};
     fx.cloudUniform={value:new THREE.Vector4(fx.cloud.tile,fx.cloud.thresh,fx.cloud.base,.6)};
   }
   // Terrain: biome/slope/altitude splatting, farmland patchwork, baked sun visibility.
@@ -125,7 +126,7 @@ export function createMaterials(){
 
   // Water: PBR with layered scrolling normals, reflecting the HDR sky.
   const wn=makeWaterNormalTexture();
-  const wm=new THREE.MeshPhysicalMaterial({color:new THREE.Color(.006,.03,.04),roughness:.035,metalness:0,normalMap:wn,normalScale:new THREE.Vector2(.55,.55),envMapIntensity:1.25,ior:1.33,specularIntensity:1});
+  const wm=new THREE.MeshPhysicalMaterial({color:new THREE.Color(.008,.034,.045),roughness:.09,metalness:0,normalMap:wn,normalScale:new THREE.Vector2(.22,.22),envMapIntensity:1.05,ior:1.33,specularIntensity:.8});
   wm.onBeforeCompile=(sh)=>{
     sh.uniforms.uTime=shared.time;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWPos2;').replace('#include <begin_vertex>','#include <begin_vertex>\nvWPos2=(modelMatrix*vec4(transformed,1.0)).xyz;');
@@ -136,7 +137,7 @@ export function createMaterials(){
         vec3 w2=texture2D(normalMap,wuv/23.0+vec2(-uTime*.017,uTime*.013)).xyz*2.-1.;
         vec3 w3=texture2D(normalMap,wuv/420.0+vec2(uTime*.003,-uTime*.002)).xyz*2.-1.;
         float wd=length(vWPos2-cameraPosition);
-        vec2 ts=(w1.xy+w2.xy*.7+w3.xy*1.2)*normalScale/(1.+wd/1400.);
+        vec2 ts=(w1.xy*.8+w2.xy*.45+w3.xy*1.1)*normalScale/(1.+wd/600.);
         vec3 wN=normalize(vec3(ts.x,1.0,-ts.y));
         normal=normalize((viewMatrix*vec4(wN,0.)).xyz);`);
   };

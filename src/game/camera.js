@@ -6,7 +6,12 @@ import { groundLevelAt } from './chunks.js';
 import { aircraftGroundOffset, camera, plane, worldTime } from './engine.js';
 
 export const camTarget=new THREE.Vector3(),camPos=new THREE.Vector3(),camShake=new THREE.Vector3();let lastCameraMode=0,camFov=66;
-export function updateCamera(dt,ctrl){const a=aircraft,q=plane.quaternion;camForward.set(0,0,-1).applyQuaternion(q);camUp.set(0,1,0).applyQuaternion(q);camRight.set(1,0,0).applyQuaternion(q);
+export function updateCamera(dt,ctrl){
+  if(state.crashed){ // slow orbit around the wreck
+    const a=aircraft.position;state.orbitYaw+=dt*.32;const r=30,h=9;camera.up.set(0,1,0);
+    camPos.set(a.x+Math.sin(state.orbitYaw)*r,a.y+h,a.z+Math.cos(state.orbitYaw)*r);const gmin=groundLevelAt(camPos.x,camPos.z)+2;if(camPos.y<gmin)camPos.y=gmin;
+    camera.position.lerp(camPos,1-Math.exp(-dt*2.5));camera.lookAt(a.x,a.y+1,a.z);return;
+  }const a=aircraft,q=plane.quaternion;camForward.set(0,0,-1).applyQuaternion(q);camUp.set(0,1,0).applyQuaternion(q);camRight.set(1,0,0).applyQuaternion(q);
   const speedK=smooth(20,75,a.airspeed);
   const targetFov=(state.camera===1?72:state.camera===2?62:state.camera===3?60:70)+speedK*5;
   camFov=lerp(camFov,targetFov,1-Math.exp(-dt*2));

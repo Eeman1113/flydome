@@ -78,5 +78,5 @@ export function viewDistanceM(){return perf.view*CHUNK;}
 export function updateCameraFar(){
   if(!camera)return;camera.far=viewDistanceM()*1.25+6000;camera.updateProjectionMatrix();
   if(scene?.fog)scene.fog.density=viewDistanceM();
-  if(waterMesh){const s=camera.far*2.2;waterMesh.scale.set(s,s,1);}
+  if(waterMesh){const s=camera.far*2.2;waterMesh.scale.set(s,1,s);}
 }

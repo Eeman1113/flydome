@@ -40,7 +40,7 @@ function Simulator({ start }) {
 
   return (
     <>
-      <div id="sim"></div><div className="grain"></div>
+      <div id="sim"></div><canvas id="rainDrops" className="rain-drops"></canvas><div className="grain"></div>
       <div className="loading" id="loading"><div className="loader-inner"><div className="loader-mark">SB</div><div className="loader-text">INITIALISING RENDERER</div><div className="loader-bar"><i></i></div></div></div>
       <header className="topbar">
         <div className="brand"><div className="brand-mark">SB</div><div><div className="brand-name">SKYBOUND</div><div className="brand-sub">FIRST CHARTER · CESSNA 182 SKYLANE</div></div></div>
@@ -51,11 +51,20 @@ function Simulator({ start }) {
           <div className="hdg"><span id="hdgVal">000</span>°</div>
           <canvas id="compassTape"></canvas>
           <div className="flight-tag" id="flightTag"></div>
+          <div className="wind-ind" id="windInd"><svg viewBox="0 0 24 24" id="windArrow"><path d="M12 3v15 M7 13l5 6 5-6" /></svg><span id="windTxt"></span></div>
+        </div>
+        <div className="approach" id="approachGuide">
+          <div className="ap-kicker">FINAL · <span id="apName"></span></div>
+          <div className="ap-body">
+            <div className="ap-scale"><i className="ap-mark" id="apGlide"></i><span>3°</span></div>
+            <div className="ap-center"><div className="ap-loc"><i id="apLoc"></i></div><div className="ap-dist" id="apDist"></div></div>
+          </div>
         </div>
         <div className="hud-readout left">
           <div className="ro-label">IAS</div>
           <div className="ro-main"><span id="spdVal">0</span><small>KT</small></div>
           <div className="thr"><div className="thr-track"><i id="thrFill"></i></div><span id="thrVal">0%</span></div>
+          <div className="thr fuel" id="fuelRow"><div className="thr-track"><i id="fuelFill"></i></div><span id="fuelVal">FUEL</span></div>
         </div>
         <div className="hud-readout right">
           <div className="ro-label">ALT AGL</div>
@@ -87,7 +96,8 @@ function Simulator({ start }) {
               <div className="charter-board" id="charterBoard"><div className="board-empty">Surveying this world…</div></div>
               <div className="menu-buttons">
                 <button className="primary" id="startBtn">FLY CHARTER{'\u00a0'} ↗</button>
-                <button id="freeBtn">FREE FLIGHT</button>
+                <button id="cargoBtn">BUSH PILOT</button>
+                <button id="freeBtn">EXPLORE</button>
                 <button id="teachBtn">FLIGHT SCHOOL</button>
                 <button id="controlsBtn">CONTROLS</button>
               </div>
@@ -101,6 +111,7 @@ function Simulator({ start }) {
                 <div className="pilot-stats" id="pilotStats"></div>
                 <button className="ghost" id="logbookBtn">OPEN LOGBOOK</button>
               </div>
+              <div className="side-block hangar" id="hangar"></div>
               <div className="side-block daily">
                 <div className="side-kicker">DAILY</div>
                 <div className="daily-title" id="dailyTitle">Daily Charter</div>
@@ -126,9 +137,15 @@ function Simulator({ start }) {
         <div className="modal-card pause-card"><div className="kicker">FLIGHT PAUSED</div><h2>Take a breath.</h2><p className="intro">Your aircraft is holding its current state. Ready when you are.</p><div className="modal-actions"><button className="primary" id="resumeBtn">RESUME</button><button id="chartBtn">CHART</button><button id="restartBtn">RESTART</button><button id="returnBtn">MAIN MENU</button></div></div>
       </div>
 
+      <div className="photo-ui" id="photoUi">
+        <div className="pf-bar top"></div><div className="pf-bar bottom"></div>
+        <div className="pf-caption"><div className="kicker">SKYBOUND · PHOTO MODE</div><div className="pf-place" id="photoCaption"></div></div>
+        <div className="pf-controls"><span className="pf-hint">DRAG ORBIT · SCROLL ZOOM · WASD ROTATE</span><button id="photoDof" className="on">DEPTH OF FIELD</button><button className="primary" id="photoCapture">CAPTURE ◉</button><button id="photoExit">EXIT · P</button></div>
+        <div className="pf-flash" id="photoFlash"></div>
+      </div>
       <div className="overlay" id="chartOverlay" style={{display:'none'}}>
         <div className="chart-card">
-          <div className="chart-head"><div><div className="kicker">EXPEDITION CHART</div><h2 id="chartTitle">Chart</h2><div className="chart-meta" id="chartMeta"></div></div><div className="chart-actions"><button id="chartSave">SAVE PNG ↓</button><button className="close" id="chartClose">✕</button></div></div>
+          <div className="chart-head"><div><div className="kicker">EXPEDITION CHART</div><h2 id="chartTitle">Chart</h2><div className="chart-meta" id="chartMeta"></div></div><div className="chart-actions"><button id="chartShare">COPY SHARE</button><button id="chartSave">SAVE PNG ↓</button><button className="close" id="chartClose">✕</button></div></div>
           <canvas id="chartCanvas"></canvas>
         </div>
       </div>

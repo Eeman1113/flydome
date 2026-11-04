@@ -23,7 +23,7 @@ export function createTerrainLib(seed){
   function hashI(i,j,k){let h=(Math.imul(i|0,374761393)+Math.imul(j|0,668265263)+Math.imul((seed+k)|0,1442695041))|0;h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296;}
   const P={
     warp:1600+rnd()*2400,landBias:.05+rnd()*.13,mountainH:900+rnd()*1500,mountainFreq:1/(6000+rnd()*3500),
-    mountainCover:rnd()*.22,hillH:50+rnd()*100,riverFreq:1/(5200+rnd()*3800),lakeBias:rnd()*.08,
+    mountainCover:rnd()*.22,hillH:50+rnd()*100,riverFreq:1/(4200+rnd()*3000),lakeBias:rnd()*.08,
     tempBias:(rnd()-.5)*.34,moistBias:(rnd()-.5)*.3,autumn:rnd()<.3?1:0,
     o1:(rnd()-.5)*4000,o2:(rnd()-.5)*4000
   };
@@ -47,8 +47,8 @@ export function createTerrainLib(seed){
     if(lk>.36)h-=sstep(.36,.46,lk)*(Math.max(h,0)+7)*inland*(1-mmask)*(1-sstep(22,60,h));
     const rv=Math.abs(noise2(px*P.riverFreq+71.3,pz*P.riverFreq-19.1));
     const valley=(1-sstep(0,.2,rv))*inland*(1-sstep(500,1100,h));
-    h-=valley*valley*valley*Math.min(Math.max(h,0)*.35,80);
-    const channel=(1-sstep(.006,.022,rv))*inland*(1-sstep(30,95,h));
+    h-=valley*valley*Math.min(Math.max(h,0)*.5,120)*(1-sstep(350,700,h));
+    const channel=(1-sstep(.007,.026,rv))*inland*(1-sstep(45,115,h));
     h=mix(h,-4,channel);
     if(o){o.cont=cont;o.mtn=mmask;o.river=valley;o.px=px;o.pz=pz;}
     return h;
@@ -235,24 +235,78 @@ export function createTerrainLib(seed){
       const h=H[j*N+i];if(h<280)continue;
       for(const [[ai,aj],[bi,bj]] of [[[1,0],[0,1]],[[0,1],[1,0]],[[1,1],[1,-1]],[[1,-1],[1,1]]]){
         const hi=Math.min(at(i+ai*sk,j+aj*sk),at(i-ai*sk,j-aj*sk)),lo=Math.max(at(i+bi*sk,j+bj*sk),at(i-bi*sk,j-bj*sk));
-        if(hi>h+110&&lo<h-70){passes.push({k:j*N+i,h,score:(hi-h)+(h-lo)*.5});break;}
+        if(hi>h+110&&lo<h-70){passes.push({k:j*N+i,h,score:(hi-h)+(h-lo)*.5,axis:[bi,bj]});break;}
       }
     }
     passes.sort((a,b)=>b.score-a.score);
-    passes.forEach((p,n)=>cand.push({type:'pass',k:p.k,score:p.score,elev:p.h,rank:n}));
+    // the deepest, narrowest passes become gorge runs; the rest stay passes
+    passes.forEach((p,n)=>cand.push({type:p.score>380&&n<2?'gorge':'pass',k:p.k,score:p.score,elev:p.h,rank:n,axis:p.axis}));
+    // coastal waterfalls: high land within ~250 m of open water
+    const falls=[];
+    for(let j=3;j<N-3;j+=1)for(let i=3;i<N-3;i+=1){
+      const h=H[j*N+i];if(h<35||h>700)continue;
+      let best=null;
+      for(let dj=-2;dj<=2;dj++)for(let di=-2;di<=2;di++){const k=(j+dj)*N+i+di;if(H[k]<-1){const d=Math.hypot(di,dj)*step;if(!best||d<best.d)best={d,k};}}
+      if(best){const steep=h/best.d;if(steep>.22)falls.push({k:j*N+i,to:best.k,h,score:h*steep});}
+    }
+    const rare=mulberry32((seed^0xFA11)>>>0);if(rare()>.6)falls.length=0;const keepStacks=rare()<=.55;
+    falls.sort((a,b)=>b.score-a.score);falls.forEach((c,n)=>cand.push({type:'falls',k:c.k,to:c.to,score:c.score,elev:c.h,rank:n}));
+    // sea stacks: shallow water hard against a steep coast
+    const stacks=[];
+    for(let j=4;j<N-4;j+=2)for(let i=4;i<N-4;i+=2){
+      const h=H[j*N+i];if(h>-2||h<-30)continue;let land=0,hi=0;
+      for(let dj=-3;dj<=3;dj++)for(let di=-3;di<=3;di++){const hh=H[(j+dj)*N+i+di];if(hh>2){land++;hi=Math.max(hi,hh);}}
+      if(land>=6&&land<=24&&hi>30)stacks.push({k:j*N+i,score:hi+land*2});
+    }
+    if(!keepStacks)stacks.length=0;
+    stacks.sort((a,b)=>b.score-a.score);stacks.forEach((c,n)=>cand.push({type:'stacks',k:c.k,score:c.score,rank:n}));
+    // capes: land tips mostly surrounded by water, on a large landmass
+    const landC=comps(k=>H[k]>=-.5),labBig=new Uint8Array(N*N);
+    {const big=landC.filter(c=>c.border||c.size>6000);const set=new Set(big.map(c=>c.id));const lab2=new Int32Array(N*N).fill(-1);}
+    const capes=[],cr=6;
+    for(let j=cr;j<N-cr;j+=2)for(let i=cr;i<N-cr;i+=2){
+      const h=H[j*N+i];if(h<3||h>200)continue;let w=0,t=0;
+      for(let dj=-cr;dj<=cr;dj+=2)for(let di=-cr;di<=cr;di+=2){if(di*di+dj*dj>cr*cr)continue;t++;if(H[(j+dj)*N+i+di]<-.5)w++;}
+      const fr=w/t;if(fr>.6&&fr<.85)capes.push({k:j*N+i,score:fr});
+    }
+    capes.sort((a,b)=>b.score-a.score);
+    // the best headland usually carries a lighthouse
+    const lr=mulberry32((seed^0x11CE)>>>0);
+    capes.forEach((c,n)=>cand.push({type:n===0&&lr()<.75?'lighthouse':'cape',k:c.k,score:c.score,rank:n}));
+    // explorer finds: an old plane wreck and natural stone arches on open ground
+    const er=mulberry32((seed^0xE4A1)>>>0),open=[];
+    for(let t=0;t<600;t++){const i=4+Math.floor(er()*(N-8)),j=4+Math.floor(er()*(N-8)),k=j*N+i,h=H[k];if(h<15||h>1100)continue;const gx=(at(i+1,j)-at(i-1,j))/(2*step),gz=(at(i,j+1)-at(i,j-1))/(2*step);if(Math.hypot(gx,gz)>.18)continue;open.push({k,f:FO[k],m:MO[k]});}
+    const wrecks=open.filter(o=>o.f<.35).slice(0,3);if(er()<.8)wrecks.forEach((c,n)=>cand.push({type:'wreck',k:c.k,score:1,rank:n}));
+    const arches=open.filter(o=>o.f<.2).sort((a,b)=>a.m-b.m).slice(0,3);if(er()<.7)arches.forEach((c,n)=>cand.push({type:'arch',k:c.k,score:1,rank:n}));
+    // glaciers: permanent snow above the local snowline
+    const gl=comps(k=>H[k]>mix(1500,3400,TP[k])+150).filter(c=>c.size>=14);
+    gl.sort((a,b)=>b.size-a.size).forEach((c,n)=>cand.push({type:'glacier',k:c.k,score:c.size,area:c.size*km2,rank:n}));
+    // lone rock spire: open, gentle ground away from water and forest
+    const sr=mulberry32((seed^0x51BE)>>>0);
+    if(sr()<.75){
+      const sp=[];
+      for(let t=0;t<400;t++){const i=4+Math.floor(sr()*(N-8)),j=4+Math.floor(sr()*(N-8)),k=j*N+i,h=H[k];if(h<25||h>900||FO[k]>.3)continue;const gx=(at(i+1,j)-at(i-1,j))/(2*step),gz=(at(i,j+1)-at(i,j-1))/(2*step);if(Math.hypot(gx,gz)>.12)continue;sp.push({k,score:sr()});}
+      sp.sort((a,b)=>b.score-a.score);sp.slice(0,3).forEach((c,n)=>cand.push({type:'spire',k:c.k,score:c.score,rank:n}));
+    }
     // Choose up to 8: the best of each type first, then runners-up, spaced across the region.
-    const chosen=[],order=['peak','lake','island','forest','river','pass'];
+    const chosen=[],order=['peak','lake','island','forest','river','falls','lighthouse','wreck','stacks','gorge','arch','pass','cape','glacier','spire'],MAXL=12;
     const ok=c=>{const p=pos(c.k),d=Math.hypot(p.x,p.z);if(d<1500||d>R-1200)return false;return !chosen.some(o=>Math.hypot(o.x-p.x,o.z-p.z)<(o.type===c.type?2600:1600));};
-    for(let round=0;round<3&&chosen.length<8;round++)for(const t of order){
-      if(chosen.length>=8)break;
+    for(let round=0;round<3&&chosen.length<MAXL;round++)for(const t of order){
+      if(chosen.length>=MAXL)break;
       const list=cand.filter(c=>c.type===t&&!c.used);
       for(const c of list){if(ok(c)){c.used=true;const p=pos(c.k);chosen.push({...c,x:p.x,z:p.z,y:Math.max(H[c.k],0)});break;}c.used=true;}
     }
-    const TPL={peak:['Mount {N}','{N} Peak','{N} Spire'],lake:['Lake {N}','{N} Mere','{N} Water'],island:['{N} Isle','Isle of {N}'],forest:['{N} Wood','{N} Forest','The {N} Weald'],river:['{N} River','River {N}'],pass:['{N} Pass','{N} Gap','{N} Saddle']};
+    const TPL={peak:['Mount {N}','{N} Peak','{N} Fell'],lake:['Lake {N}','{N} Mere','{N} Water'],island:['{N} Isle','Isle of {N}'],forest:['{N} Wood','{N} Forest','The {N} Weald'],river:['{N} River','River {N}'],pass:['{N} Pass','{N} Gap','{N} Saddle'],gorge:['{N} Gorge','The {N} Narrows'],falls:['{N} Falls','The {N} Cascade'],stacks:['The {N} Stacks','{N} Arch'],cape:['Cape {N}','{N} Head','{N} Point'],glacier:['{N} Glacier','The {N} Icefield'],spire:['The {N} Needle','{N} Spire'],lighthouse:['{N} Light','{N} Lighthouse'],wreck:['The {N} Wreck','Wreck of the {N}'],arch:['{N} Arch','The {N} Arches']};
     const highest=chosen.filter(c=>c.type==='peak').sort((a,b)=>b.elev-a.elev)[0];
     const landmarks=chosen.map((c,i)=>{
       const tpl=TPL[c.type],nm=placeName(i+1),t=(c===highest)?'Mount {N}':tpl[Math.floor(mulberry32((seed+i*7919)>>>0)()*tpl.length)];
-      return {id:i,type:c.type,name:t.replace('{N}',nm),x:c.x,z:c.z,y:c.y,elev:c.elev??c.y,area:c.area||0,highest:c===highest,rare:(c.type==='island'&&c.rank===0&&c.area<2)||(c.type==='pass'&&c.score>450)||(c===highest&&c.elev>2200)};
+      const L={id:i,type:c.type,name:t.replace('{N}',nm),x:c.x,z:c.z,y:c.y,elev:c.elev??c.y,area:c.area||0,highest:c===highest,
+        rare:['falls','stacks','glacier','spire','gorge','wreck','arch','lighthouse'].includes(c.type)||(c.type==='island'&&c.rank===0&&c.area<2)||(c===highest&&c.elev>2200)};
+      if(c.type==='falls'){const tp=pos(c.to);L.toX=tp.x;L.toZ=tp.z;}
+      if(c.type==='gorge'||c.type==='pass'){const ax=c.axis||[1,0],l=Math.hypot(ax[0],ax[1]);L.ax=ax[0]/l;L.az=ax[1]/l;}
+      if(c.type==='spire'){const r2=mulberry32((seed+i*131)>>>0);L.height=75+r2()*65;L.top=c.y+L.height;}
+      if(c.type==='stacks'){const r2=mulberry32((seed+i*313)>>>0);L.top=40+r2()*40;}
+      return L;
     });
     return {N,step,R,rgba,landmarks};
   }

@@ -16,14 +16,27 @@ Every world is uncharted wilderness, and you're its first survey pilot.
 
 Your **pilot logbook** (rank, XP, discovery stamps, landing grades) is saved in the browser and carries across worlds. **Refresh for a brand-new world.** The URL always carries the seed, so you can share it, and **Resume last world** reopens the last world you flew. The **Daily Charter** gives every pilot the same world and charter each day, with a shareable result line. Press **M** for the full expedition chart, which can be saved as a PNG. **Free Flight** lets you explore and chart at will.
 
+## Game modes
+
+- **Charters** (First Charter): survey three named landmarks, then land at a strip.
+- **Bush Pilot**: a job board of deliveries between bush strips and the home field. Cargo weight affects climb, medical runs are timed, and you're paid on landing, then pick the next job from wherever you are.
+- **Explore**: chart the whole world at your own pace and share `World #48213: 7/12 discovered`.
+- **Daily Charter**: one world for everyone each day, with a ghost of your best run.
+- **Flight School**: ten lessons, from throttle to surveying a landmark and landing on a strip.
+
 ## Features
 
+- **Landmarks from real terrain.** Peaks, lakes, islands, forests, rivers, passes, gorge runs, coastal waterfalls, sea stacks and arches, capes and lighthouses, glaciers, rock spires and old plane wrecks. Each is named, and the rare ones carry their own logbook stamp. A survey beacon (a cairn and pennant, or a buoy on water) marks every charted landmark.
 - **Survey gameplay.** Seeded grass bush strips, each with a cabin, windsock and edge cones, sit on flat sites found by a rotated flatness search. A worker-side scanner names 7–8 landmarks per world, and charters, survey envelopes, landing grades, a fog-of-war chart and the logbook turn exploration into the goal.
 - **A new world on every visit.** A random seed drives domain-warped continents and coastlines, ridged mountain ranges, rolling hills, lowland rivers, lakes, temperature/moisture climate and summer or autumn seasons. The airfield is placed automatically at the flattest suitable site and sits in a natural forest clearing. Use `?seed=12345` to revisit a world, or **NEW WORLD** in the menu.
 - **Real HDR skies.** Four CC0 pure-sky HDRIs from [Poly Haven](https://polyhaven.com) (partly cloudy midday, clear noon, late afternoon, golden sunset); one is picked per world, or force one with `?sky=belfast`. Each HDR is analysed at load: the sun disc is located and integrated for the sun light's direction, colour and strength, sky irradiance sets exposure, and the sun is clamped out of the image-based lighting so it is not counted twice.
 - **Streaming terrain.** Chunks are generated in Web Workers with distance LOD (64/32/16/8 segments) and crack-hiding skirts. Baked terrain self-shadowing, ambient occlusion and a splatting shader give grassland, farmland patchwork, forest, rock with strata, snow lines, beaches and wet shorelines.
 - **Living scenery.** Instanced conifer and broadleaf forests with wind sway, PBR water reflecting the sky, sun-lit cumulus clouds with matching cloud shadows on the ground, and height fog with sun in-scattering.
 - **Cinematic rendering.** HDR render target with MSAA, bloom, ACES tone mapping and grading, a sun-aligned aircraft shadow, and a separate near-plane pass for the cockpit so the world keeps depth precision to the horizon.
+- **Weather & time of day.** Seven CC0 HDR skies (dawn to dusk, plus overcast). Each world has seeded wind and gusts that the flight model feels, rain with windshield droplets on some overcast days, and low cloud.
+- **Two aircraft.** The Cessna 182 Skylane, and a Cessna 208 Caravan Amphibian that unlocks at Bush Pilot rank and lands on lakes as well as runways. Six paint schemes unlock with rank. Hardcore mode adds fuel limits, refuelling at strips and +50% XP.
+- **Crashes.** A fireball, a smoke plume drifting with the wind, torn-off parts and shards with physics, a crumpled airframe, a shock-distortion pulse and a crash camera. A water landing in the wrong aircraft ends in a splash and steam instead.
+- **Approach guide & photo mode.** A glideslope and centreline cue when lined up with a strip. Photo mode (P) has an orbit camera, depth of field, a letterbox frame and PNG capture.
 - **Automatic quality.** The GPU is detected to pick Low/Medium/High/Ultra, then a runtime governor watches frame rate and adjusts render scale, view distance (4–20 km) and effects. **Settings → Graphics quality** allows a manual override.
 - **Flight model.** Lift perpendicular to the airflow, induced and sideslip drag, ground effect, progressive stall, engine spool-up, density falloff with altitude, rate-commanded controls with expo and an optional wing-levelling assist. It is a game flight model, not a certified training simulator.
 - **Flight School.** **TEACH ME TO FLY** walks you through throttle, takeoff roll, rotation, climb, banking and levelling, advancing automatically as you complete each step, with instructions for whichever device you are using.
@@ -41,7 +54,9 @@ Your **pilot logbook** (rank, XP, discovery stamps, landing grades) is saved in 
 | Steer like a joystick | Hold left mouse + drag | — |
 | Look around | Hold right mouse + drag | Right stick |
 | HUD | H | □ |
-| Expedition chart | M | — |
+| Expedition chart | M | Touchpad |
+| Minimap zoom | N or scroll | Create |
+| Photo mode | P | — |
 | Pause | Esc / Space | OPTIONS |
 
 **Taking off:** hold Shift to full throttle, wait for about 58 kt, then gently pull back with W.
@@ -95,6 +110,7 @@ public/skies/        CC0 HDR skies
 
 ## Credits
 
+- **Amphibian:** "CaravanA" (Cessna 208 Caravan Amphibian) by [helijah](https://sketchfab.com/helijah) on [Sketchfab](https://sketchfab.com/3d-models/caravanazip-125yIM3DWOvlzV70NvXjZElRdel), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - **Aircraft:** "Cessna 182 Skylane" by VTX on [Sketchfab](https://sketchfab.com/3d-models/cessna-182-skylane-2dde31b1aa8f484f96bb7ee9d9c5ad26), licensed [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (non-commercial, attribution, share-alike). Compressed with glTF-Transform for the web.
-- **Skies:** CC0 HDRIs from [Poly Haven](https://polyhaven.com): Kloofendal 48d Partly Cloudy, Qwantani Noon, Qwantani Late Afternoon and Belfast Sunset (Pure Sky).
+- **Skies:** CC0 HDRIs from [Poly Haven](https://polyhaven.com): Kloofendal 48d Partly Cloudy, Kloofendal Overcast, Qwantani Dawn, Noon, Late Afternoon and Dusk 2, and Belfast Sunset (Pure Sky).
 - Built with [three.js](https://threejs.org) and [Next.js](https://nextjs.org).

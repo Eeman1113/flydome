@@ -76,7 +76,9 @@ export function analyseSky(tex){
   const envTex=new THREE.DataTexture(env,W,H,THREE.RGBAFormat,tex.type);envTex.flipY=tex.flipY;envTex.mapping=THREE.EquirectangularReflectionMapping;envTex.minFilter=THREE.LinearFilter;envTex.magFilter=THREE.LinearFilter;envTex.generateMipmaps=false;envTex.needsUpdate=true;
   sky.envSource=envTex;
   let sunLum=.2126*sunE[0]+.7152*sunE[1]+.0722*sunE[2];
-  if(!hasSun||sunLum<skyE*.3){sky.sunDir.set(.35,.62,-.4).normalize();sunE[0]=sunE[1]=sunE[2]=skyE*.6;sunLum=skyE*.6;}
+  if(SKY.overcast||!hasSun||sunLum<skyE*.3){sky.sunDir.set(.35,.82,-.4).normalize();const k=SKY.overcast?.28:.6;sunE[0]=sunE[1]=sunE[2]=skyE*k;sunLum=skyE*k;}
+  // Keep the light at least 6° up so low suns give long (not endless) shadows.
+  if(sky.sunDir.y<Math.sin(6*DEG)){const h=Math.hypot(sky.sunDir.x,sky.sunDir.z),y=Math.sin(6*DEG),s=Math.cos(6*DEG)/h;sky.sunDir.set(sky.sunDir.x*s,y,sky.sunDir.z*s);}
   const m=Math.max(sunE[0],sunE[1],sunE[2])||1;sky.sunColor.setRGB(sunE[0]/m,sunE[1]/m,sunE[2]/m,THREE.LinearSRGBColorSpace);
   sky.sunIntensity=sunLum/Math.max(.2126*sky.sunColor.r+.7152*sky.sunColor.g+.0722*sky.sunColor.b,1e-3);
   sky.horizon.setRGB(hz[0]/hzN,hz[1]/hzN,hz[2]/hzN,THREE.LinearSRGBColorSpace);

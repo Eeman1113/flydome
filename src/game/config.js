@@ -24,7 +24,10 @@ export const SKIES=[
   {id:'kloofendal_48d_partly_cloudy_puresky',name:'Partly cloudy · midday',clouds:.55,haze:1},
   {id:'qwantani_noon_puresky',name:'Clear · noon',clouds:.22,haze:.8},
   {id:'qwantani_late_afternoon_puresky',name:'Late afternoon',clouds:.35,haze:1.1},
-  {id:'belfast_sunset_puresky',name:'Golden sunset',clouds:.4,haze:1.35}
+  {id:'belfast_sunset_puresky',name:'Golden sunset',clouds:.4,haze:1.35},
+  {id:'qwantani_dawn_puresky',name:'Dawn',clouds:.3,haze:1.5},
+  {id:'kloofendal_overcast_puresky',name:'Overcast',clouds:1.05,haze:1.7,overcast:true,rain:.65},
+  {id:'qwantani_dusk_2_puresky',name:'Dusk',clouds:.3,haze:1.4}
 ];
 export const SKY=(()=>{const q=urlParams.get('sky');const byName=SKIES.find(s=>s.id.startsWith(q||'#'));if(byName)return byName;const n=parseInt(q||'',10);if(Number.isFinite(n)&&SKIES[n])return SKIES[n];return SKIES[WORLD_SEED%SKIES.length];})();
 
@@ -45,3 +48,32 @@ export const glass=new THREE.MeshPhysicalMaterial({color:0x9fc6d4,metalness:.1,r
 export const sky={sunDir:new THREE.Vector3(.4,.6,-.5).normalize(),sunColor:new THREE.Color(1,.95,.85),sunIntensity:3,horizon:new THREE.Color(.6,.7,.8),zenith:new THREE.Color(.3,.45,.7),exposure:1,texture:null,env:null,name:SKY.name};
 export const fx={time:0,visibility:30000};
 export const shared={time:{value:0}};
+
+// Airframes and paint schemes (unlocked by rank / stamps; see menu.js).
+export const AIRCRAFT={
+  skylane:{id:'skylane',name:'Cessna 182 Skylane',short:'Skylane',file:'cessna_182_skylane.glb',scale:1.08,yaw:0,floats:false,rank:0},
+  floats:{id:'floats',name:'Cessna 208 Caravan Amphibian',short:'Caravan Amphib',file:'cessna_208_amphibian.glb',scale:1,yaw:-Math.PI/2,floats:true,rank:2,thrust:1.3,
+    objFrame:'caravan',eye:[-3.0,-.38,1.12],propCut:-5.84,propZMin:-1.3,
+    credit:'“CaravanA” (Cessna 208 Caravan Amphibian) by helijah, CC BY 4.0'}
+};
+export const LIVERIES=[
+  {id:'factory',name:'Factory',tint:0xffffff,rank:0},
+  {id:'glacier',name:'Glacier',tint:0xcfe6ff,rank:1},
+  {id:'sage',name:'Sage',tint:0xc9dcc0,rank:1},
+  {id:'ember',name:'Ember',tint:0xffd2b0,rank:2},
+  {id:'dusk',name:'Dusk',tint:0x9aa4c4,rank:3},
+  {id:'gold',name:'Cartographer Gold',tint:0xffe2a0,rank:5}
+];
+export const aircraftState={variant:'skylane',livery:'factory'};
+
+// Per-world weather, derived from the seed: wind from a direction (degrees, 0 = north),
+// steady speed and gust strength in knots, rain on some overcast days, and low cloud.
+export const WEATHER=(()=>{
+  let a=(WORLD_SEED*2654435761)>>>0;const r=()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};
+  const calm=r()<.22,dir=Math.round(r()*36)*10||360;
+  const kt=calm?2+r()*4:6+r()*(SKY.overcast?16:12),gust=calm?0:r()<.55?kt*(.3+r()*.5):0;
+  const rain=!!SKY.rain&&r()<SKY.rain;
+  return {dir,kt,gust,rain,lowCloud:!!SKY.overcast};
+})();
+export const WIND_BASE=new THREE.Vector3(-Math.sin(WEATHER.dir*Math.PI/180),0,Math.cos(WEATHER.dir*Math.PI/180)).multiplyScalar(WEATHER.kt/1.94384);
+state.wind.copy(WIND_BASE);

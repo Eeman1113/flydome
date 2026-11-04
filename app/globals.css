@@ -221,3 +221,69 @@ button.ghost{width:100%;padding:9px;font-size:10px;letter-spacing:.12em;backgrou
 .complete-card .modal-actions button{padding:11px 8px;font-size:10.5px;letter-spacing:.06em;white-space:nowrap}
 #mainMenu .menu-buttons{flex-wrap:nowrap;gap:8px}
 #mainMenu .menu-buttons button{padding:10px 12px;font-size:12px;white-space:nowrap}
+/* wind + rain + approach guide */
+.rain-drops{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;opacity:0;transition:opacity .4s}
+.wind-ind{display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgba(238,246,252,.72);text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.wind-ind svg{width:14px;height:14px;fill:none;stroke:var(--cyan);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s linear}
+.wind-ind .gust{color:var(--amber)}
+.approach{position:absolute;left:50%;top:calc(50% + 90px);transform:translateX(-50%);opacity:0;transition:opacity .35s;text-align:center;pointer-events:none;text-shadow:0 1px 8px rgba(0,0,0,.55)}
+.approach.show{opacity:1}
+.ap-kicker{font-size:8.5px;letter-spacing:.26em;font-weight:800;color:var(--cyan)}
+.ap-body{display:flex;align-items:center;gap:16px;margin-top:7px}
+.ap-scale{position:relative;width:4px;height:70px;border-radius:4px;background:linear-gradient(rgba(238,246,252,.15),rgba(238,246,252,.35) 50%,rgba(238,246,252,.15))}
+.ap-scale span{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:8px;color:rgba(238,246,252,.5)}
+.ap-scale:before{content:"";position:absolute;left:-5px;right:-5px;top:50%;height:1.5px;background:rgba(238,246,252,.8)}
+.ap-mark{position:absolute;left:-6px;width:16px;height:16px;margin-top:-8px;top:50%;transform:rotate(45deg) scale(.7);border:2px solid var(--cyan);background:rgba(113,216,238,.25);transition:top .15s linear}
+.ap-center{text-align:left}
+.ap-loc{position:relative;width:150px;height:4px;border-radius:4px;background:linear-gradient(90deg,rgba(238,246,252,.15),rgba(238,246,252,.35) 50%,rgba(238,246,252,.15))}
+.ap-loc:before{content:"";position:absolute;top:-5px;bottom:-5px;left:50%;width:1.5px;background:rgba(238,246,252,.8)}
+.ap-loc i{position:absolute;top:-6px;width:16px;height:16px;margin-left:-8px;left:50%;transform:rotate(45deg) scale(.7);border:2px solid var(--cyan);background:rgba(113,216,238,.25);transition:left .15s linear}
+.ap-dist{margin-top:10px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:rgba(238,246,252,.85)}
+/* photo mode */
+.hud-map{pointer-events:auto;cursor:pointer}
+.photo-ui{position:fixed;inset:0;z-index:9;pointer-events:none;opacity:0;transition:opacity .35s}
+body.photo .photo-ui{opacity:1}
+body.photo .topbar,body.photo .hud,body.photo .tutorial-panel{opacity:0;pointer-events:none}
+.pf-bar{position:absolute;left:0;right:0;height:7vh;background:#000;transform:scaleY(0);transition:transform .45s cubic-bezier(.6,.1,.2,1)}
+.pf-bar.top{top:0;transform-origin:top}.pf-bar.bottom{bottom:0;transform-origin:bottom}
+body.photo .pf-bar{transform:scaleY(1)}
+.pf-caption{position:absolute;left:4vw;bottom:calc(7vh + 22px);text-shadow:0 2px 14px rgba(0,0,0,.6)}
+.pf-place{font-family:var(--display);font-style:italic;font-size:30px;margin-top:4px;color:var(--cream)}
+.pf-controls{position:absolute;right:4vw;bottom:calc(7vh + 22px);display:flex;align-items:center;gap:8px;pointer-events:auto}
+.pf-controls button{background:rgba(6,16,26,.5);backdrop-filter:blur(10px);font-size:10px;letter-spacing:.12em;padding:9px 12px}
+.pf-controls button.on{border-color:rgba(113,216,238,.7);color:var(--cyan)}
+.pf-controls .primary{background:var(--cyan);color:#07131e}
+.pf-hint{font-size:9px;letter-spacing:.2em;color:rgba(238,246,252,.6);margin-right:8px}
+.pf-flash{position:absolute;inset:0;background:#fff;opacity:0}
+.pf-flash.go{animation:flash .5s ease-out}
+@keyframes flash{0%{opacity:.8}100%{opacity:0}}
+/* hangar */
+.hangar.busy{opacity:.6;pointer-events:none}
+.hg-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.hg-ac{text-align:left;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.03)}
+.hg-ac strong{display:block;font-family:var(--display);font-size:15px;font-weight:500}
+.hg-ac small{display:block;font-size:9.5px;color:var(--muted);margin-top:2px}
+.hg-ac.selected{border-color:rgba(113,216,238,.7);background:rgba(113,216,238,.1)}
+.hg-ac.locked{opacity:.45}
+.hg-label{font-size:9px;letter-spacing:.18em;color:var(--muted);font-weight:700;margin:11px 0 6px}.hg-label span{color:var(--text);letter-spacing:.06em}
+.hg-sws{display:flex;gap:7px}
+.hg-sw{width:22px;height:22px;padding:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0,var(--c) 45%,color-mix(in srgb,var(--c) 60%,#000) 100%);border:2px solid rgba(255,255,255,.12)}
+.hg-sw.selected{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(113,216,238,.3)}
+.hg-sw.locked{opacity:.3;filter:grayscale(1)}
+.hg-hard{display:flex;gap:9px;align-items:flex-start;margin-top:12px;cursor:pointer}
+.hg-hard input{accent-color:var(--cyan);margin-top:2px}
+.hg-hard strong{display:block;font-size:11px}.hg-hard small{display:block;font-size:9.5px;color:var(--muted);margin-top:2px}
+/* job board */
+.jobs{display:flex;flex-direction:column;gap:8px}
+.job{text-align:left;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.035)}
+.job:hover{border-color:rgba(113,216,238,.7);background:rgba(113,216,238,.08)}
+.job-top{display:flex;justify-content:space-between;align-items:baseline}
+.job-cargo{font-family:var(--display);font-size:18px}
+.job-pay{font-size:15px;font-weight:700;color:var(--lime);font-variant-numeric:tabular-nums}
+.job-route{display:flex;align-items:center;gap:7px;margin-top:6px;font-size:12px;color:rgba(238,246,252,.85)}
+.job-meta{margin-top:5px;font-size:10.5px;color:var(--muted);letter-spacing:.03em}
+.job-timed{color:var(--amber)}
+.job-receipt{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:6px}
+.job-receipt>div{padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.job-receipt span{font-size:9px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}.job-receipt strong{font-size:14px}.job-receipt em{font-style:normal;color:var(--lime);font-size:10px}
+#mainMenu .menu-buttons button{padding:10px 11px;font-size:11px}

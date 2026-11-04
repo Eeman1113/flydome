@@ -1,4 +1,6 @@
+import { triggerCrash } from './crash.js';
 import { onCrash, mission } from './survey.js';
+import { AIRCRAFT, aircraftState } from './config.js';
 // SKYBOUND · physics
 import { $, DEG, clamp, lerp, smooth, wrapAngle } from './util.js';
 import { AIRCRAFT_MASS_KG, MAX_ENGINE_THRUST_N, SEA_LEVEL, WING_AREA_M2, aircraft, fx, simAirVelocity, simDirection, simEuler, simForce, simForward, simGravity, simLiftDirection, simQuaternion, simRight, simUp, state } from './config.js';
@@ -8,7 +10,9 @@ import { aircraftGroundOffset, plane, syncPlaneTransform } from './engine.js';
 import { setHud, toast } from './ui.js';
 
 export function crashAircraft(title,text,msg){
-  state.crashed=true;state.paused=true;$('pauseMenu').style.display='grid';onCrash();
+  // Fire/debris/crumple and a short crash-cam orbit before the menu appears.
+  state.crashed=true;onCrash();triggerCrash(/ditch/i.test(title)?'water':'impact');
+  clearTimeout(crashAircraft.t);crashAircraft.t=setTimeout(()=>{if(!state.crashed)return;state.paused=true;$('pauseMenu').style.display='grid';setHud();},3400);
   $('pauseMenu').querySelector('h2').textContent=title;
   $('pauseMenu').querySelector('.intro').textContent=mission.charter&&!mission.complete?`${text.replace(' Restart the flight to try again.','')} Your discoveries are saved; this charter's landing bonus is lost. Restart to continue the charter.`:text;
   toast(msg);setHud();
@@ -88,7 +92,7 @@ export function stepPhysics(dt,ctrl){
   const spoolTau=state.throttle>a.enginePower?1.15:.72;
   a.enginePower+=(state.throttle-a.enginePower)*(1-Math.exp(-dt/spoolTau));
   // Thrust lapses gently with density (normally aspirated engine).
-  const thrust=a.engineRunning?a.enginePower*MAX_ENGINE_THRUST_N*Math.pow(rho/1.225,.7):0;
+  const thrust=a.engineRunning?a.enginePower*MAX_ENGINE_THRUST_N*(AIRCRAFT[aircraftState.variant].thrust||1)*(AIRCRAFT_MASS_KG/(AIRCRAFT_MASS_KG+(mission.cargoKg||0)*.9))*Math.pow(rho/1.225,.7):0;
   simLiftDirection.copy(simUp).addScaledVector(simDirection,-simUp.dot(simDirection));
   if(simLiftDirection.lengthSq()<1e-6)simLiftDirection.copy(simUp);
   simLiftDirection.normalize();
@@ -116,18 +120,19 @@ export function stepPhysics(dt,ctrl){
     const rx=Math.cos(a.yaw),rz=-Math.sin(a.yaw);
     const forwardV=a.velocity.x*fx+a.velocity.z*fz;
     const lateralV=a.velocity.x*rx+a.velocity.z*rz;
-    const paved=onRunway(a.position.x,a.position.z);
-    const rollingV=forwardV*Math.exp(-(paved?.028:.16)*dt);
+    const paved=onRunway(a.position.x,a.position.z),floats=AIRCRAFT[aircraftState.variant].floats,onWater=isWaterAt(a.position.x,a.position.z);
+    // Floats plane water hard but hold more drag than tarmac; grass strips sit in between.
+    const rollingV=forwardV*Math.exp(-(paved?.028:onWater&&floats?.075:.16)*dt);
     const lateralAfter=lateralV*Math.exp(-1.35*dt);
     a.velocity.x=fx*rollingV+rx*lateralAfter;
     a.velocity.z=fz*rollingV+rz*lateralAfter;
     a.pitchRate*=Math.exp(-dt*1.1);
     a.rollRate*=Math.exp(-dt*2.4);
-    if(isWaterAt(a.position.x,a.position.z)&&a.airspeed>3){
+    if(onWater&&!floats&&a.airspeed>3){
       crashAircraft('Ditched in the water','The aircraft touched down on open water. Restart the flight to try again.','Ditched — the aircraft is in the water.');
     }else if(impact>13||Math.abs(a.roll)>.82){
       crashAircraft('Aircraft damaged','The landing impact exceeded the safe envelope. Restart the flight to try again.','Hard landing — aircraft damaged.');
-    }else if(!paved&&Math.abs(forwardV)>42){
+    }else if(!paved&&!(onWater&&floats)&&Math.abs(forwardV)>42){
       crashAircraft('Terrain impact','The aircraft struck terrain at high speed. Restart the flight to try again.','Terrain impact.');
     }
   }
@@ -139,6 +144,6 @@ export function stepPhysics(dt,ctrl){
   a.gLoad=wasOnGround?1:lift/(AIRCRAFT_MASS_KG*9.81);
   a.slipAngle=Math.atan2(lateralSpeed,Math.max(airspeedNow,.1))/DEG;
   if(a.position.y<=ground+contactOffset+.35)a.stall=false;
-  if(plane.userData.prop){plane.userData.prop.rotation.y+=dt*(18+a.enginePower*205);const blur=a.enginePower>.58;if(plane.userData.propFast)plane.userData.propFast.visible=blur;if(plane.userData.propSlow)plane.userData.propSlow.visible=!blur;}
+  if(plane.userData.prop){plane.userData.prop.rotation[plane.userData.propAxis||'y']+=dt*(18+a.enginePower*205);const blur=a.enginePower>.58;if(plane.userData.propFast)plane.userData.propFast.visible=blur;if(plane.userData.propSlow)plane.userData.propSlow.visible=!blur;}
   syncPlaneTransform();
 }

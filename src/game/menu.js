@@ -1,8 +1,10 @@
 // SKYBOUND · menu — charter board, pilot card, daily charter, resume and logbook.
 import { $ } from './util.js';
-import { DAILY_NUMBER, IS_DAILY, WORLD_SEED } from './config.js';
+import { DAILY_NUMBER, IS_DAILY, WORLD_SEED, AIRCRAFT, LIVERIES, aircraftState, urlParams } from './config.js';
+import { swapAircraft } from './engine.js';
+import { applyLivery } from './engine.js';
 import { mission, dailyCharter, landmarkById } from './survey.js';
-import { progress, previousWorld, rankInfo, averageGrade, RANKS } from './progress.js';
+import { progress, previousWorld, rankInfo, averageGrade, RANKS, saveProgress } from './progress.js';
 import { iconSvg, TYPE_LABEL } from './icons.js';
 import { openModal } from './ui.js';
 
@@ -11,7 +13,7 @@ export const menuState={charter:0};
 function goTo(params){const u=new URL(location.href);u.search='';for(const [k,v] of Object.entries(params))u.searchParams.set(k,v);location.href=u.toString();}
 
 export function renderMenu(){
-  renderBoard();renderPilot();renderDaily();
+  renderBoard();renderPilot();renderDaily();renderHangar();
   if(IS_DAILY){const k=$('worldSeed')?.parentElement;if(k)k.innerHTML=`DAILY CHARTER #${DAILY_NUMBER} · WORLD <span id="worldSeed">#${WORLD_SEED}</span>`;}
   const prev=previousWorld,btn=$('resumeWorldBtn');
   if(prev&&prev.seed!==WORLD_SEED&&!prev.daily){btn.style.display='';btn.querySelector('small').textContent=`World #${prev.seed}`;btn.onclick=()=>goTo({seed:prev.seed});}
@@ -37,7 +39,7 @@ function renderPilot(){
   $('pilotRank').textContent=r.name;
   $('pilotXp').textContent=r.next?`${p.xp.toLocaleString()} / ${r.next.toLocaleString()} XP`:`${p.xp.toLocaleString()} XP · max rank`;
   $('pilotXpBar').style.width=`${Math.round(r.pct*100)}%`;
-  $('pilotStats').innerHTML=`<span><b>${p.discoveries}</b> charted</span><span><b>${p.charters}</b> charters</span><span><b>${averageGrade()}</b> avg landing</span>`;
+  $('pilotStats').innerHTML=`<span><b>${p.discoveries}</b> charted</span><span><b>${p.charters}</b> charters</span><span><b>$${(p.cash||0).toLocaleString()}</b> earned</span><span><b>${averageGrade()}</b> avg</span>`;
 }
 function renderDaily(){
   const res=progress.daily[DAILY_NUMBER];
@@ -50,7 +52,7 @@ function renderDaily(){
 
 export function logbookModal(){
   const r=rankInfo(),p=progress.pilot,h=Math.floor(p.flightTime/3600),m=Math.floor(p.flightTime%3600/60);
-  const stamps=['peak','lake','island','forest','river','pass'].map(t=>`<div class="stamp${p.stamps[t]?' got':''}">${iconSvg(t,'st-ico')}<span>${TYPE_LABEL[t]}</span><b>${p.stamps[t]||0}</b></div>`).join('')+`<div class="stamp rare${p.stamps.rare?' got':''}">★<span>Rare finds</span><b>${p.stamps.rare||0}</b></div>`;
+  const stamps=['peak','lake','island','forest','river','pass','gorge','falls','stacks','cape','lighthouse','glacier','spire','arch','wreck'].map(t=>`<div class="stamp${p.stamps[t]?' got':''}">${iconSvg(t,'st-ico')}<span>${TYPE_LABEL[t]}</span><b>${p.stamps[t]||0}</b></div>`).join('')+`<div class="stamp rare${p.stamps.rare?' got':''}">★<span>Rare finds</span><b>${p.stamps.rare||0}</b></div>`;
   const ranks=RANKS.map(([xp,n],i)=>`<li class="${i<=r.index?'got':''}"><span>${n}</span><em>${xp.toLocaleString()} XP</em></li>`).join('');
   const g=p.grades,total=Object.values(g).reduce((a,b)=>a+b,0)||1;
   const bars=['S','A','B','C','D'].map(k=>`<div class="gb"><span>${k}</span><i style="width:${g[k]/total*100}%"></i><b>${g[k]}</b></div>`).join('');
@@ -60,8 +62,31 @@ export function logbookModal(){
       <div><span>Worlds flown</span><b>${p.worlds}</b></div><div><span>Landmarks charted</span><b>${p.discoveries}</b></div>
       <div><span>Charters complete</span><b>${p.charters}</b></div><div><span>Flight time</span><b>${h}h ${m}m</b></div>
       <div><span>Landings</span><b>${p.landings}</b></div><div><span>Best landing</span><b>${p.best||'—'}</b></div>
+      <div><span>Deliveries</span><b>${p.deliveries||0}</b></div><div><span>Earnings</span><b>$${(p.cash||0).toLocaleString()}</b></div>
     </div>
     <h3 class="lb-h">Discovery stamps</h3><div class="stamps">${stamps}</div>
     <h3 class="lb-h">Landing grades</h3><div class="grades">${bars}</div>
     <h3 class="lb-h">Ranks</h3><ul class="ranks">${ranks}</ul>`);
+}
+
+// ---------------------------------------------------------------- hangar
+const UNLOCK_ALL=urlParams.has('unlock');
+export function unlocked(rank){return UNLOCK_ALL||rankInfo().index>=rank;}
+export function initialLoadout(){
+  const p=progress.pilot;
+  aircraftState.variant=(p.aircraft&&AIRCRAFT[p.aircraft]&&unlocked(AIRCRAFT[p.aircraft].rank))?p.aircraft:'skylane';
+  if(urlParams.get('plane')&&AIRCRAFT[urlParams.get('plane')])aircraftState.variant=urlParams.get('plane');
+  const L=LIVERIES.find(l=>l.id===p.livery);aircraftState.livery=L&&unlocked(L.rank)?L.id:'factory';
+  return aircraftState.variant;
+}
+function renderHangar(){
+  const el=$('hangar');if(!el)return;
+  const ac=Object.values(AIRCRAFT).map(v=>{const ok=unlocked(v.rank),sel=aircraftState.variant===v.id;
+    return `<button class="hg-ac${sel?' selected':''}${ok?'':' locked'}" data-ac="${v.id}" ${ok?'':'disabled'}><strong>${v.short}</strong><small>${ok?(v.floats?'Lands on water & runways':'All-round tourer'):`Unlocks at ${RANKS[v.rank][1]}`}</small></button>`;}).join('');
+  const lv=LIVERIES.map(l=>{const ok=unlocked(l.rank),sel=aircraftState.livery===l.id;return `<button class="hg-sw${sel?' selected':''}${ok?'':' locked'}" data-lv="${l.id}" title="${l.name}${ok?'':` · unlocks at ${RANKS[l.rank][1]}`}" style="--c:#${l.tint.toString(16).padStart(6,'0')}" ${ok?'':'disabled'}></button>`;}).join('');
+  el.innerHTML=`<div class="side-kicker">HANGAR</div><div class="hg-row">${ac}</div><div class="hg-label">Paint · <span>${(LIVERIES.find(l=>l.id===aircraftState.livery)||LIVERIES[0]).name}</span></div><div class="hg-sws">${lv}</div>
+    <label class="hg-hard"><input type="checkbox" id="hardcoreToggle" ${progress.pilot.hardcore?'checked':''}><span><strong>Hardcore charters</strong><small>Limited fuel, refuel at strips · +50% XP</small></span></label>`;
+  for(const b of el.querySelectorAll('[data-ac]'))b.onclick=async()=>{if(b.disabled||aircraftState.variant===b.dataset.ac)return;progress.pilot.aircraft=b.dataset.ac;saveProgress();el.classList.add('busy');await swapAircraft(b.dataset.ac);el.classList.remove('busy');renderHangar();};
+  for(const b of el.querySelectorAll('[data-lv]'))b.onclick=()=>{if(b.disabled)return;progress.pilot.livery=b.dataset.lv;saveProgress();applyLivery(b.dataset.lv);renderHangar();};
+  $('hardcoreToggle').onchange=e=>{progress.pilot.hardcore=e.target.checked;saveProgress();};
 }
