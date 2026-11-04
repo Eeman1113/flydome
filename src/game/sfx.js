@@ -97,7 +97,7 @@ export function sfxUpdate(dt,{onGround,surface,fire}={}){
   if((surface==='strip'||surface==='field')&&roll>.1&&Math.random()<dt*gs*.25)burst({buf:brown,type:'lowpass',f:220,peak:.18*roll,a:.004,d:.12});
   set(L.spray.g.gain,surface==='water'&&!crashed?clamp(gs/25,0,1)*.22:0);set(L.spray.fl.frequency,1200+gs*60);
   // stall horn: sounds just above the stall, airborne only
-  const horn=!onGround&&!crashed&&a.altAGL>3&&(a.stall||kt<62)&&kt>15;
+  const horn=state.stallSim&&!onGround&&!crashed&&a.altAGL>3&&(a.stall||kt<62)&&kt>15;
   set(L.horn.gain,horn?(cockpit?.07:.035):0,.03);
   // gust buffet
   set(L.gust.g.gain,!crashed&&!onGround?clamp((state.gust||0)/8,0,1)*clamp(kt/90,0,1)*(cockpit?.32:.2):0,.25);

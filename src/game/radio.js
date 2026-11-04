@@ -7,7 +7,8 @@ import { $, clamp, DEG } from './util.js';
 import { mission, nextTarget, charterSurveyed, landmarkById } from './survey.js';
 
 const SETTINGS_KEY='skybound.radio';
-export const radioSettings=(()=>{const d={on:true,chatter:true,subs:true,volume:.85};try{return {...d,...JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')};}catch{return d;}})();
+export const radioSettings=(()=>{const d={on:true,chatter:true,subs:true,volume:.3,v:2};
+  try{const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');if((s.v||1)<2){delete s.volume;s.v=2;}return {...d,...s};}catch{return d;}})();
 export function saveRadioSettings(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(radioSettings));}catch{}if(!radioSettings.on)stopRadio();}
 
 let manifest=null,groups={},ctx=null,bus=null,noiseBuf=null,loading=null;

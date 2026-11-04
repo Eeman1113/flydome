@@ -81,7 +81,8 @@ export function stepPhysics(dt,ctrl){
   const stallAlphaBlend=smooth(14*DEG,22*DEG,alpha);
   const vs=Math.sqrt((2*AIRCRAFT_MASS_KG*9.81)/(rho*WING_AREA_M2*1.62));
   const lowSpeedStall=wasOnGround?0:1-smooth(vs*.82,vs*1.06,airspeedNow);
-  const stallBlend=wasOnGround?0:Math.max(stallAlphaBlend,lowSpeedStall);
+  // Stall simulation is optional (off by default): without it the wing never stalls, it just mushes and sinks.
+  const stallBlend=wasOnGround||!state.stallSim?0:Math.max(stallAlphaBlend,lowSpeedStall);
   const cl=lerp(clLinear,.62,stallBlend);
   const heightAGL=Math.max(0,a.position.y-groundBefore);
   const groundEffect=1+(1-smooth(1,14,heightAGL))*.12;
