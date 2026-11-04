@@ -50,6 +50,9 @@ export function createTerrainLib(seed){
     h-=valley*valley*Math.min(Math.max(h,0)*.5,120)*(1-sstep(350,700,h));
     const channel=(1-sstep(.007,.026,rv))*inland*(1-sstep(45,115,h));
     h=mix(h,-4,channel);
+    // Steepen the ground across sea level so coasts never lie nearly flush with the water
+    // (prevents shoreline z-fighting from altitude); monotonic, untouched beyond ±4 m.
+    {const x=h/1.5;h+=1.2*h*Math.exp(-x*x);}
     if(o){o.cont=cont;o.mtn=mmask;o.river=valley;o.px=px;o.pz=pz;}
     return h;
   }

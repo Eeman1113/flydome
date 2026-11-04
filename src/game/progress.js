@@ -30,7 +30,7 @@ export function addXP(n){
   const after=rankInfo();return {rankUp:after.index>before,rank:after};
 }
 // Per-world logs are keyed by generator version so old saves never mark the wrong landmarks.
-const GEN='g3';
+const GEN='g4';
 export function worldEntry(seed){
   seed=`${seed}:${GEN}`;const log=progress.worldLog;
   if(!log[seed]){

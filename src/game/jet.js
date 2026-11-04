@@ -52,8 +52,19 @@ export function attachJetFx(group,V){
   const vapour=new THREE.Mesh(new THREE.ConeGeometry(V.vapourR||3.4,V.vapourL||6,48,1,true),vcMat);vapour.rotation.x=-Math.PI/2;vapour.position.set(0,V.vapourY||.4,V.vapourZ||-1);vapour.renderOrder=12;
   n.add(outer,core,glow,light);group.add(vapour);
   for(const o of [outer,core,glow,vapour])o.layers.set(0);
-  fx={n,outer,core,glow,light,vapour,r,boomT:0,lastMach:0};
+  fx={n,outer,core,glow,light,vapour,r,boomT:0,lastMach:0,gear:null};
+  // Landing gear: the model carries an extended-gear mesh and a closed-doors mesh. Retracting
+  // folds the gear up into the belly (scaled about its top), then the doors close over it.
+  const model=group.userData.visualModel;let on=null,off=null,lamp=null;
+  model.traverse(o=>{const nm=o.name||'';if(/landingOnLight/i.test(nm))lamp=o;else if(/landingOn/i.test(nm))on=o;else if(/landingOff/i.test(nm))off=o;});
+  if(on&&off){
+    group.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(on),top=b.max.y,piv=new THREE.Group();
+    const anchor=on.parent;anchor.add(piv);piv.position.copy(anchor.worldToLocal(new THREE.Vector3((b.min.x+b.max.x)/2,top,(b.min.z+b.max.z)/2)));
+    piv.attach(on);if(lamp)piv.attach(lamp);off.visible=false;
+    fx.gear={piv,on,off,lamp,t:1,down:true};
+  }
 }
+export function gearDown(){return !fx?.gear||fx.gear.t>.98;}
 export function detachJetFx(){if(gradePass?.uniforms.uHaze)gradePass.uniforms.uHaze.value=0;if(!fx)return;fx.n.parent?.remove(fx.n);fx.vapour.parent?.remove(fx.vapour);fx=null;}
 export function updateJetFx(dt){
   if(!fx)return;
@@ -71,6 +82,19 @@ export function updateJetFx(dt){
   const flick=.85+.15*Math.random();
   fx.glow.scale.setScalar(fx.r*(2.2+1.5*p+3.5*ab)*flick);fx.glow.material.opacity=.25+.35*p+.4*ab;fx.glow.position.z=.15;
   fx.light.intensity=(3*p+70*ab)*flick;fx.light.color.setHSL(.07-.03*ab,1,.6);
+  // automatic gear: up after a positive climb or when fast, down when low and slow
+  const G=fx.gear;
+  if(G){
+    const kt=a.airspeed*1.94384,agl=a.altAGL;
+    let want=G.down;
+    if(agl<15||state.crashed)want=true;
+    else if(G.down&&agl>40&&(a.verticalSpeed>2||kt>220))want=false;
+    else if(!G.down&&agl<140&&kt<230&&a.verticalSpeed<1)want=true;
+    if(want!==G.down){G.down=want;jetAudio.gear(want);}
+    const tgt=G.down?1:0;G.t+=Math.sign(tgt-G.t)*Math.min(Math.abs(tgt-G.t),dt/2.2);
+    const e=G.t*G.t*(3-2*G.t);
+    G.piv.scale.set(1,Math.max(.02,e),.6+.4*e);G.on.visible=G.t>.03;G.off.visible=G.t<.12;
+  }
   // vapour cone flickers in from Mach .95 to 1.02 and fades as the aircraft goes supersonic
   const m=a.mach||0,vc=clamp((m-.94)/.05,0,1)*clamp((1.08-m)/.05,0,1);
   fx.vapour.material.opacity=vc*(.28+.12*Math.random());fx.vapour.visible=vc>.01;
@@ -97,6 +121,7 @@ function buildAudio(){
 }
 const set=(p,v,tc=.08)=>p.setTargetAtTime(v,A.ctx.currentTime,tc);
 export const jetAudio={
+  gear(down){if(!A)return;const c=A.ctx,t=c.currentTime;const o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.setValueAtTime(140,t);o.frequency.linearRampToValueAtTime(220,t+1.8);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.05,t+.15);g.gain.setValueAtTime(.05,t+1.7);g.gain.exponentialRampToValueAtTime(.0001,t+2.1);const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;o.connect(lp);lp.connect(g);g.connect(A.master);o.start(t);o.stop(t+2.2);burst(A,t+2.1,'lowpass',500,.35,.003,.25);},
   boom(){if(!A)return;const c=A.ctx,t=c.currentTime;for(const [dt,k] of [[0,1],[.18,.8]]){const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(70,t+dt);o.frequency.exponentialRampToValueAtTime(24,t+dt+.6);g.gain.setValueAtTime(.0001,t+dt);g.gain.exponentialRampToValueAtTime(.9*k,t+dt+.008);g.gain.exponentialRampToValueAtTime(.0001,t+dt+.9);o.connect(g);g.connect(A.master);o.start(t+dt);o.stop(t+dt+1);
     burst(A,t+dt,'lowpass',1800,.8*k,.004,.7);}},
 };

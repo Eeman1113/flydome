@@ -126,7 +126,9 @@ export function createMaterials(){
 
   // Water: PBR with layered scrolling normals, reflecting the HDR sky.
   const wn=makeWaterNormalTexture();
-  const wm=new THREE.MeshPhysicalMaterial({color:new THREE.Color(.008,.034,.045),roughness:.09,metalness:0,normalMap:wn,normalScale:new THREE.Vector2(.22,.22),envMapIntensity:1.05,ior:1.33,specularIntensity:.8});
+  const wm=new THREE.MeshPhysicalMaterial({color:new THREE.Color(.008,.034,.045),roughness:.09,metalness:0,normalMap:wn,normalScale:new THREE.Vector2(.22,.22),envMapIntensity:1.05,ior:1.33,specularIntensity:.8,
+    // pushed back a touch in depth so near-flush shorelines resolve to land, not flicker
+    polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:6});
   wm.onBeforeCompile=(sh)=>{
     sh.uniforms.uTime=shared.time;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWPos2;').replace('#include <begin_vertex>','#include <begin_vertex>\nvWPos2=(modelMatrix*vec4(transformed,1.0)).xyz;');
