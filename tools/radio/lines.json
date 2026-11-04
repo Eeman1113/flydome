@@ -2238,6 +2238,150 @@
   "text": "Still with me? Check the instructions on the panel."
  },
  {
+  "id": "cs_viper_00",
+  "group": "cs_viper",
+  "voice": "tara",
+  "text": "Viper one one,"
+ },
+ {
+  "id": "cs_viper_01",
+  "group": "cs_viper",
+  "voice": "tara",
+  "text": "Viper,"
+ },
+ {
+  "id": "cs_viper_02",
+  "group": "cs_viper",
+  "voice": "tara",
+  "text": "Viper one one, Skybound Ground,"
+ },
+ {
+  "id": "jet_on_00",
+  "group": "jet_on",
+  "voice": "tara",
+  "text": "Wait. Is that an F-16 on my runway? Who signed that out?"
+ },
+ {
+  "id": "jet_on_01",
+  "group": "jet_on",
+  "voice": "tara",
+  "text": "Ground to all stations, we have a fighter jet on the field. Do not ask me how."
+ },
+ {
+  "id": "jet_on_02",
+  "group": "jet_on",
+  "voice": "tara",
+  "text": "<gasp> Where did that come from? Okay. Okay. Viper one one, try not to break anything."
+ },
+ {
+  "id": "jet_on_03",
+  "group": "jet_on",
+  "voice": "tara",
+  "text": "That is not a Cessna. That is very much not a Cessna."
+ },
+ {
+  "id": "jet_on_04",
+  "group": "jet_on",
+  "voice": "tara",
+  "text": "Somebody just swapped your aeroplane for an F-16. I am not even going to ask."
+ },
+ {
+  "id": "jet_on_05",
+  "group": "jet_on",
+  "voice": "tara",
+  "text": "Viper one one, welcome to Skybound. Please keep it below the speed of sound over the cabins."
+ },
+ {
+  "id": "jet_off_00",
+  "group": "jet_off",
+  "voice": "tara",
+  "text": "And the F-16 is gone. Back to something sensible."
+ },
+ {
+  "id": "jet_off_01",
+  "group": "jet_off",
+  "voice": "tara",
+  "text": "Welcome back to the slow lane. My ears thank you."
+ },
+ {
+  "id": "jet_off_02",
+  "group": "jet_off",
+  "voice": "tara",
+  "text": "Cessna again? Probably for the best."
+ },
+ {
+  "id": "jet_takeoff_00",
+  "group": "jet_takeoff",
+  "voice": "tara",
+  "text": "Airborne, and climbing like a rocket. Have fun."
+ },
+ {
+  "id": "jet_takeoff_01",
+  "group": "jet_takeoff",
+  "voice": "tara",
+  "text": "Viper is airborne. That was loud."
+ },
+ {
+  "id": "jet_takeoff_02",
+  "group": "jet_takeoff",
+  "voice": "tara",
+  "text": "Off you go. I felt that one in my chest."
+ },
+ {
+  "id": "jet_takeoff_03",
+  "group": "jet_takeoff",
+  "voice": "tara",
+  "text": "Gear up, and away. Show off."
+ },
+ {
+  "id": "jet_ab_00",
+  "group": "jet_ab",
+  "voice": "tara",
+  "text": "Easy on the burner, you are rattling the tower windows."
+ },
+ {
+  "id": "jet_ab_01",
+  "group": "jet_ab",
+  "voice": "tara",
+  "text": "Afterburner lit. The whole valley heard that."
+ },
+ {
+  "id": "jet_ab_02",
+  "group": "jet_ab",
+  "voice": "tara",
+  "text": "Full reheat? Somebody is in a hurry."
+ },
+ {
+  "id": "jet_ab_03",
+  "group": "jet_ab",
+  "voice": "tara",
+  "text": "That is a lot of fire coming out of the back of that thing."
+ },
+ {
+  "id": "jet_boom_00",
+  "group": "jet_boom",
+  "voice": "tara",
+  "text": "Was that a sonic boom? <laugh> You just broke every window in the valley."
+ },
+ {
+  "id": "jet_boom_01",
+  "group": "jet_boom",
+  "voice": "tara",
+  "text": "Supersonic! The sheep are going to need therapy."
+ },
+ {
+  "id": "jet_boom_02",
+  "group": "jet_boom",
+  "voice": "tara",
+  "text": "And that is Mach one. Nicely done, Viper."
+ },
+ {
+  "id": "jet_boom_03",
+  "group": "jet_boom",
+  "voice": "tara",
+  "text": "Boom. I think the cabins on the ridge just lost their windows."
+ },
+ {
   "id": "chat_ground_00",
   "group": "chat_ground",
   "voice": "tara",

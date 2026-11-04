@@ -457,6 +457,40 @@ add('tut_hint', [
     'Still with me? Check the instructions on the panel.',
 ])
 
+# ------------------------------------------------------------------ the secret F-16 ("fly" cheat)
+add('cs_viper', ['Viper one one,', 'Viper,', 'Viper one one, Skybound Ground,'])
+add('jet_on', [
+    'Wait. Is that an F-16 on my runway? Who signed that out?',
+    'Ground to all stations, we have a fighter jet on the field. Do not ask me how.',
+    '<gasp> Where did that come from? Okay. Okay. Viper one one, try not to break anything.',
+    'That is not a Cessna. That is very much not a Cessna.',
+    'Somebody just swapped your aeroplane for an F-16. I am not even going to ask.',
+    'Viper one one, welcome to Skybound. Please keep it below the speed of sound over the cabins.',
+])
+add('jet_off', [
+    'And the F-16 is gone. Back to something sensible.',
+    'Welcome back to the slow lane. My ears thank you.',
+    'Cessna again? Probably for the best.',
+])
+add('jet_takeoff', [
+    'Airborne, and climbing like a rocket. Have fun.',
+    'Viper is airborne. That was loud.',
+    'Off you go. I felt that one in my chest.',
+    'Gear up, and away. Show off.',
+])
+add('jet_ab', [
+    'Easy on the burner, you are rattling the tower windows.',
+    'Afterburner lit. The whole valley heard that.',
+    'Full reheat? Somebody is in a hurry.',
+    'That is a lot of fire coming out of the back of that thing.',
+])
+add('jet_boom', [
+    'Was that a sonic boom? <laugh> You just broke every window in the valley.',
+    'Supersonic! The sheep are going to need therapy.',
+    'And that is Mach one. Nicely done, Viper.',
+    'Boom. I think the cabins on the ridge just lost their windows.',
+])
+
 # ------------------------------------------------------------------ background chatter (other traffic)
 add('chat_ground', [
     'Caravan niner kilo, taxi to runway three six via alpha, hold short.',
