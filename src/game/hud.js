@@ -182,7 +182,7 @@ export function hudCharterUpdate(){
   const c=mission.charter;
   if(!c){
     const n=mission.discovered.size,t=mission.landmarks.length;
-    el.innerHTML=`<div class="cc-kicker">FREE FLIGHT · WORLD #${WORLD_SEED}</div><div class="cc-title">${n} of ${t} landmarks charted</div><div class="cc-bar"><i style="width:${t?n/t*100:0}%"></i></div><div class="cc-foot">Fly low over a <b>?</b> marker to chart it</div>`;
+    el.innerHTML=`<div class="cc-kicker">EXPLORER · WORLD #${WORLD_SEED}</div><div class="cc-title">${n} of ${t} landmarks charted</div><div class="cc-bar"><i style="width:${t?n/t*100:0}%"></i></div><div class="cc-foot">Fly low over a <b>?</b> marker to chart it</div>`;
     return;
   }
   const ts=charterTargets(),done=ts.filter(l=>mission.discovered.has(l.id)).length,tgt=nextTarget();

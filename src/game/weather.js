@@ -7,14 +7,14 @@ import { terrain } from './world.js';
 import { scene, camera, worldTime } from './engine.js';
 
 let rain=null,rainPos=null,rainSeed=null,drops=[],dctx=null,dw=0,dh=0,amb=null,forestT=0,overForest=0,birdT=0;
-const RAIN_N=2400,BOX=90;
+const RAIN_N=3600,BOX=80;
 
 export function initWeather(){
   if(WEATHER.rain){
     rainPos=new Float32Array(RAIN_N*6);rainSeed=new Float32Array(RAIN_N*3);
     for(let i=0;i<RAIN_N;i++){rainSeed[i*3]=(Math.random()-.5)*BOX*2;rainSeed[i*3+1]=Math.random()*BOX*2-BOX;rainSeed[i*3+2]=(Math.random()-.5)*BOX*2;}
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(rainPos,3).setUsage(THREE.DynamicDrawUsage));
-    rain=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xd6e0ea,transparent:true,opacity:.26,depthWrite:false,fog:true}));
+    rain=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xdfe8f0,transparent:true,opacity:.42,depthWrite:false,fog:true}));
     rain.frustumCulled=false;rain.renderOrder=11;scene.add(rain);
     const c=$('rainDrops');if(c){dctx=c.getContext('2d');}
   }
@@ -35,7 +35,7 @@ export function updateWeather(dt){
   updateAmbience(dt);
 }
 function updateRain(dt){
-  const c=camera.position,fall=9,len=.055;
+  const c=camera.position,fall=9,len=.09;
   // streaks are drawn along the drops' motion relative to the aircraft
   const rx=state.wind.x-aircraft.velocity.x*(state.started?1:0),ry=-fall-aircraft.velocity.y*(state.started?1:0),rz=state.wind.z-aircraft.velocity.z*(state.started?1:0);
   for(let i=0;i<RAIN_N;i++){
@@ -54,15 +54,18 @@ function updateDrops(dt){
   c.style.opacity=show?1:0;if(!show){if(drops.length){drops=[];dctx.clearRect(0,0,dw,dh);}return;}
   const r=Math.min(2,devicePixelRatio||1);if(dw!==innerWidth*r||dh!==innerHeight*r){dw=c.width=innerWidth*r;dh=c.height=innerHeight*r;}
   const spd=aircraft.airspeed;
-  if(drops.length<70&&Math.random()<dt*40)drops.push({x:Math.random()*dw,y:Math.random()*dh*.75,r:(1.4+Math.random()*3.2)*r,life:0,vx:0,vy:0});
+  for(let k=0;k<3;k++)if(drops.length<140&&Math.random()<dt*45)drops.push({x:Math.random()*dw,y:dh*.15+Math.random()*dh*.6,r:(2+Math.random()*4.5)*r,life:0,vx:0,vy:0,hold:.15+Math.random()*.6,trail:[]});
   dctx.clearRect(0,0,dw,dh);
   for(let i=drops.length-1;i>=0;i--){
     const d=drops[i];d.life+=dt;
     // at speed the airflow sweeps drops up and outward across the screen
-    const cx=d.x-dw/2;d.vx=cx/dw*spd*14*r;d.vy=-(spd*7+(spd<12?-18:0))*r;
-    d.x+=d.vx*dt;d.y+=d.vy*dt;
-    if(d.y<-20||d.y>dh+20||d.x<-20||d.x>dw+20||d.life>4){drops.splice(i,1);continue;}
-    const stretch=1+clamp(spd/25,0,2.2);
+    // a drop beads for a moment, then the airflow drives it up and outward, leaving a rivulet
+    const cx=d.x-dw/2,go=d.life>d.hold?Math.min(1,(d.life-d.hold)*2):0;
+    d.vx=cx/dw*spd*4*r*go;d.vy=(spd<10?22:-(spd*2.4))*r*go;
+    d.x+=d.vx*dt;d.y+=d.vy*dt;if(go>0){d.trail.push(d.x,d.y);if(d.trail.length>24)d.trail.splice(0,2);}
+    if(d.y<-20||d.y>dh+20||d.x<-20||d.x>dw+20||d.life>6){drops.splice(i,1);continue;}
+    if(d.trail.length>4){dctx.strokeStyle='rgba(225,236,245,.22)';dctx.lineWidth=d.r*.7;dctx.lineCap='round';dctx.beginPath();dctx.moveTo(d.trail[0],d.trail[1]);for(let t=2;t<d.trail.length;t+=2)dctx.lineTo(d.trail[t],d.trail[t+1]);dctx.stroke();}
+    const stretch=1+clamp(spd/40,0,1.2)*(d.life>d.hold?1:0);
     dctx.save();dctx.translate(d.x,d.y);dctx.rotate(Math.atan2(d.vy,d.vx)+Math.PI/2);
     const g=dctx.createRadialGradient(-d.r*.3,-d.r*.3,0,0,0,d.r*1.2);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(.6,'rgba(200,220,235,.18)');g.addColorStop(1,'rgba(160,180,200,0)');
     dctx.fillStyle=g;dctx.beginPath();dctx.ellipse(0,0,d.r,d.r*stretch,0,0,Math.PI*2);dctx.fill();dctx.restore();

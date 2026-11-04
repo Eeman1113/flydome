@@ -9,6 +9,7 @@ import { crashAircraft } from './physics.js';
 import * as THREE from 'three';
 import { AIRCRAFT, aircraftState, LIVERIES } from './config.js';
 import { initSurvey, beginMission, surveyTick, respawnPoint, mission } from './survey.js';
+import { WEATHER } from './config.js';
 import { initHud, hudFrame, hudEvents, hudJobBoard } from './hud.js';
 import { renderMenu } from './menu.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -316,7 +317,7 @@ export async function startGame(){
   if(booted)return;booted=true;
   try{
     await setupScene();
-    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx,mission};
+    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx,mission,WEATHER};
     $('loading').classList.add('hidden');
     setTimeout(()=>{const l=$('loading');if(l)l.style.display='none';},500);
     frame();
