@@ -163,7 +163,7 @@ function Simulator({ start }) {
       </aside>
       
       <div className="overlay" id="modalOverlay" style={{display:'none'}}><div className="modal-card" id="modalContent"></div></div>
-      <div className="toast" id="toast"></div>
+      <div className="toast" id="toast"></div><div className="cheat-banner" id="cheatBanner"></div>
     </>
   );
 }

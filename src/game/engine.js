@@ -1,5 +1,7 @@
 import { updateCrash, clearCrash, crashActive, firePos } from './crash.js';
 import { radioEvent, radioUpdate } from './radio.js';
+import { attachJetFx, updateJetFx, updateJetAudio } from './jet.js';
+import './cheat.js';
 import { sfx, sfxUpdate } from './sfx.js';
 import { approachState } from './hud.js';
 import { onRunway, isWaterAt } from './chunks.js';
@@ -25,7 +27,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { Pass } from 'three/addons/postprocessing/Pass.js';
-import { $ } from './util.js';
+import { $, clamp } from './util.js';
 import { BASE_PATH, AIRCRAFT_VISUAL_SCALE, FIXED_STEP, SKY, START_Z, WORLD_SEED, aircraft, cockpitEyeLocal, fx, glass, shared, sky, state, urlParams } from './config.js';
 import { AIRPORT_H, terrain } from './world.js';
 import { TIERS, applyTier, detectHardware, perf, perfTick, updateCameraFar, viewDistanceM } from './perf.js';
@@ -136,12 +138,19 @@ export function setupPost(){
   bokehPass=new BokehPass(scene,camera,{focus:25,aperture:.0004,maxblur:.008});bokehPass.enabled=false;composer.addPass(bokehPass);
   composer.addPass(new OutputPass());
   gradePass=new ShaderPass({
-    uniforms:{tDiffuse:{value:null},uTime:{value:0},uVig:{value:.55},uShock:{value:0}},
+    uniforms:{tDiffuse:{value:null},uTime:{value:0},uVig:{value:.55},uShock:{value:0},uHaze:{value:0},uHazeA:{value:new THREE.Vector2()},uHazeB:{value:new THREE.Vector2()},uHazeR:{value:.02},uAspect:{value:1}},
     vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-    fragmentShader:`uniform sampler2D tDiffuse; uniform float uTime; uniform float uVig; uniform float uShock; varying vec2 vUv;
+    fragmentShader:`uniform sampler2D tDiffuse; uniform float uTime; uniform float uVig; uniform float uShock; uniform float uHaze,uHazeR,uAspect; uniform vec2 uHazeA,uHazeB; varying vec2 vUv;
+      // jet exhaust heat haze: a rippling refraction along the plume, in screen space
+      vec2 haze(vec2 uv){ if(uHaze<=0.) return vec2(0.);
+        vec2 ab=uHazeB-uHazeA,ap=uv-uHazeA; ab.x*=uAspect; ap.x*=uAspect;
+        float L=max(dot(ab,ab),1e-6),t=clamp(dot(ap,ab)/L,0.,1.); vec2 d=ap-ab*t; float r=uHazeR*(1.+2.2*t);
+        float m=smoothstep(r,r*.15,length(d))*smoothstep(0.,.08,t)*(1.-t);
+        float w=sin(t*60.-uTime*34.+d.y*400.)*cos(t*37.+uTime*21.+d.x*300.);
+        return vec2(w,cos(t*52.-uTime*29.))*m*uHaze*.0055; }
       void main(){ vec2 q=vUv-.5; float r2=dot(q,q);
         // crash shock: barrel warp, ripple and chromatic split, decaying over ~0.6 s
-        vec2 uv=vUv+q*r2*uShock*.45+vec2(sin(vUv.y*38.+uTime*42.),cos(vUv.x*31.+uTime*37.))*uShock*.006;
+        vec2 uv=vUv+haze(vUv)+q*r2*uShock*.45+vec2(sin(vUv.y*38.+uTime*42.),cos(vUv.x*31.+uTime*37.))*uShock*.006;
         float ca=uShock*.018; vec4 c=vec4(texture2D(tDiffuse,uv+q*ca).r,texture2D(tDiffuse,uv).g,texture2D(tDiffuse,uv-q*ca).b,1.);
         c.rgb+=vec3(1.,.55,.25)*uShock*uShock*.35; c.rgb*=1.-dot(q,q)*uVig;
         c.rgb=mix(c.rgb,c.rgb*c.rgb*(3.-2.*c.rgb),.18);
@@ -164,8 +173,11 @@ export async function makeAircraft(variantId=aircraftState.variant){
       if(event.lengthComputable&&event.total>0&&!state.started){const percent=Math.round(event.loaded/event.total*100);if(!plane)setLoading(`LOADING ${V.name.toUpperCase()} · ${percent}%`,22+percent*.33);}
     });
   }catch(error){throw new Error(`Unable to load ${V.file}. Details: ${error.message}`);}
-  const model=gltf.scene;model.name=V.name;model.scale.setScalar(V.scale);
+  const model=gltf.scene;model.name=V.name;
   if(V.yaw)model.rotation.y=V.yaw;
+  if(V.lengthM){model.scale.setScalar(1);model.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(model),s=b.getSize(new THREE.Vector3());model.scale.setScalar(V.lengthM/Math.max(s.x,s.z));
+    model.updateMatrixWorld(true);const c=new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3());model.position.x-=c.x;model.position.z-=c.z;}
+  else model.scale.setScalar(V.scale);
   let propPivot=null,eye=null;
   if(V.objFrame){
     // The C195 was exported with the propeller merged into the body: split the triangles in
@@ -193,6 +205,7 @@ export async function makeAircraft(variantId=aircraftState.variant){
           // Clear, lightly reflective glazing on both airframes.
           const materialName=String(material.name||'').toLowerCase();
           const isWindshield=materialName.includes('windshield')||materialName.includes('windscreen');
+          if(materialName.includes('hud')){material.transparent=true;material.opacity=.14;material.color?.set(0x9dffc8);material.map=null;material.depthWrite=false;material.metalness=0;material.roughness=.05;if(material.emissive){material.emissive.set(0x2bff8a);material.emissiveIntensity=.15;}object.castShadow=false;material.needsUpdate=true;continue;}
           const isGlass=isWindshield||materialName.includes('glass')||materialName.startsWith('transparent');
           if(isGlass){
             object.castShadow=false;
@@ -225,6 +238,22 @@ export async function makeAircraft(variantId=aircraftState.variant){
     const seatWorld=pilotSeat.getWorldPosition(new THREE.Vector3());plane.worldToLocal(seatWorld);cockpitEyeLocal.copy(seatWorld);
     cockpitEyeLocal.y+=.64;cockpitEyeLocal.z+=.38;cockpitEyeSource='GLB pilot seat';
   }else if(eye){plane.updateMatrixWorld(true);cockpitEyeLocal.copy(plane.worldToLocal(eye.frame.localToWorld(eye.p.clone())));cockpitEyeSource='C195 seat';}
+  if(V.jet){
+    // Jet: eye inside the canopy (largest glass mesh), nozzle at the tail on the fuselage centreline.
+    // Pilot's eye: 28% back from the nose (real F-16 layout), just under the top of the bubble canopy.
+    plane.updateMatrixWorld(true);const Q=new THREE.Vector3(),pts=[];let zF=1e9,zR=-1e9;
+    model.traverse(o=>{if(!o.isMesh)return;const pos=o.geometry.attributes.position;for(let i=0;i<pos.count;i+=2){Q.fromBufferAttribute(pos,i);o.localToWorld(Q);plane.worldToLocal(Q);pts.push(Q.x,Q.y,Q.z);zF=Math.min(zF,Q.z);zR=Math.max(zR,Q.z);}});
+    const ez=zF+(zR-zF)*.28;let top=-1e9;for(let i=0;i<pts.length;i+=3)if(Math.abs(pts[i+2]-ez)<.35&&Math.abs(pts[i])<.4)top=Math.max(top,pts[i+1]);
+    if(top>-1e9){cockpitEyeLocal.set(0,top-.32,ez+.15);cockpitEyeSource='F-16 canopy';}
+    // Nozzle: the rearmost geometry on the centreline below the fin (the fin and chute housing sit above it).
+    const band=[];for(let i=0;i<pts.length;i+=3)if(Math.abs(pts[i])<.75&&pts[i+2]>zR-2.2)band.push(pts[i+1],pts[i+2]);
+    let yMin=1e9;for(let i=0;i<band.length;i+=2)yMin=Math.min(yMin,band[i]);
+    let zN=-1e9,ys=0,yn=0;for(let i=0;i<band.length;i+=2)if(band[i]<yMin+1.15){zN=Math.max(zN,band[i+1]);}
+    for(let i=0;i<band.length;i+=2)if(band[i]<yMin+1.15&&band[i+1]>zN-.35){ys+=band[i];yn++;}
+    const yN=yn?ys/yn:yMin+.5;
+    V.nozzle=[0,yN,zN-.05];V.nozzleR=.52;V.vapourZ=-2;V.vapourY=yN+.3;V.vapourR=4.2;V.vapourL=8;
+  }
+  attachJetFx(plane,V);
   plane.userData.cockpitEye=cockpitEyeLocal.clone();
   applyLivery();
 }
@@ -307,7 +336,7 @@ export function frame(){requestAnimationFrame(frame);frameStartTime=performance.
   if(state.photo)updatePhotoCamera(frameDt);
   updateWorldFx(frameDt);
   {const a=aircraft,p=a.position,onGround=a.altAGL<aircraftGroundOffset+.3,surface=!onGround?null:onRunway(p.x,p.z)?'runway':isWaterAt(p.x,p.z)?'water':terrain.stripAt(p.x,p.z,6)?'strip':'field';
-   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
+   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});updateJetFx(frameDt);updateJetAudio(frameDt);radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
   updateWeather(frameDt);updateBeacons(worldTime);updateLandmarkFx(worldTime);updateGhost();updateCrash(frameDt);
   hudFrame();
   perfTick(frameDt);

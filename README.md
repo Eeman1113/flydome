@@ -57,6 +57,7 @@ Rare finds earn their own logbook stamp. Every charted landmark gets a survey be
 - **Cessna 182 Skylane.** Your first aircraft: a dependable all-round tourer.
 - **Cessna 208 Caravan Amphibian.** Unlocks at **Bush Pilot** rank. It lands on lakes as well as runways, opens water strip charters, and turns charted lakes into cargo destinations.
 - **Paint schemes.** Six liveries, unlocked by rank, up to Cartographer Gold.
+- **A secret.** There is a third aircraft. Old-school cheat codes still work.
 - **Hardcore charters.** An optional limited-fuel mode: the tank is sized to the route, you refuel by stopping at a strip, and you earn +50% XP.
 
 Your **pilot logbook** saves in the browser and carries across every world: rank, flight time, discovery stamps, landing grades, deliveries and earnings.
@@ -180,6 +181,11 @@ tools/radio/         radio script (lines.py) and GPU voice generator (gen.py)
 - **Model:** "[CaravanA](https://sketchfab.com/3d-models/caravanazip-125yIM3DWOvlzV70NvXjZElRdel)" by **[helijah](https://sketchfab.com/helijah)** on Sketchfab.
 - **Licence:** [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/) (CC BY 4.0).
 - **Changes:** converted from OBJ to glTF and compressed with glTF-Transform, with the propeller split into blades plus a motion-blur disc. In-game, paint schemes are applied as a tint.
+
+**F-16 Fighting Falcon** (a secret aircraft)
+- **Model:** "[F-16 Fighting Falcon - Fighter Jet - Free](https://sketchfab.com/3d-models/f-16-fighting-falcon-fighter-jet-free-f0b00989e5634764848ef2c235c64db5)" by **[bohmerang](https://sketchfab.com/bohmerang)** on Sketchfab.
+- **Licence:** [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+- **Changes:** compressed with glTF-Transform (meshopt geometry, WebP textures). The afterburner, heat haze, vapour cone and engine sound are the game's own.
 
 All other 3D content (terrain, trees, clouds, the airfield, cabins, windsocks, beacons, lighthouses, arches, sea stacks and the plane wreck) is generated procedurally in code.
 

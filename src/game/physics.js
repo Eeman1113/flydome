@@ -24,7 +24,7 @@ export function crashAircraft(title,text,msg){
 }
 export function stepPhysics(dt,ctrl){
   if(state.crashed)return;
-  const a=aircraft;
+  const a=aircraft,V=AIRCRAFT[aircraftState.variant],jet=!!V.jet;
   // Forgiving flight (stall simulation off, the default) feels half the wind.
   const forgiving=!state.stallSim;simWind.copy(state.wind).multiplyScalar(forgiving?.5:1);
   const groundBefore=groundLevelAt(a.position.x,a.position.z);
@@ -47,9 +47,9 @@ export function stepPhysics(dt,ctrl){
   const authority=clamp(.28+airspeed/34,.28,1.12)*(wasOnGround?0.62:1);
   const preSlipAngle=Math.atan2(simAirVelocity.dot(simRight),Math.max(airspeed,.1));
 
-  const pitchRateTarget=a.controlPitch*(31*DEG)*authority;
+  const pitchRateTarget=a.controlPitch*((V.pitchRate||31)*DEG)*authority;
   const bankLimit=65*DEG;
-  const rollRateTarget=a.controlRoll*(62*DEG)*authority-(wasOnGround?0:Math.sin(a.roll)*state.rollStability*.34);
+  const rollRateTarget=a.controlRoll*((V.rollRate||62)*DEG)*authority-(wasOnGround?0:Math.sin(a.roll)*state.rollStability*.34);
   // Coordinated turn yaw from bank; fades out past knife-edge so rolls and inverted flight stay clean.
   const coordinatedYawRate=(!wasOnGround&&airspeed>7)?-9.81*Math.tan(clamp(a.roll,-bankLimit,bankLimit))*Math.max(Math.cos(a.roll),0)/Math.max(airspeed,12):0;
   const rudderAuthority=wasOnGround?clamp(airspeed/10,0,1):clamp(airspeed/24,.25,1.15);
@@ -61,7 +61,7 @@ export function stepPhysics(dt,ctrl){
   a.pitchRate=lerp(a.pitchRate,pitchRateTarget,pitchResponse);
   a.rollRate=lerp(a.rollRate,rollRateTarget,rollResponse);
   a.yawRate=lerp(a.yawRate,yawRateTarget,yawResponse);
-  a.pitch=clamp(a.pitch+a.pitchRate*dt,-.38,wasOnGround?11*DEG:.40);if(wasOnGround&&a.pitch>=11*DEG&&a.pitchRate>0)a.pitchRate=0;
+  const pMax=jet?80*DEG:.40;a.pitch=clamp(a.pitch+a.pitchRate*dt,-(jet?80*DEG:.38),wasOnGround?11*DEG:pMax);if(wasOnGround&&a.pitch>=11*DEG&&a.pitchRate>0)a.pitchRate=0;
   // Airborne the aircraft can roll freely through 360° (barrel/aileron rolls); on the ground bank stays limited.
   a.roll=wasOnGround?clamp(a.roll+a.rollRate*dt,-bankLimit,bankLimit):wrapAngle(a.roll+a.rollRate*dt);
   a.yaw=wrapAngle(a.yaw+a.yawRate*dt);
@@ -92,18 +92,22 @@ export function stepPhysics(dt,ctrl){
   const groundEffect=1+(1-smooth(1,14,heightAGL))*.12;
   const lift=qbar*WING_AREA_M2*cl*groundEffect;
   a.stall=!wasOnGround&&stallBlend>.24;
-  const cd=.024+.075*cl*cl+stallBlend*.42;
+  // Jets: a cleaner airframe, plus a transonic drag rise so the afterburner just breaks Mach 1 low down.
+  const mach=airspeedNow/340;a.mach=mach;
+  const cd=(.024+.075*cl*cl)*(V.cdMul||1)+stallBlend*.42+(jet?.003*smooth(.92,1.08,mach)+.0015*Math.max(0,mach-1.08):0);
   const drag=qbar*WING_AREA_M2*cd;
   const lateralSpeed=simAirVelocity.dot(simRight);
   const sideDrag=.5*rho*airspeedNow*Math.abs(lateralSpeed)*WING_AREA_M2*.72;
 
-  const spoolTau=state.throttle>a.enginePower?1.15:.72;
+  const spoolTau=jet?(state.throttle>a.enginePower?2.1:1.4):state.throttle>a.enginePower?1.15:.72;
   a.enginePower+=(state.throttle-a.enginePower)*(1-Math.exp(-dt/spoolTau));
   // Thrust lapses gently with density (normally aspirated engine).
   // Propeller thrust falls with airspeed (fixed power), so the aircraft accelerates briskly,
   // climbs ~1,100 fpm at 80 kt and cruises ~140 kt at 75% like the real C182.
-  const propLapse=clamp(1-.0048*airspeedNow,.35,1);
-  const thrust=a.engineRunning?a.enginePower*MAX_ENGINE_THRUST_N*propLapse*(AIRCRAFT[aircraftState.variant].thrust||1)*(AIRCRAFT_MASS_KG/(AIRCRAFT_MASS_KG+(mission.cargoKg||0)*.9))*Math.pow(rho/1.225,.7):0;
+  const propLapse=jet?1:clamp(1-.0048*airspeedNow,.35,1);
+  // Afterburner: throttle past 92% lights the reheat for a big kick in thrust.
+  a.afterburner=jet&&a.engineRunning&&state.throttle>.92&&a.enginePower>.86;a.abLevel=(a.abLevel||0)+((a.afterburner?1:0)-(a.abLevel||0))*(1-Math.exp(-dt*(a.afterburner?6:3)));
+  const thrust=a.engineRunning?(a.enginePower+(jet?a.abLevel*(V.ab||0):0))*MAX_ENGINE_THRUST_N*propLapse*(V.thrust||1)*(AIRCRAFT_MASS_KG/(AIRCRAFT_MASS_KG+(mission.cargoKg||0)*.9))*Math.pow(rho/1.225,.7):0;
   simLiftDirection.copy(simUp).addScaledVector(simDirection,-simUp.dot(simDirection));
   if(simLiftDirection.lengthSq()<1e-6)simLiftDirection.copy(simUp);
   simLiftDirection.normalize();

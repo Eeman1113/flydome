@@ -83,8 +83,8 @@ export function initialLoadout(){
 }
 function renderHangar(){
   const el=$('hangar');if(!el)return;
-  const ac=Object.values(AIRCRAFT).map(v=>{const ok=unlocked(v.rank),sel=aircraftState.variant===v.id;
-    return `<button class="hg-ac${sel?' selected':''}${ok?'':' locked'}" data-ac="${v.id}" ${ok?'':'disabled'}><strong>${v.short}</strong><small>${ok?(v.floats?'Lands on water & runways':'All-round tourer'):`Unlocks at ${RANKS[v.rank][1]}`}</small></button>`;}).join('');
+  const ac=Object.values(AIRCRAFT).filter(v=>!v.secret||aircraftState.variant===v.id).map(v=>{const ok=unlocked(v.rank),sel=aircraftState.variant===v.id;
+    return `<button class="hg-ac${sel?' selected':''}${ok?'':' locked'}" data-ac="${v.id}" ${ok?'':'disabled'}><strong>${v.short}</strong><small>${ok?(v.jet?'Cheat unlocked · afterburner':v.floats?'Lands on water & runways':'All-round tourer'):`Unlocks at ${RANKS[v.rank][1]}`}</small></button>`;}).join('');
   const lv=LIVERIES.map(l=>{const ok=unlocked(l.rank),sel=aircraftState.livery===l.id;return `<button class="hg-sw${sel?' selected':''}${ok?'':' locked'}" data-lv="${l.id}" title="${l.name}${ok?'':` · unlocks at ${RANKS[l.rank][1]}`}" style="--c:#${l.tint.toString(16).padStart(6,'0')}" ${ok?'':'disabled'}></button>`;}).join('');
   el.innerHTML=`<div class="side-kicker">HANGAR</div><div class="hg-row">${ac}</div><div class="hg-label">Paint · <span>${(LIVERIES.find(l=>l.id===aircraftState.livery)||LIVERIES[0]).name}</span></div><div class="hg-sws">${lv}</div>
     <label class="hg-hard"><input type="checkbox" id="hardcoreToggle" ${progress.pilot.hardcore?'checked':''}><span><strong>Hardcore charters</strong><small>Limited fuel, refuel at strips · +50% XP</small></span></label>`;

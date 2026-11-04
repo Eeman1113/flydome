@@ -1,7 +1,7 @@
 // SKYBOUND · camera
 import * as THREE from 'three';
 import { clamp, lerp, smooth } from './util.js';
-import { aircraft, camForward, camRight, camUp, cockpitEyeLocal, state } from './config.js';
+import { aircraft, camForward, camRight, camUp, cockpitEyeLocal, state, AIRCRAFT, aircraftState } from './config.js';
 import { groundLevelAt } from './chunks.js';
 import { aircraftGroundOffset, camera, plane, worldTime } from './engine.js';
 
@@ -29,13 +29,16 @@ export function updateCamera(dt,ctrl){
   else if(state.camera===2){
     camera.up.set(0,1,0);
     const flatF=new THREE.Vector3(camForward.x,0,camForward.z).normalize();
-    camPos.copy(a.position).addScaledVector(camForward,-17).addScaledVector(flatF,-3).addScaledVector(camUp,4.6*Math.max(camUp.y,0)).add(new THREE.Vector3(0,1.2+4.6*(1-Math.max(camUp.y,0)),0));
+    const cs=AIRCRAFT[aircraftState.variant]?.camScale||1;
+    camPos.copy(a.position).addScaledVector(camForward,-17*cs).addScaledVector(flatF,-3*cs).addScaledVector(camUp,4.6*cs*Math.max(camUp.y,0)).add(new THREE.Vector3(0,1.2+4.6*cs*(1-Math.max(camUp.y,0)),0));
     const gmin=groundLevelAt(camPos.x,camPos.z)+2;if(camPos.y<gmin)camPos.y=gmin;
     camTarget.copy(a.position).addScaledVector(camForward,18).add(new THREE.Vector3(0,1.2,0));
-    camera.position.lerp(camPos,1-Math.exp(-dt*7.5));camera.position.add(camShake);camera.lookAt(camTarget);
+    // smooth the offset from the aircraft, not the absolute position, so the camera keeps up at jet speeds
+    chaseOff.lerp(camPos.sub(a.position),1-Math.exp(-dt*7.5));camera.position.copy(a.position).add(chaseOff).add(camShake);camera.lookAt(camTarget);
   }
-  else{camera.up.set(0,1,0);state.orbitYaw-=ctrl.camX*dt*1.8;state.orbitPitch=clamp(state.orbitPitch-ctrl.camY*dt*1.4,-.2,1.1);if(state.mouseDown){state.orbitYaw-=state.mouseDx*.004;state.orbitPitch=clamp(state.orbitPitch-state.mouseDy*.004,-.2,1.1);state.mouseDx=state.mouseDy=0;}const radius=state.camera===3?32:70,ox=Math.sin(state.orbitYaw)*Math.cos(state.orbitPitch)*radius,oy=Math.sin(state.orbitPitch)*radius+5,oz=Math.cos(state.orbitYaw)*Math.cos(state.orbitPitch)*radius;camPos.set(a.position.x+ox,a.position.y+oy,a.position.z+oz);const gmin=groundLevelAt(camPos.x,camPos.z)+1.5;if(camPos.y<gmin)camPos.y=gmin;camera.position.lerp(camPos,1-Math.exp(-dt*3));camera.lookAt(a.position);}
+  else{camera.up.set(0,1,0);state.orbitYaw-=ctrl.camX*dt*1.8;state.orbitPitch=clamp(state.orbitPitch-ctrl.camY*dt*1.4,-.2,1.1);if(state.mouseDown){state.orbitYaw-=state.mouseDx*.004;state.orbitPitch=clamp(state.orbitPitch-state.mouseDy*.004,-.2,1.1);state.mouseDx=state.mouseDy=0;}const radius=(state.camera===3?32:70)*(AIRCRAFT[aircraftState.variant]?.camScale||1),ox=Math.sin(state.orbitYaw)*Math.cos(state.orbitPitch)*radius,oy=Math.sin(state.orbitPitch)*radius+5,oz=Math.cos(state.orbitYaw)*Math.cos(state.orbitPitch)*radius;camPos.set(a.position.x+ox,a.position.y+oy,a.position.z+oz);const gmin=groundLevelAt(camPos.x,camPos.z)+1.5;if(camPos.y<gmin)camPos.y=gmin;orbitOff.lerp(camPos.sub(a.position),1-Math.exp(-dt*3));camera.position.copy(a.position).add(orbitOff);camera.lookAt(a.position);}
 }
+const chaseOff=new THREE.Vector3(0,5,18),orbitOff=new THREE.Vector3(20,8,20);
 export let menuT=0;
 export function updateMenuCamera(dt){
   // Slow cinematic orbit around the parked aircraft, framed right of the menu card.

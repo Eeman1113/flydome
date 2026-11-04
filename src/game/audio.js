@@ -1,6 +1,6 @@
 // SKYBOUND · audio
 import { $, KTS_PER_MS, clamp, smooth } from './util.js';
-import { aircraft, state } from './config.js';
+import { aircraft, state, AIRCRAFT, aircraftState } from './config.js';
 import { camera } from './engine.js';
 import { toast } from './ui.js';
 
@@ -99,7 +99,7 @@ export function updateAircraftAudio(dt){
   const active=state.started&&!state.paused&&!state.crashed;
   const audible=state.audioEnabled?state.audioVolume:0;
   setAudioParam(a.master.gain,active?audible:0,.16);
-  const running=active&&aircraft.engineRunning;
+  const running=active&&aircraft.engineRunning&&!AIRCRAFT[aircraftState.variant]?.jet; // the F-16 has its own turbofan model (jet.js)
   const power=running?clamp(aircraft.enginePower,0,1):0;
   // Simplified constant-speed-prop training model: idle-to-governed RPM follows power.
   const rpm=running?650+1750*Math.pow(power,.78):0;

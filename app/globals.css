@@ -295,3 +295,8 @@ body.photo .pf-bar{transform:scaleY(1)}
 .radio-sub.show{opacity:1;transform:translate(-50%,0)}
 .radio-sub b{display:block;font-size:9px;letter-spacing:.18em;color:#7fd3ee;margin-bottom:2px}
 body:not(.flying) .radio-sub{display:none}
+/* Vice City style cheat banner */
+.cheat-banner{position:fixed;left:50%;top:22%;transform:translate(-50%,0) scale(.96);text-align:center;opacity:0;pointer-events:none;z-index:40;transition:opacity .25s,transform .25s}
+.cheat-banner.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.cheat-banner b{display:block;font:italic 800 46px/1 var(--font-display,Georgia),serif;letter-spacing:.04em;color:#fff;text-shadow:0 0 2px #000,3px 3px 0 #d13aa8,6px 6px 18px rgba(0,0,0,.55)}
+.cheat-banner span{display:block;margin-top:8px;font:700 13px/1 Inter,ui-sans-serif,system-ui;letter-spacing:.32em;color:#ffd84a;text-shadow:0 1px 6px rgba(0,0,0,.7)}

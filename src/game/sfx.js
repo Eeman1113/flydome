@@ -76,6 +76,7 @@ export const sfx={
     tone({type:'sawtooth',f:180,f2:420,peak:.05,a:.1,d:1.1,t});
     for(let i=0;i<7;i++){const ti=t+.15+i*.14;burst({buf:brown,type:'lowpass',f:300,peak:.2,a:.005,d:.08,t:ti});}
     for(let i=0;i<4;i++)burst({buf:brown,type:'lowpass',f:500,peak:.35,a:.003,d:.12,t:t+1.15+i*.09});},
+  cheat(){if(!init())return;const t=ctx.currentTime;[784,988,1175,1568].forEach((f,i)=>{tone({type:'square',f,peak:.05,a:.005,d:.25,t:t+i*.07});tone({type:'triangle',f:f/2,peak:.06,a:.005,d:.3,t:t+i*.07});});},
   shutter(){if(!init())return;const t=ctx.currentTime;burst({f:4200,q:2,peak:.2,d:.03,t});burst({f:2600,q:2,peak:.16,d:.05,t:t+.09});},
   cash(){if(!init())return;const t=ctx.currentTime;[1568,2093,2637].forEach((f,i)=>tone({type:'triangle',f,peak:.09,a:.004,d:.5,t:t+i*.07}));burst({f:6000,q:1,peak:.05,d:.2,t});},
   fanfare(){if(!init())return;const t=ctx.currentTime;[523,659,784,1047].forEach((f,i)=>{tone({type:'triangle',f,peak:.1,a:.02,d:.9,t:t+i*.11});tone({type:'sine',f:f*2,peak:.03,a:.02,d:.7,t:t+i*.11});});},

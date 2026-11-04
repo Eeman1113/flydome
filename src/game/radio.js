@@ -105,7 +105,7 @@ function call(parts,{pri=1,ttl,chatter=false,key,cd=0}={}){
 // ---------------------------------------------------------------- spoken numbers
 const digits=n=>String(n).padStart(3,'0').split('').map(d=>`dig_${d}`);
 function numGroup(n){n=Math.round(n);return n>=0&&n<=30?`num_${n}`:null;}
-function cs(){return AIRCRAFT[aircraftState.variant].floats?'cs_caravan':'cs_skylane';}
+function cs(){const v=AIRCRAFT[aircraftState.variant];return v.jet?'cs_viper':v.floats?'cs_caravan':'cs_skylane';}
 function bearingTo(l){const a=aircraft.position;let b=Math.atan2(l.x-a.x,-(l.z-a.z))/DEG;b=(b+360)%360;return Math.round(b/10)*10%360||360;}
 function targetParts(l,lead){
   const a=aircraft.position,km=Math.hypot(l.x-a.x,l.z-a.z)/1000;
@@ -155,6 +155,9 @@ export function radioEvent(ev,d={}){
       case 'delivered':call([d.late?'delivered_late':'delivered'],{pri:2});if(d.rankUp!=null)call(['rank_up',`rank_${d.rankUp}`],{ttl:20000});break;
       case 'crash':call([d.water?'ditch':'crash'],{pri:3});break;
       case 'respawn':call([cs(),d.strip?'start_strip':'respawn'],{pri:2});break;
+      case 'jet':call(['jet_on'],{pri:3});break;
+      case 'jetOff':call(['jet_off'],{pri:2});break;
+      case 'boom':call(['jet_boom'],{pri:2,key:'boom',cd:30});break;
       case 'fuelOut':call([cs(),'fuel_out'],{pri:3});break;
       case 'tutStep':live.tutStep=d.index;live.tutT=0;
         if(!d.first)call(['tut_good'],{pri:2,ttl:4000});
@@ -169,7 +172,8 @@ export function radioUpdate(dt,ctxState){
   pump();
   const a=aircraft,kt=a.airspeed*1.94384,air=a.altAGL>6;
   // takeoff
-  if(!live.airborneSaid&&a.altAGL>25&&kt>45){live.airborneSaid=true;if(!state.tutorial.active)call(['takeoff']);}
+  if(!live.airborneSaid&&a.altAGL>25&&kt>45){live.airborneSaid=true;if(!state.tutorial.active)call([AIRCRAFT[aircraftState.variant].jet&&groups.jet_takeoff?'jet_takeoff':'takeoff']);}
+  if(a.afterburner&&groups.jet_ab)call(['jet_ab'],{key:'ab',cd:90,ttl:3000});
   if(a.altAGL<3)live.airborneSaid=a.altAGL>25;
   // warnings
   if(air&&a.stall)call(['stall'],{pri:3,key:'stall',cd:9,ttl:1500});

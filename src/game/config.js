@@ -54,7 +54,11 @@ export const AIRCRAFT={
   skylane:{id:'skylane',name:'Cessna 182 Skylane',short:'Skylane',file:'cessna_182_skylane.glb',scale:1.08,yaw:0,floats:false,rank:0},
   floats:{id:'floats',name:'Cessna 208 Caravan Amphibian',short:'Caravan Amphib',file:'cessna_208_amphibian.glb',scale:1,yaw:-Math.PI/2,floats:true,rank:2,thrust:1.3,
     objFrame:'caravan',eye:[-3.0,-.38,1.12],propCut:-5.84,propZMin:-1.3,
-    credit:'“CaravanA” (Cessna 208 Caravan Amphibian) by helijah, CC BY 4.0'}
+    credit:'“CaravanA” (Cessna 208 Caravan Amphibian) by helijah, CC BY 4.0'},
+  // Secret: type "fly" in flight. Fitted to the real F-16's 15.06 m length; nose/nozzle/eye found from the mesh.
+  f16:{id:'f16',name:'F-16 Fighting Falcon',short:'F-16',file:'f16_fighting_falcon.glb',lengthM:15.06,yaw:Math.PI/2,floats:false,rank:99,secret:true,jet:true,
+    thrust:4.0,ab:1.6,cdMul:.7,rollRate:220,pitchRate:50,camScale:1.45,
+    credit:'“F-16 Fighting Falcon - Fighter Jet - Free” by bohmerang, CC BY-NC-SA 4.0'}
 };
 export const LIVERIES=[
   {id:'factory',name:'Factory',tint:0xffffff,rank:0},
