@@ -1,0 +1,2408 @@
+[
+ {
+  "id": "cs_skylane_00",
+  "group": "cs_skylane",
+  "voice": "tara",
+  "text": "Skylane two seven echo,"
+ },
+ {
+  "id": "cs_skylane_01",
+  "group": "cs_skylane",
+  "voice": "tara",
+  "text": "Two seven echo,"
+ },
+ {
+  "id": "cs_skylane_02",
+  "group": "cs_skylane",
+  "voice": "tara",
+  "text": "Skylane seven echo,"
+ },
+ {
+  "id": "cs_caravan_00",
+  "group": "cs_caravan",
+  "voice": "tara",
+  "text": "Caravan four lima,"
+ },
+ {
+  "id": "cs_caravan_01",
+  "group": "cs_caravan",
+  "voice": "tara",
+  "text": "Four lima,"
+ },
+ {
+  "id": "cs_caravan_02",
+  "group": "cs_caravan",
+  "voice": "tara",
+  "text": "Caravan, four lima,"
+ },
+ {
+  "id": "dig_0",
+  "group": "dig_0",
+  "voice": "tara",
+  "text": "zero"
+ },
+ {
+  "id": "dig_1",
+  "group": "dig_1",
+  "voice": "tara",
+  "text": "one"
+ },
+ {
+  "id": "dig_2",
+  "group": "dig_2",
+  "voice": "tara",
+  "text": "two"
+ },
+ {
+  "id": "dig_3",
+  "group": "dig_3",
+  "voice": "tara",
+  "text": "three"
+ },
+ {
+  "id": "dig_4",
+  "group": "dig_4",
+  "voice": "tara",
+  "text": "four"
+ },
+ {
+  "id": "dig_5",
+  "group": "dig_5",
+  "voice": "tara",
+  "text": "five"
+ },
+ {
+  "id": "dig_6",
+  "group": "dig_6",
+  "voice": "tara",
+  "text": "six"
+ },
+ {
+  "id": "dig_7",
+  "group": "dig_7",
+  "voice": "tara",
+  "text": "seven"
+ },
+ {
+  "id": "dig_8",
+  "group": "dig_8",
+  "voice": "tara",
+  "text": "eight"
+ },
+ {
+  "id": "dig_9",
+  "group": "dig_9",
+  "voice": "tara",
+  "text": "niner"
+ },
+ {
+  "id": "num_0",
+  "group": "num_0",
+  "voice": "tara",
+  "text": "zero"
+ },
+ {
+  "id": "num_1",
+  "group": "num_1",
+  "voice": "tara",
+  "text": "one"
+ },
+ {
+  "id": "num_2",
+  "group": "num_2",
+  "voice": "tara",
+  "text": "two"
+ },
+ {
+  "id": "num_3",
+  "group": "num_3",
+  "voice": "tara",
+  "text": "three"
+ },
+ {
+  "id": "num_4",
+  "group": "num_4",
+  "voice": "tara",
+  "text": "four"
+ },
+ {
+  "id": "num_5",
+  "group": "num_5",
+  "voice": "tara",
+  "text": "five"
+ },
+ {
+  "id": "num_6",
+  "group": "num_6",
+  "voice": "tara",
+  "text": "six"
+ },
+ {
+  "id": "num_7",
+  "group": "num_7",
+  "voice": "tara",
+  "text": "seven"
+ },
+ {
+  "id": "num_8",
+  "group": "num_8",
+  "voice": "tara",
+  "text": "eight"
+ },
+ {
+  "id": "num_9",
+  "group": "num_9",
+  "voice": "tara",
+  "text": "nine"
+ },
+ {
+  "id": "num_10",
+  "group": "num_10",
+  "voice": "tara",
+  "text": "ten"
+ },
+ {
+  "id": "num_11",
+  "group": "num_11",
+  "voice": "tara",
+  "text": "eleven"
+ },
+ {
+  "id": "num_12",
+  "group": "num_12",
+  "voice": "tara",
+  "text": "twelve"
+ },
+ {
+  "id": "num_13",
+  "group": "num_13",
+  "voice": "tara",
+  "text": "thirteen"
+ },
+ {
+  "id": "num_14",
+  "group": "num_14",
+  "voice": "tara",
+  "text": "fourteen"
+ },
+ {
+  "id": "num_15",
+  "group": "num_15",
+  "voice": "tara",
+  "text": "fifteen"
+ },
+ {
+  "id": "num_16",
+  "group": "num_16",
+  "voice": "tara",
+  "text": "sixteen"
+ },
+ {
+  "id": "num_17",
+  "group": "num_17",
+  "voice": "tara",
+  "text": "seventeen"
+ },
+ {
+  "id": "num_18",
+  "group": "num_18",
+  "voice": "tara",
+  "text": "eighteen"
+ },
+ {
+  "id": "num_19",
+  "group": "num_19",
+  "voice": "tara",
+  "text": "nineteen"
+ },
+ {
+  "id": "num_20",
+  "group": "num_20",
+  "voice": "tara",
+  "text": "twenty"
+ },
+ {
+  "id": "num_21",
+  "group": "num_21",
+  "voice": "tara",
+  "text": "twenty one"
+ },
+ {
+  "id": "num_22",
+  "group": "num_22",
+  "voice": "tara",
+  "text": "twenty two"
+ },
+ {
+  "id": "num_23",
+  "group": "num_23",
+  "voice": "tara",
+  "text": "twenty three"
+ },
+ {
+  "id": "num_24",
+  "group": "num_24",
+  "voice": "tara",
+  "text": "twenty four"
+ },
+ {
+  "id": "num_25",
+  "group": "num_25",
+  "voice": "tara",
+  "text": "twenty five"
+ },
+ {
+  "id": "num_26",
+  "group": "num_26",
+  "voice": "tara",
+  "text": "twenty six"
+ },
+ {
+  "id": "num_27",
+  "group": "num_27",
+  "voice": "tara",
+  "text": "twenty seven"
+ },
+ {
+  "id": "num_28",
+  "group": "num_28",
+  "voice": "tara",
+  "text": "twenty eight"
+ },
+ {
+  "id": "num_29",
+  "group": "num_29",
+  "voice": "tara",
+  "text": "twenty nine"
+ },
+ {
+  "id": "num_30",
+  "group": "num_30",
+  "voice": "tara",
+  "text": "thirty"
+ },
+ {
+  "id": "w_wind_00",
+  "group": "w_wind",
+  "voice": "tara",
+  "text": "Wind"
+ },
+ {
+  "id": "w_wind_01",
+  "group": "w_wind",
+  "voice": "tara",
+  "text": "Wind is"
+ },
+ {
+  "id": "w_wind_02",
+  "group": "w_wind",
+  "voice": "tara",
+  "text": "Surface wind"
+ },
+ {
+  "id": "w_at_00",
+  "group": "w_at",
+  "voice": "tara",
+  "text": "at"
+ },
+ {
+  "id": "w_knots_00",
+  "group": "w_knots",
+  "voice": "tara",
+  "text": "knots."
+ },
+ {
+  "id": "w_calm_00",
+  "group": "w_calm",
+  "voice": "tara",
+  "text": "Wind calm."
+ },
+ {
+  "id": "w_calm_01",
+  "group": "w_calm",
+  "voice": "tara",
+  "text": "Winds are calm."
+ },
+ {
+  "id": "w_gusting_00",
+  "group": "w_gusting",
+  "voice": "tara",
+  "text": "gusting"
+ },
+ {
+  "id": "w_gusting_01",
+  "group": "w_gusting",
+  "voice": "tara",
+  "text": "gusts to"
+ },
+ {
+  "id": "w_bearing_00",
+  "group": "w_bearing",
+  "voice": "tara",
+  "text": "bearing"
+ },
+ {
+  "id": "w_bearing_01",
+  "group": "w_bearing",
+  "voice": "tara",
+  "text": "heading"
+ },
+ {
+  "id": "w_bearing_02",
+  "group": "w_bearing",
+  "voice": "tara",
+  "text": "on a bearing of"
+ },
+ {
+  "id": "w_range_00",
+  "group": "w_range",
+  "voice": "tara",
+  "text": "range"
+ },
+ {
+  "id": "w_range_01",
+  "group": "w_range",
+  "voice": "tara",
+  "text": "distance"
+ },
+ {
+  "id": "w_km_00",
+  "group": "w_km",
+  "voice": "tara",
+  "text": "kilometres."
+ },
+ {
+  "id": "w_km_01",
+  "group": "w_km",
+  "voice": "tara",
+  "text": "clicks out."
+ },
+ {
+  "id": "w_km1_00",
+  "group": "w_km1",
+  "voice": "tara",
+  "text": "one kilometre."
+ },
+ {
+  "id": "type_peak_00",
+  "group": "type_peak",
+  "voice": "tara",
+  "text": "the summit"
+ },
+ {
+  "id": "type_lake_00",
+  "group": "type_lake",
+  "voice": "tara",
+  "text": "the lake"
+ },
+ {
+  "id": "type_crater_00",
+  "group": "type_crater",
+  "voice": "tara",
+  "text": "the crater lake"
+ },
+ {
+  "id": "type_island_00",
+  "group": "type_island",
+  "voice": "tara",
+  "text": "the island"
+ },
+ {
+  "id": "type_forest_00",
+  "group": "type_forest",
+  "voice": "tara",
+  "text": "the forest"
+ },
+ {
+  "id": "type_river_00",
+  "group": "type_river",
+  "voice": "tara",
+  "text": "the river"
+ },
+ {
+  "id": "type_pass_00",
+  "group": "type_pass",
+  "voice": "tara",
+  "text": "the mountain pass"
+ },
+ {
+  "id": "type_gorge_00",
+  "group": "type_gorge",
+  "voice": "tara",
+  "text": "the gorge"
+ },
+ {
+  "id": "type_falls_00",
+  "group": "type_falls",
+  "voice": "tara",
+  "text": "the waterfall"
+ },
+ {
+  "id": "type_stacks_00",
+  "group": "type_stacks",
+  "voice": "tara",
+  "text": "the sea stacks"
+ },
+ {
+  "id": "type_cape_00",
+  "group": "type_cape",
+  "voice": "tara",
+  "text": "the cape"
+ },
+ {
+  "id": "type_glacier_00",
+  "group": "type_glacier",
+  "voice": "tara",
+  "text": "the glacier"
+ },
+ {
+  "id": "type_spire_00",
+  "group": "type_spire",
+  "voice": "tara",
+  "text": "the rock spire"
+ },
+ {
+  "id": "type_lighthouse_00",
+  "group": "type_lighthouse",
+  "voice": "tara",
+  "text": "the lighthouse"
+ },
+ {
+  "id": "type_wreck_00",
+  "group": "type_wreck",
+  "voice": "tara",
+  "text": "the old wreck"
+ },
+ {
+  "id": "type_arch_00",
+  "group": "type_arch",
+  "voice": "tara",
+  "text": "the stone arch"
+ },
+ {
+  "id": "rank_0_00",
+  "group": "rank_0",
+  "voice": "tara",
+  "text": "Student Pilot."
+ },
+ {
+  "id": "rank_1_00",
+  "group": "rank_1",
+  "voice": "tara",
+  "text": "Private Pilot."
+ },
+ {
+  "id": "rank_2_00",
+  "group": "rank_2",
+  "voice": "tara",
+  "text": "Bush Pilot."
+ },
+ {
+  "id": "rank_3_00",
+  "group": "rank_3",
+  "voice": "tara",
+  "text": "Survey Pilot."
+ },
+ {
+  "id": "rank_4_00",
+  "group": "rank_4",
+  "voice": "tara",
+  "text": "Senior Surveyor."
+ },
+ {
+  "id": "rank_5_00",
+  "group": "rank_5",
+  "voice": "tara",
+  "text": "Chief Cartographer."
+ },
+ {
+  "id": "start_charter_00",
+  "group": "start_charter",
+  "voice": "tara",
+  "text": "Skybound Ground, radio check loud and clear. Runway three six, you are cleared for takeoff. Go find us something new."
+ },
+ {
+  "id": "start_charter_01",
+  "group": "start_charter",
+  "voice": "tara",
+  "text": "Morning. Charter is filed, runway three six is yours. Cleared for takeoff."
+ },
+ {
+  "id": "start_charter_02",
+  "group": "start_charter",
+  "voice": "tara",
+  "text": "You are lined up on three six. Cleared for takeoff. Good hunting out there."
+ },
+ {
+  "id": "start_charter_03",
+  "group": "start_charter",
+  "voice": "tara",
+  "text": "Skybound Ground. Charter on file, three landmarks waiting. Runway three six, cleared for takeoff."
+ },
+ {
+  "id": "start_charter_04",
+  "group": "start_charter",
+  "voice": "tara",
+  "text": "Runway three six, cleared for takeoff. The map is blank, so bring it back full."
+ },
+ {
+  "id": "start_charter_05",
+  "group": "start_charter",
+  "voice": "tara",
+  "text": "Got your charter. Nothing on this chart yet but rumours. Cleared for takeoff, three six."
+ },
+ {
+  "id": "start_charter_06",
+  "group": "start_charter",
+  "voice": "tara",
+  "text": "Ground here. Weather is checked, fuel is topped up. Three six, cleared for takeoff."
+ },
+ {
+  "id": "start_charter_07",
+  "group": "start_charter",
+  "voice": "tara",
+  "text": "All yours. Runway three six, cleared for takeoff. Fly low, fly steady, and come home in one piece."
+ },
+ {
+  "id": "start_explore_00",
+  "group": "start_explore",
+  "voice": "tara",
+  "text": "No charter today? Fair enough. Runway three six, cleared for takeoff. Chart whatever you like."
+ },
+ {
+  "id": "start_explore_01",
+  "group": "start_explore",
+  "voice": "tara",
+  "text": "Free flight, copy. The whole world is uncharted. Three six, cleared for takeoff."
+ },
+ {
+  "id": "start_explore_02",
+  "group": "start_explore",
+  "voice": "tara",
+  "text": "Cleared for takeoff, three six. No schedule, no route. Just go and see what is out there."
+ },
+ {
+  "id": "start_explore_03",
+  "group": "start_explore",
+  "voice": "tara",
+  "text": "Explorer flight approved. Every question mark out there is yours to name. Cleared for takeoff."
+ },
+ {
+  "id": "start_explore_04",
+  "group": "start_explore",
+  "voice": "tara",
+  "text": "Skybound Ground. Runway three six, cleared for takeoff. Bring back a good story."
+ },
+ {
+  "id": "start_explore_05",
+  "group": "start_explore",
+  "voice": "tara",
+  "text": "Copy, sightseeing. Three six is clear. Off you go."
+ },
+ {
+  "id": "start_cargo_00",
+  "group": "start_cargo",
+  "voice": "tara",
+  "text": "Bush pilot desk is open. Check the job board, pick a load, and we will get you moving."
+ },
+ {
+  "id": "start_cargo_01",
+  "group": "start_cargo",
+  "voice": "tara",
+  "text": "Morning. We have freight stacking up in the hangar. Take your pick from the board."
+ },
+ {
+  "id": "start_cargo_02",
+  "group": "start_cargo",
+  "voice": "tara",
+  "text": "Ground here. Three jobs on the board, all paying. Choose one and we will load you up."
+ },
+ {
+  "id": "start_cargo_03",
+  "group": "start_cargo",
+  "voice": "tara",
+  "text": "Cargo desk. Folks out at the strips are waiting on you. Pick a delivery."
+ },
+ {
+  "id": "start_cargo_04",
+  "group": "start_cargo",
+  "voice": "tara",
+  "text": "The board is full today. Pick a job, and mind the weight on climb out."
+ },
+ {
+  "id": "start_daily_00",
+  "group": "start_daily",
+  "voice": "tara",
+  "text": "Daily charter, copy. Every pilot flies this one today, so make it count. Cleared for takeoff, three six."
+ },
+ {
+  "id": "start_daily_01",
+  "group": "start_daily",
+  "voice": "tara",
+  "text": "Same world, same route, every pilot today. Let us see what you have got. Cleared for takeoff."
+ },
+ {
+  "id": "start_daily_02",
+  "group": "start_daily",
+  "voice": "tara",
+  "text": "Daily charter on file. The clock starts now. Runway three six, cleared for takeoff."
+ },
+ {
+  "id": "start_daily_03",
+  "group": "start_daily",
+  "voice": "tara",
+  "text": "Everyone is flying this one today. Beat them. Cleared for takeoff, three six."
+ },
+ {
+  "id": "start_strip_00",
+  "group": "start_strip",
+  "voice": "tara",
+  "text": "Fresh aircraft is ready at the strip. Clear to depart at your discretion."
+ },
+ {
+  "id": "start_strip_01",
+  "group": "start_strip",
+  "voice": "tara",
+  "text": "You are back on the strip. Departure at your own discretion. Watch the trees."
+ },
+ {
+  "id": "start_strip_02",
+  "group": "start_strip",
+  "voice": "tara",
+  "text": "Strip departure, no traffic reported. Go when ready."
+ },
+ {
+  "id": "start_strip_03",
+  "group": "start_strip",
+  "voice": "tara",
+  "text": "Bush strip, you are clear to go. Plenty of grass, not much else."
+ },
+ {
+  "id": "wx_rain_00",
+  "group": "wx_rain",
+  "voice": "tara",
+  "text": "Heads up, showers moving through the area. Expect reduced visibility."
+ },
+ {
+  "id": "wx_rain_01",
+  "group": "wx_rain",
+  "voice": "tara",
+  "text": "Rain in the area today. Keep your eyes on the instruments if it closes in."
+ },
+ {
+  "id": "wx_rain_02",
+  "group": "wx_rain",
+  "voice": "tara",
+  "text": "We have rain on the field. Windscreen will be busy, take it easy."
+ },
+ {
+  "id": "wx_rain_03",
+  "group": "wx_rain",
+  "voice": "tara",
+  "text": "Light rain reported out by the strips. Nothing to stop you, just mind your visibility."
+ },
+ {
+  "id": "wx_gusts_00",
+  "group": "wx_gusts",
+  "voice": "tara",
+  "text": "Winds are gusty today. Expect some bumps on climb out."
+ },
+ {
+  "id": "wx_gusts_01",
+  "group": "wx_gusts",
+  "voice": "tara",
+  "text": "Gusty conditions on the field. Keep a firm hand on the controls."
+ },
+ {
+  "id": "wx_gusts_02",
+  "group": "wx_gusts",
+  "voice": "tara",
+  "text": "Watch the gusts on final today. They have been catching a few people out."
+ },
+ {
+  "id": "wx_gusts_03",
+  "group": "wx_gusts",
+  "voice": "tara",
+  "text": "Turbulence reported at low level. Keep your speed up in the gusts."
+ },
+ {
+  "id": "wx_lowcloud_00",
+  "group": "wx_lowcloud",
+  "voice": "tara",
+  "text": "Cloud base is low today. Stay below it and keep the ground in sight."
+ },
+ {
+  "id": "wx_lowcloud_01",
+  "group": "wx_lowcloud",
+  "voice": "tara",
+  "text": "Low cloud over the high ground. Do not go poking into it."
+ },
+ {
+  "id": "wx_lowcloud_02",
+  "group": "wx_lowcloud",
+  "voice": "tara",
+  "text": "Ceilings are low out there. If you lose the horizon, turn back."
+ },
+ {
+  "id": "takeoff_00",
+  "group": "takeoff",
+  "voice": "tara",
+  "text": "Positive climb. Nicely done."
+ },
+ {
+  "id": "takeoff_01",
+  "group": "takeoff",
+  "voice": "tara",
+  "text": "You are airborne. Have a good flight."
+ },
+ {
+  "id": "takeoff_02",
+  "group": "takeoff",
+  "voice": "tara",
+  "text": "Wheels up. Turn on course when ready."
+ },
+ {
+  "id": "takeoff_03",
+  "group": "takeoff",
+  "voice": "tara",
+  "text": "Airborne. Climb at your discretion, no traffic reported."
+ },
+ {
+  "id": "takeoff_04",
+  "group": "takeoff",
+  "voice": "tara",
+  "text": "And off you go. Looking good."
+ },
+ {
+  "id": "takeoff_05",
+  "group": "takeoff",
+  "voice": "tara",
+  "text": "Clean departure. Proceed on course."
+ },
+ {
+  "id": "takeoff_06",
+  "group": "takeoff",
+  "voice": "tara",
+  "text": "Nice rotation. Radar contact, you are on your own."
+ },
+ {
+  "id": "takeoff_07",
+  "group": "takeoff",
+  "voice": "tara",
+  "text": "Airborne. Frequency is quiet, call if you need anything."
+ },
+ {
+  "id": "brief_first_00",
+  "group": "brief_first",
+  "voice": "tara",
+  "text": "Your first target is"
+ },
+ {
+  "id": "brief_first_01",
+  "group": "brief_first",
+  "voice": "tara",
+  "text": "First up is"
+ },
+ {
+  "id": "brief_first_02",
+  "group": "brief_first",
+  "voice": "tara",
+  "text": "Start with"
+ },
+ {
+  "id": "brief_first_03",
+  "group": "brief_first",
+  "voice": "tara",
+  "text": "Head for"
+ },
+ {
+  "id": "brief_next_00",
+  "group": "brief_next",
+  "voice": "tara",
+  "text": "Next target is"
+ },
+ {
+  "id": "brief_next_01",
+  "group": "brief_next",
+  "voice": "tara",
+  "text": "Next up,"
+ },
+ {
+  "id": "brief_next_02",
+  "group": "brief_next",
+  "voice": "tara",
+  "text": "Now head for"
+ },
+ {
+  "id": "brief_next_03",
+  "group": "brief_next",
+  "voice": "tara",
+  "text": "Your next one is"
+ },
+ {
+  "id": "brief_next_04",
+  "group": "brief_next",
+  "voice": "tara",
+  "text": "Moving on to"
+ },
+ {
+  "id": "target_near_00",
+  "group": "target_near",
+  "voice": "tara",
+  "text": "You are coming up on the target. Get low and steady."
+ },
+ {
+  "id": "target_near_01",
+  "group": "target_near",
+  "voice": "tara",
+  "text": "Target is close. Bring it down and hold it level."
+ },
+ {
+  "id": "target_near_02",
+  "group": "target_near",
+  "voice": "tara",
+  "text": "Almost there. Slow it down and give us a clean pass."
+ },
+ {
+  "id": "target_near_03",
+  "group": "target_near",
+  "voice": "tara",
+  "text": "Coming up on it now. Nice and low."
+ },
+ {
+  "id": "target_near_04",
+  "group": "target_near",
+  "voice": "tara",
+  "text": "Target ahead. Keep it smooth through the pass."
+ },
+ {
+  "id": "target_near_05",
+  "group": "target_near",
+  "voice": "tara",
+  "text": "You should have it in sight. Low and steady, please."
+ },
+ {
+  "id": "target_near_06",
+  "group": "target_near",
+  "voice": "tara",
+  "text": "Getting close. Take your time on this one."
+ },
+ {
+  "id": "target_near_07",
+  "group": "target_near",
+  "voice": "tara",
+  "text": "That is your target. Line up a good survey pass."
+ },
+ {
+  "id": "surveying_00",
+  "group": "surveying",
+  "voice": "tara",
+  "text": "That is it, hold it there."
+ },
+ {
+  "id": "surveying_01",
+  "group": "surveying",
+  "voice": "tara",
+  "text": "Good, keep it steady."
+ },
+ {
+  "id": "surveying_02",
+  "group": "surveying",
+  "voice": "tara",
+  "text": "Survey is running. Do not stop now."
+ },
+ {
+  "id": "surveying_03",
+  "group": "surveying",
+  "voice": "tara",
+  "text": "Steady. Steady."
+ },
+ {
+  "id": "surveying_04",
+  "group": "surveying",
+  "voice": "tara",
+  "text": "Hold that line."
+ },
+ {
+  "id": "surveying_05",
+  "group": "surveying",
+  "voice": "tara",
+  "text": "Lovely. Keep it there."
+ },
+ {
+  "id": "survey_lost_00",
+  "group": "survey_lost",
+  "voice": "tara",
+  "text": "You drifted off. Bring it back around."
+ },
+ {
+  "id": "survey_lost_01",
+  "group": "survey_lost",
+  "voice": "tara",
+  "text": "Lost the survey. Go around and try again."
+ },
+ {
+  "id": "survey_lost_02",
+  "group": "survey_lost",
+  "voice": "tara",
+  "text": "Too far out. Swing back for another pass."
+ },
+ {
+  "id": "survey_lost_03",
+  "group": "survey_lost",
+  "voice": "tara",
+  "text": "That pass did not count. Try it again, lower."
+ },
+ {
+  "id": "discovery_00",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Got it. That is on the chart."
+ },
+ {
+  "id": "discovery_01",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Charted. Nice work."
+ },
+ {
+  "id": "discovery_02",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Confirmed, it is on the map now."
+ },
+ {
+  "id": "discovery_03",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Beautiful. That one is yours."
+ },
+ {
+  "id": "discovery_04",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Survey complete. Logging it now."
+ },
+ {
+  "id": "discovery_05",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Copy, landmark charted."
+ },
+ {
+  "id": "discovery_06",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "There it is. First pilot ever to see it."
+ },
+ {
+  "id": "discovery_07",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "That is a clean survey. Inking it in."
+ },
+ {
+  "id": "discovery_08",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Lovely pass. That is charted."
+ },
+ {
+  "id": "discovery_09",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Recorded. The cartographers will be pleased."
+ },
+ {
+  "id": "discovery_10",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Got the readings. That is a keeper."
+ },
+ {
+  "id": "discovery_11",
+  "group": "discovery",
+  "voice": "tara",
+  "text": "Nicely flown. One more off the list."
+ },
+ {
+  "id": "discovery_rare_00",
+  "group": "discovery_rare",
+  "voice": "tara",
+  "text": "Oh, now that is a rare find. <laugh> Well done."
+ },
+ {
+  "id": "discovery_rare_01",
+  "group": "discovery_rare",
+  "voice": "tara",
+  "text": "Wait, is that real? That is a rare one. Charting it now."
+ },
+ {
+  "id": "discovery_rare_02",
+  "group": "discovery_rare",
+  "voice": "tara",
+  "text": "We have never logged one of those. Incredible find."
+ },
+ {
+  "id": "discovery_rare_03",
+  "group": "discovery_rare",
+  "voice": "tara",
+  "text": "Rare discovery confirmed. They will be talking about this one."
+ },
+ {
+  "id": "discovery_rare_04",
+  "group": "discovery_rare",
+  "voice": "tara",
+  "text": "Oh wow. That is going in the logbook with a gold star."
+ },
+ {
+  "id": "discovery_rare_05",
+  "group": "discovery_rare",
+  "voice": "tara",
+  "text": "Now that is something special. Rare find, charted."
+ },
+ {
+  "id": "discovery_rare_06",
+  "group": "discovery_rare",
+  "voice": "tara",
+  "text": "Hold on, let me get that down. That is a rare one."
+ },
+ {
+  "id": "discovery_rare_07",
+  "group": "discovery_rare",
+  "voice": "tara",
+  "text": "You do not see that every day. Rare find, logged."
+ },
+ {
+  "id": "charter_surveyed_00",
+  "group": "charter_surveyed",
+  "voice": "tara",
+  "text": "That is every target on the charter. Bring it home and land at any strip."
+ },
+ {
+  "id": "charter_surveyed_01",
+  "group": "charter_surveyed",
+  "voice": "tara",
+  "text": "Charter surveyed. All you need now is a good landing."
+ },
+ {
+  "id": "charter_surveyed_02",
+  "group": "charter_surveyed",
+  "voice": "tara",
+  "text": "All targets charted. Pick a strip and put it down gently."
+ },
+ {
+  "id": "charter_surveyed_03",
+  "group": "charter_surveyed",
+  "voice": "tara",
+  "text": "That is the full set. Head for the nearest strip."
+ },
+ {
+  "id": "charter_surveyed_04",
+  "group": "charter_surveyed",
+  "voice": "tara",
+  "text": "Survey complete. Now the hard part. Land it."
+ },
+ {
+  "id": "charter_surveyed_05",
+  "group": "charter_surveyed",
+  "voice": "tara",
+  "text": "Great work. Charter is surveyed. Find a runway and file it."
+ },
+ {
+  "id": "charter_surveyed_06",
+  "group": "charter_surveyed",
+  "voice": "tara",
+  "text": "All three logged. Come on home."
+ },
+ {
+  "id": "charter_surveyed_07",
+  "group": "charter_surveyed",
+  "voice": "tara",
+  "text": "Charter done. Land anywhere you like, as long as it is a runway."
+ },
+ {
+  "id": "charter_surveyed_water_00",
+  "group": "charter_surveyed_water",
+  "voice": "tara",
+  "text": "All targets charted. Now set her down on the lake to file it."
+ },
+ {
+  "id": "charter_surveyed_water_01",
+  "group": "charter_surveyed_water",
+  "voice": "tara",
+  "text": "Survey complete. Alight on the lake and we will call it done."
+ },
+ {
+  "id": "charter_surveyed_water_02",
+  "group": "charter_surveyed_water",
+  "voice": "tara",
+  "text": "That is the set. Bring it down onto the water, nice and gentle."
+ },
+ {
+  "id": "charter_surveyed_water_03",
+  "group": "charter_surveyed_water",
+  "voice": "tara",
+  "text": "Charter surveyed. One water landing and you are finished."
+ },
+ {
+  "id": "gorge_done_00",
+  "group": "gorge_done",
+  "voice": "tara",
+  "text": "You flew the whole gorge. That is some flying."
+ },
+ {
+  "id": "gorge_done_01",
+  "group": "gorge_done",
+  "voice": "tara",
+  "text": "End to end through the gorge. Impressive."
+ },
+ {
+  "id": "gorge_done_02",
+  "group": "gorge_done",
+  "voice": "tara",
+  "text": "Gorge run complete. My heart is still racing."
+ },
+ {
+  "id": "approach_00",
+  "group": "approach",
+  "voice": "tara",
+  "text": "You are lined up. Cleared to land."
+ },
+ {
+  "id": "approach_01",
+  "group": "approach",
+  "voice": "tara",
+  "text": "Looking good on final. Cleared to land."
+ },
+ {
+  "id": "approach_02",
+  "group": "approach",
+  "voice": "tara",
+  "text": "Runway is clear. You are cleared to land."
+ },
+ {
+  "id": "approach_03",
+  "group": "approach",
+  "voice": "tara",
+  "text": "Nice and lined up. Cleared to land, check your speed."
+ },
+ {
+  "id": "approach_04",
+  "group": "approach",
+  "voice": "tara",
+  "text": "Cleared to land. Watch the diamonds."
+ },
+ {
+  "id": "approach_05",
+  "group": "approach",
+  "voice": "tara",
+  "text": "On final. Cleared to land, take it slow."
+ },
+ {
+  "id": "approach_06",
+  "group": "approach",
+  "voice": "tara",
+  "text": "Strip is clear, cleared to land. Mind the trees on short final."
+ },
+ {
+  "id": "approach_07",
+  "group": "approach",
+  "voice": "tara",
+  "text": "Cleared to land. Gentle now."
+ },
+ {
+  "id": "approach_high_00",
+  "group": "approach_high",
+  "voice": "tara",
+  "text": "You are high. Bring the power back."
+ },
+ {
+  "id": "approach_high_01",
+  "group": "approach_high",
+  "voice": "tara",
+  "text": "Little high on the glide path."
+ },
+ {
+  "id": "approach_high_02",
+  "group": "approach_high",
+  "voice": "tara",
+  "text": "High on approach. Ease the nose down."
+ },
+ {
+  "id": "approach_high_03",
+  "group": "approach_high",
+  "voice": "tara",
+  "text": "You are well above the slope. Lose some height."
+ },
+ {
+  "id": "approach_high_04",
+  "group": "approach_high",
+  "voice": "tara",
+  "text": "Too high. Go around if you need to."
+ },
+ {
+  "id": "approach_low_00",
+  "group": "approach_low",
+  "voice": "tara",
+  "text": "You are low. Add some power."
+ },
+ {
+  "id": "approach_low_01",
+  "group": "approach_low",
+  "voice": "tara",
+  "text": "Low on the glide path, watch it."
+ },
+ {
+  "id": "approach_low_02",
+  "group": "approach_low",
+  "voice": "tara",
+  "text": "Too low. Bring the nose up a touch."
+ },
+ {
+  "id": "approach_low_03",
+  "group": "approach_low",
+  "voice": "tara",
+  "text": "Check your height. You are below the slope."
+ },
+ {
+  "id": "approach_low_04",
+  "group": "approach_low",
+  "voice": "tara",
+  "text": "Low and slow is how people get hurt. Add power."
+ },
+ {
+  "id": "approach_fast_00",
+  "group": "approach_fast",
+  "voice": "tara",
+  "text": "You are fast. Bleed off some speed."
+ },
+ {
+  "id": "approach_fast_01",
+  "group": "approach_fast",
+  "voice": "tara",
+  "text": "Too much speed for this strip."
+ },
+ {
+  "id": "approach_fast_02",
+  "group": "approach_fast",
+  "voice": "tara",
+  "text": "Check your airspeed. You are hot."
+ },
+ {
+  "id": "approach_fast_03",
+  "group": "approach_fast",
+  "voice": "tara",
+  "text": "Slow it down, you will float halfway down the strip."
+ },
+ {
+  "id": "land_S_00",
+  "group": "land_S",
+  "voice": "tara",
+  "text": "<laugh> Butter. Absolute butter."
+ },
+ {
+  "id": "land_S_01",
+  "group": "land_S",
+  "voice": "tara",
+  "text": "Did you even touch down? Beautiful landing."
+ },
+ {
+  "id": "land_S_02",
+  "group": "land_S",
+  "voice": "tara",
+  "text": "Now that is how you land an aeroplane."
+ },
+ {
+  "id": "land_S_03",
+  "group": "land_S",
+  "voice": "tara",
+  "text": "Textbook. Not a bounce. Lovely."
+ },
+ {
+  "id": "land_S_04",
+  "group": "land_S",
+  "voice": "tara",
+  "text": "Smooth as silk. Nicely done."
+ },
+ {
+  "id": "land_S_05",
+  "group": "land_S",
+  "voice": "tara",
+  "text": "I could not have done that better myself."
+ },
+ {
+  "id": "land_S_06",
+  "group": "land_S",
+  "voice": "tara",
+  "text": "Perfect landing. Frame that one."
+ },
+ {
+  "id": "land_S_07",
+  "group": "land_S",
+  "voice": "tara",
+  "text": "Wow. Greased it."
+ },
+ {
+  "id": "land_A_00",
+  "group": "land_A",
+  "voice": "tara",
+  "text": "Smooth landing. Well flown."
+ },
+ {
+  "id": "land_A_01",
+  "group": "land_A",
+  "voice": "tara",
+  "text": "Very nice touchdown."
+ },
+ {
+  "id": "land_A_02",
+  "group": "land_A",
+  "voice": "tara",
+  "text": "Good landing. Clean and on the centreline."
+ },
+ {
+  "id": "land_A_03",
+  "group": "land_A",
+  "voice": "tara",
+  "text": "Lovely arrival. Welcome back."
+ },
+ {
+  "id": "land_A_04",
+  "group": "land_A",
+  "voice": "tara",
+  "text": "Nice one. The passengers would clap."
+ },
+ {
+  "id": "land_A_05",
+  "group": "land_A",
+  "voice": "tara",
+  "text": "Solid landing. Well done."
+ },
+ {
+  "id": "land_A_06",
+  "group": "land_A",
+  "voice": "tara",
+  "text": "Good touchdown. That is a pilot."
+ },
+ {
+  "id": "land_A_07",
+  "group": "land_A",
+  "voice": "tara",
+  "text": "Very tidy. Nicely flown."
+ },
+ {
+  "id": "land_B_00",
+  "group": "land_B",
+  "voice": "tara",
+  "text": "Good landing. Welcome back."
+ },
+ {
+  "id": "land_B_01",
+  "group": "land_B",
+  "voice": "tara",
+  "text": "Down and safe. Nicely done."
+ },
+ {
+  "id": "land_B_02",
+  "group": "land_B",
+  "voice": "tara",
+  "text": "Not bad at all. Welcome in."
+ },
+ {
+  "id": "land_B_03",
+  "group": "land_B",
+  "voice": "tara",
+  "text": "Decent landing. You are down."
+ },
+ {
+  "id": "land_B_04",
+  "group": "land_B",
+  "voice": "tara",
+  "text": "Good arrival. Taxi when ready."
+ },
+ {
+  "id": "land_B_05",
+  "group": "land_B",
+  "voice": "tara",
+  "text": "That will do nicely."
+ },
+ {
+  "id": "land_C_00",
+  "group": "land_C",
+  "voice": "tara",
+  "text": "Bit firm, but you are down."
+ },
+ {
+  "id": "land_C_01",
+  "group": "land_C",
+  "voice": "tara",
+  "text": "Firm landing. The tyres felt that one."
+ },
+ {
+  "id": "land_C_02",
+  "group": "land_C",
+  "voice": "tara",
+  "text": "You are down. Maybe a little softer next time."
+ },
+ {
+  "id": "land_C_03",
+  "group": "land_C",
+  "voice": "tara",
+  "text": "Arrived. Firmly."
+ },
+ {
+  "id": "land_C_04",
+  "group": "land_C",
+  "voice": "tara",
+  "text": "That was a firm one. Everyone okay in there?"
+ },
+ {
+  "id": "land_C_05",
+  "group": "land_C",
+  "voice": "tara",
+  "text": "Down safely. We will call that a firm arrival."
+ },
+ {
+  "id": "land_D_00",
+  "group": "land_D",
+  "voice": "tara",
+  "text": "Ouch. Maintenance will want a word."
+ },
+ {
+  "id": "land_D_01",
+  "group": "land_D",
+  "voice": "tara",
+  "text": "That was a hard landing. Is everything still attached?"
+ },
+ {
+  "id": "land_D_02",
+  "group": "land_D",
+  "voice": "tara",
+  "text": "<sigh> Well, you are on the ground."
+ },
+ {
+  "id": "land_D_03",
+  "group": "land_D",
+  "voice": "tara",
+  "text": "Hard landing. Let us check those struts."
+ },
+ {
+  "id": "land_D_04",
+  "group": "land_D",
+  "voice": "tara",
+  "text": "Any landing you walk away from, I suppose."
+ },
+ {
+  "id": "land_D_05",
+  "group": "land_D",
+  "voice": "tara",
+  "text": "That one rattled the tower windows."
+ },
+ {
+  "id": "land_field_00",
+  "group": "land_field",
+  "voice": "tara",
+  "text": "That is not a runway, but you are down. Bush landing logged."
+ },
+ {
+  "id": "land_field_01",
+  "group": "land_field",
+  "voice": "tara",
+  "text": "Off airport landing. Bold. Charters still need a proper strip."
+ },
+ {
+  "id": "land_field_02",
+  "group": "land_field",
+  "voice": "tara",
+  "text": "You put it down in a field. Fair enough."
+ },
+ {
+  "id": "land_field_03",
+  "group": "land_field",
+  "voice": "tara",
+  "text": "Field landing, copy. Find a strip to file the charter."
+ },
+ {
+  "id": "land_field_04",
+  "group": "land_field",
+  "voice": "tara",
+  "text": "Well, that is one way to land. Not a strip, though."
+ },
+ {
+  "id": "land_water_00",
+  "group": "land_water",
+  "voice": "tara",
+  "text": "Nice alighting. Welcome to the lake."
+ },
+ {
+  "id": "land_water_01",
+  "group": "land_water",
+  "voice": "tara",
+  "text": "Smooth on the water. Lovely."
+ },
+ {
+  "id": "land_water_02",
+  "group": "land_water",
+  "voice": "tara",
+  "text": "Down on the lake. Nicely done."
+ },
+ {
+  "id": "land_water_03",
+  "group": "land_water",
+  "voice": "tara",
+  "text": "Water landing logged. Mind the shoreline."
+ },
+ {
+  "id": "charter_complete_00",
+  "group": "charter_complete",
+  "voice": "tara",
+  "text": "Charter complete. Excellent work today."
+ },
+ {
+  "id": "charter_complete_01",
+  "group": "charter_complete",
+  "voice": "tara",
+  "text": "That is the charter filed. Great flying."
+ },
+ {
+  "id": "charter_complete_02",
+  "group": "charter_complete",
+  "voice": "tara",
+  "text": "All done. The chart looks fantastic."
+ },
+ {
+  "id": "charter_complete_03",
+  "group": "charter_complete",
+  "voice": "tara",
+  "text": "Charter closed out. Drinks are on the cargo desk."
+ },
+ {
+  "id": "charter_complete_04",
+  "group": "charter_complete",
+  "voice": "tara",
+  "text": "Complete. The cartographers owe you one."
+ },
+ {
+  "id": "charter_complete_05",
+  "group": "charter_complete",
+  "voice": "tara",
+  "text": "And that is a wrap on the charter. Well done."
+ },
+ {
+  "id": "charter_complete_06",
+  "group": "charter_complete",
+  "voice": "tara",
+  "text": "Charter filed. You are making this look easy."
+ },
+ {
+  "id": "charter_complete_07",
+  "group": "charter_complete",
+  "voice": "tara",
+  "text": "Mission complete. Proud of you, pilot."
+ },
+ {
+  "id": "rank_up_00",
+  "group": "rank_up",
+  "voice": "tara",
+  "text": "Congratulations, you have been promoted to"
+ },
+ {
+  "id": "rank_up_01",
+  "group": "rank_up",
+  "voice": "tara",
+  "text": "Big news from the office. You are now"
+ },
+ {
+  "id": "rank_up_02",
+  "group": "rank_up",
+  "voice": "tara",
+  "text": "Well earned. Promotion confirmed,"
+ },
+ {
+  "id": "rank_up_03",
+  "group": "rank_up",
+  "voice": "tara",
+  "text": "They have made it official. You are now"
+ },
+ {
+  "id": "rank_up_04",
+  "group": "rank_up",
+  "voice": "tara",
+  "text": "Congratulations, pilot. New rank,"
+ },
+ {
+  "id": "job_medical_00",
+  "group": "job_medical",
+  "voice": "tara",
+  "text": "Medical supplies are aboard. Somebody needs these fast. Do not hang about."
+ },
+ {
+  "id": "job_medical_01",
+  "group": "job_medical",
+  "voice": "tara",
+  "text": "Medical run. The clock is ticking on this one."
+ },
+ {
+  "id": "job_medical_02",
+  "group": "job_medical",
+  "voice": "tara",
+  "text": "Medicine for the strip. Fly fast, land soft."
+ },
+ {
+  "id": "job_medical_03",
+  "group": "job_medical",
+  "voice": "tara",
+  "text": "Urgent medical cargo. Every minute counts."
+ },
+ {
+  "id": "job_fuel_00",
+  "group": "job_fuel",
+  "voice": "tara",
+  "text": "Fuel drums loaded. She is heavy, so expect a slow climb."
+ },
+ {
+  "id": "job_fuel_01",
+  "group": "job_fuel",
+  "voice": "tara",
+  "text": "You have got fuel drums aboard. Long takeoff roll, mind the trees."
+ },
+ {
+  "id": "job_fuel_02",
+  "group": "job_fuel",
+  "voice": "tara",
+  "text": "Heavy load of fuel. Treat her gently on climb out."
+ },
+ {
+  "id": "job_mail_00",
+  "group": "job_mail",
+  "voice": "tara",
+  "text": "Mail and parcels are aboard. Someone out there is waiting on a letter."
+ },
+ {
+  "id": "job_mail_01",
+  "group": "job_mail",
+  "voice": "tara",
+  "text": "Mail run. Light load, easy money."
+ },
+ {
+  "id": "job_mail_02",
+  "group": "job_mail",
+  "voice": "tara",
+  "text": "Parcels loaded. Do not shake them about too much."
+ },
+ {
+  "id": "job_crew_00",
+  "group": "job_crew",
+  "voice": "tara",
+  "text": "Survey crew is aboard. Try not to scare them."
+ },
+ {
+  "id": "job_crew_01",
+  "group": "job_crew",
+  "voice": "tara",
+  "text": "Passengers on this one. Smooth flying, please."
+ },
+ {
+  "id": "job_crew_02",
+  "group": "job_crew",
+  "voice": "tara",
+  "text": "Crew is strapped in. They asked for a gentle landing."
+ },
+ {
+  "id": "job_supplies_00",
+  "group": "job_supplies",
+  "voice": "tara",
+  "text": "Fresh supplies loaded. The strip is running low."
+ },
+ {
+  "id": "job_supplies_01",
+  "group": "job_supplies",
+  "voice": "tara",
+  "text": "Supplies are aboard. They are counting on you out there."
+ },
+ {
+  "id": "job_supplies_02",
+  "group": "job_supplies",
+  "voice": "tara",
+  "text": "Food and supplies loaded. Go when ready."
+ },
+ {
+  "id": "delivered_00",
+  "group": "delivered",
+  "voice": "tara",
+  "text": "Delivery confirmed. Payment is on its way."
+ },
+ {
+  "id": "delivered_01",
+  "group": "delivered",
+  "voice": "tara",
+  "text": "Cargo delivered. Nice work."
+ },
+ {
+  "id": "delivered_02",
+  "group": "delivered",
+  "voice": "tara",
+  "text": "They have got it. The money is in your account."
+ },
+ {
+  "id": "delivered_03",
+  "group": "delivered",
+  "voice": "tara",
+  "text": "Delivered safe and sound. Check the board for your next job."
+ },
+ {
+  "id": "delivered_04",
+  "group": "delivered",
+  "voice": "tara",
+  "text": "Good delivery. The strip says thank you."
+ },
+ {
+  "id": "delivered_05",
+  "group": "delivered",
+  "voice": "tara",
+  "text": "Signed, sealed, delivered. Payment received."
+ },
+ {
+  "id": "delivered_06",
+  "group": "delivered",
+  "voice": "tara",
+  "text": "Cargo is off. Another happy customer."
+ },
+ {
+  "id": "delivered_07",
+  "group": "delivered",
+  "voice": "tara",
+  "text": "Delivery complete. Pick your next load."
+ },
+ {
+  "id": "delivered_late_00",
+  "group": "delivered_late",
+  "voice": "tara",
+  "text": "You made it, but you are late. They docked your pay."
+ },
+ {
+  "id": "delivered_late_01",
+  "group": "delivered_late",
+  "voice": "tara",
+  "text": "Delivered, just not in time. Reduced payment."
+ },
+ {
+  "id": "delivered_late_02",
+  "group": "delivered_late",
+  "voice": "tara",
+  "text": "They got it, eventually. Late fee applied."
+ },
+ {
+  "id": "delivered_late_03",
+  "group": "delivered_late",
+  "voice": "tara",
+  "text": "Late, but delivered. Faster next time."
+ },
+ {
+  "id": "stall_00",
+  "group": "stall",
+  "voice": "tara",
+  "text": "Watch your airspeed!"
+ },
+ {
+  "id": "stall_01",
+  "group": "stall",
+  "voice": "tara",
+  "text": "You are stalling, nose down!"
+ },
+ {
+  "id": "stall_02",
+  "group": "stall",
+  "voice": "tara",
+  "text": "Airspeed! Push forward!"
+ },
+ {
+  "id": "stall_03",
+  "group": "stall",
+  "voice": "tara",
+  "text": "Stall! Lower the nose and add power!"
+ },
+ {
+  "id": "stall_04",
+  "group": "stall",
+  "voice": "tara",
+  "text": "Too slow, too slow!"
+ },
+ {
+  "id": "stall_05",
+  "group": "stall",
+  "voice": "tara",
+  "text": "Careful, you are losing it. Nose down!"
+ },
+ {
+  "id": "terrain_00",
+  "group": "terrain",
+  "voice": "tara",
+  "text": "Terrain! Pull up!"
+ },
+ {
+  "id": "terrain_01",
+  "group": "terrain",
+  "voice": "tara",
+  "text": "Check your altitude, you are very low!"
+ },
+ {
+  "id": "terrain_02",
+  "group": "terrain",
+  "voice": "tara",
+  "text": "Ground is coming up fast!"
+ },
+ {
+  "id": "terrain_03",
+  "group": "terrain",
+  "voice": "tara",
+  "text": "Pull up, pull up!"
+ },
+ {
+  "id": "terrain_04",
+  "group": "terrain",
+  "voice": "tara",
+  "text": "You are too low, climb!"
+ },
+ {
+  "id": "fuel_low_00",
+  "group": "fuel_low",
+  "voice": "tara",
+  "text": "Fuel is getting low. Find a strip soon."
+ },
+ {
+  "id": "fuel_low_01",
+  "group": "fuel_low",
+  "voice": "tara",
+  "text": "Low fuel. Start thinking about where you are landing."
+ },
+ {
+  "id": "fuel_low_02",
+  "group": "fuel_low",
+  "voice": "tara",
+  "text": "You are running on fumes. Head for a strip."
+ },
+ {
+  "id": "fuel_low_03",
+  "group": "fuel_low",
+  "voice": "tara",
+  "text": "Fuel state is low. Do not push it."
+ },
+ {
+  "id": "fuel_out_00",
+  "group": "fuel_out",
+  "voice": "tara",
+  "text": "Engine out! Pick a field and glide."
+ },
+ {
+  "id": "fuel_out_01",
+  "group": "fuel_out",
+  "voice": "tara",
+  "text": "You are out of fuel. Best glide, find somewhere flat."
+ },
+ {
+  "id": "fuel_out_02",
+  "group": "fuel_out",
+  "voice": "tara",
+  "text": "Engine has quit. Keep your speed up and pick a landing spot."
+ },
+ {
+  "id": "fuel_out_03",
+  "group": "fuel_out",
+  "voice": "tara",
+  "text": "Dead stick! Glide it down, you can do this."
+ },
+ {
+  "id": "crash_00",
+  "group": "crash",
+  "voice": "tara",
+  "text": "Mayday, mayday. We have lost contact. Rescue is on the way."
+ },
+ {
+  "id": "crash_01",
+  "group": "crash",
+  "voice": "tara",
+  "text": "Skybound Ground to all stations, aircraft down. Dispatching rescue."
+ },
+ {
+  "id": "crash_02",
+  "group": "crash",
+  "voice": "tara",
+  "text": "Oh no. We have lost them. Get the crash team out there."
+ },
+ {
+  "id": "crash_03",
+  "group": "crash",
+  "voice": "tara",
+  "text": "Aircraft down, aircraft down. Rolling the rescue crew now."
+ },
+ {
+  "id": "crash_04",
+  "group": "crash",
+  "voice": "tara",
+  "text": "We lost your signal. Hang on, help is coming."
+ },
+ {
+  "id": "crash_05",
+  "group": "crash",
+  "voice": "tara",
+  "text": "That is a crash. Emergency services, go, go, go."
+ },
+ {
+  "id": "crash_06",
+  "group": "crash",
+  "voice": "tara",
+  "text": "Mayday received. Stay with the aircraft, rescue is inbound."
+ },
+ {
+  "id": "crash_07",
+  "group": "crash",
+  "voice": "tara",
+  "text": "Impact reported. Get the helicopter up."
+ },
+ {
+  "id": "crash_08",
+  "group": "crash",
+  "voice": "tara",
+  "text": "We just lost you on radar. Rescue crews are rolling."
+ },
+ {
+  "id": "crash_09",
+  "group": "crash",
+  "voice": "tara",
+  "text": "Aircraft is down. Somebody get out there now."
+ },
+ {
+  "id": "ditch_00",
+  "group": "ditch",
+  "voice": "tara",
+  "text": "They have gone into the water! Get the boats out!"
+ },
+ {
+  "id": "ditch_01",
+  "group": "ditch",
+  "voice": "tara",
+  "text": "Aircraft in the water, aircraft in the water!"
+ },
+ {
+  "id": "ditch_02",
+  "group": "ditch",
+  "voice": "tara",
+  "text": "Ditched! Rescue boats are on the way."
+ },
+ {
+  "id": "ditch_03",
+  "group": "ditch",
+  "voice": "tara",
+  "text": "That aircraft does not float. Sending the boats."
+ },
+ {
+  "id": "respawn_00",
+  "group": "respawn",
+  "voice": "tara",
+  "text": "Fresh aircraft is ready. Let us try that again."
+ },
+ {
+  "id": "respawn_01",
+  "group": "respawn",
+  "voice": "tara",
+  "text": "New aircraft fuelled and waiting. Shake it off."
+ },
+ {
+  "id": "respawn_02",
+  "group": "respawn",
+  "voice": "tara",
+  "text": "Okay, deep breath. You are back on the ground and ready to go."
+ },
+ {
+  "id": "respawn_03",
+  "group": "respawn",
+  "voice": "tara",
+  "text": "The hangar found you another one. Try to bring this one back."
+ },
+ {
+  "id": "respawn_04",
+  "group": "respawn",
+  "voice": "tara",
+  "text": "Spare aircraft is ready. The charter is still open."
+ },
+ {
+  "id": "tut_welcome_00",
+  "group": "tut_welcome",
+  "voice": "tara",
+  "text": "Welcome to Flight School. I will be on the radio the whole way. Let us get you flying."
+ },
+ {
+  "id": "tut_welcome_01",
+  "group": "tut_welcome",
+  "voice": "tara",
+  "text": "Hi there. This is Skybound Ground. I will talk you through your first flight. Ready? Let us go."
+ },
+ {
+  "id": "tut_0_00",
+  "group": "tut_0",
+  "voice": "tara",
+  "text": "First, power. Bring the throttle up smoothly, all the way past ninety percent."
+ },
+ {
+  "id": "tut_0_01",
+  "group": "tut_0",
+  "voice": "tara",
+  "text": "Let us start with the throttle. Push it up nice and smooth, ninety percent or more."
+ },
+ {
+  "id": "tut_1_00",
+  "group": "tut_1",
+  "voice": "tara",
+  "text": "Good. Now keep her straight and let the speed build. Hands off the controls until fifty eight knots."
+ },
+ {
+  "id": "tut_1_01",
+  "group": "tut_1",
+  "voice": "tara",
+  "text": "Keep it straight down the centreline. Do not touch the stick, let the speed build to fifty eight knots."
+ },
+ {
+  "id": "tut_2_00",
+  "group": "tut_2",
+  "voice": "tara",
+  "text": "There is your speed. Gently raise the nose. Small input, no yanking."
+ },
+ {
+  "id": "tut_2_01",
+  "group": "tut_2",
+  "voice": "tara",
+  "text": "Fifty eight knots. Ease the nose up, gently, and let her fly."
+ },
+ {
+  "id": "tut_3_00",
+  "group": "tut_3",
+  "voice": "tara",
+  "text": "You are flying! Hold a shallow climb and keep the wings level. Two hundred feet, please."
+ },
+ {
+  "id": "tut_3_01",
+  "group": "tut_3",
+  "voice": "tara",
+  "text": "Airborne! Small corrections now. Climb to two hundred feet with the wings level."
+ },
+ {
+  "id": "tut_4_00",
+  "group": "tut_4",
+  "voice": "tara",
+  "text": "Lovely. The gear on this one is fixed, so nothing to retract. Just hold a steady climb with the wings level."
+ },
+ {
+  "id": "tut_4_01",
+  "group": "tut_4",
+  "voice": "tara",
+  "text": "Nice. Hold that climb steady. Wings level, nose a little up."
+ },
+ {
+  "id": "tut_5_00",
+  "group": "tut_5",
+  "voice": "tara",
+  "text": "Now a turn. Aeroplanes turn by banking. Roll into a gentle fifteen degree bank."
+ },
+ {
+  "id": "tut_5_01",
+  "group": "tut_5",
+  "voice": "tara",
+  "text": "Let us try a turn. Bank gently to one side, about fifteen degrees."
+ },
+ {
+  "id": "tut_6_00",
+  "group": "tut_6",
+  "voice": "tara",
+  "text": "Good turn. Now roll the wings back to level. Small, gentle input the other way."
+ },
+ {
+  "id": "tut_6_01",
+  "group": "tut_6",
+  "voice": "tara",
+  "text": "Now level the wings. Ease it back to centre, no big inputs."
+ },
+ {
+  "id": "tut_7_00",
+  "group": "tut_7",
+  "voice": "tara",
+  "text": "Time for some real work. Follow the cyan diamond to a question mark, then fly a low, steady pass until the ring fills."
+ },
+ {
+  "id": "tut_7_01",
+  "group": "tut_7",
+  "voice": "tara",
+  "text": "See the cyan diamond on the compass? That is an uncharted landmark. Fly to it, get low, and hold steady until it is charted."
+ },
+ {
+  "id": "tut_8_00",
+  "group": "tut_8",
+  "voice": "tara",
+  "text": "Brilliant. Now land it. Turn toward a strip, line up until the approach guide appears, and keep both diamonds centred."
+ },
+ {
+  "id": "tut_8_01",
+  "group": "tut_8",
+  "voice": "tara",
+  "text": "Last lesson, the landing. Line up with a strip, reduce power, keep the diamonds centred, and flare just above the ground."
+ },
+ {
+  "id": "tut_9_00",
+  "group": "tut_9",
+  "voice": "tara",
+  "text": "And that is it. You are a pilot. The whole world is out there, go chart it."
+ },
+ {
+  "id": "tut_9_01",
+  "group": "tut_9",
+  "voice": "tara",
+  "text": "Flight School complete. Honestly? You are a natural. Go and explore."
+ },
+ {
+  "id": "tut_good_00",
+  "group": "tut_good",
+  "voice": "tara",
+  "text": "Nice."
+ },
+ {
+  "id": "tut_good_01",
+  "group": "tut_good",
+  "voice": "tara",
+  "text": "Perfect."
+ },
+ {
+  "id": "tut_good_02",
+  "group": "tut_good",
+  "voice": "tara",
+  "text": "Good, that is it."
+ },
+ {
+  "id": "tut_good_03",
+  "group": "tut_good",
+  "voice": "tara",
+  "text": "Lovely."
+ },
+ {
+  "id": "tut_good_04",
+  "group": "tut_good",
+  "voice": "tara",
+  "text": "Well done."
+ },
+ {
+  "id": "tut_good_05",
+  "group": "tut_good",
+  "voice": "tara",
+  "text": "Exactly right."
+ },
+ {
+  "id": "tut_good_06",
+  "group": "tut_good",
+  "voice": "tara",
+  "text": "Great job."
+ },
+ {
+  "id": "tut_good_07",
+  "group": "tut_good",
+  "voice": "tara",
+  "text": "There you go."
+ },
+ {
+  "id": "tut_hint_00",
+  "group": "tut_hint",
+  "voice": "tara",
+  "text": "Take your time. Small, gentle inputs."
+ },
+ {
+  "id": "tut_hint_01",
+  "group": "tut_hint",
+  "voice": "tara",
+  "text": "No rush. Read the panel if you are stuck."
+ },
+ {
+  "id": "tut_hint_02",
+  "group": "tut_hint",
+  "voice": "tara",
+  "text": "You have got this. Smooth and steady."
+ },
+ {
+  "id": "tut_hint_03",
+  "group": "tut_hint",
+  "voice": "tara",
+  "text": "Try a little more input. Gently."
+ },
+ {
+  "id": "tut_hint_04",
+  "group": "tut_hint",
+  "voice": "tara",
+  "text": "Still with me? Check the instructions on the panel."
+ },
+ {
+  "id": "chat_ground_00",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Caravan niner kilo, taxi to runway three six via alpha, hold short."
+ },
+ {
+  "id": "chat_ground_01",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Beaver one two zulu, wind two four zero at eight, cleared to land."
+ },
+ {
+  "id": "chat_ground_02",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Otter five six, traffic is a Skylane on climb out, report in sight."
+ },
+ {
+  "id": "chat_ground_03",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Cub three echo, radio check, five by five."
+ },
+ {
+  "id": "chat_ground_04",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "All stations, fuel truck is crossing the apron, stand by."
+ },
+ {
+  "id": "chat_ground_05",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Beaver one two zulu, welcome back, park on the grass by the hangar."
+ },
+ {
+  "id": "chat_ground_06",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Otter five six, the north strip is soft today, use the eastern end."
+ },
+ {
+  "id": "chat_ground_07",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Caravan niner kilo, cleared for takeoff, have a good one."
+ },
+ {
+  "id": "chat_ground_08",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Cub three echo, the cargo desk says your parcels are ready."
+ },
+ {
+  "id": "chat_ground_09",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "All stations, birds reported near the river, keep a good lookout."
+ },
+ {
+  "id": "chat_ground_10",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Otter five six, say again, you were broken."
+ },
+ {
+  "id": "chat_ground_11",
+  "group": "chat_ground",
+  "voice": "tara",
+  "text": "Beaver one two zulu, roger, rescue team is stood down. Good to hear you."
+ },
+ {
+  "id": "chat_leo_00",
+  "group": "chat_leo",
+  "voice": "leo",
+  "text": "Ground, Caravan niner kilo, ready to taxi with information bravo."
+ },
+ {
+  "id": "chat_leo_01",
+  "group": "chat_leo",
+  "voice": "leo",
+  "text": "Caravan niner kilo, holding short three six."
+ },
+ {
+  "id": "chat_leo_02",
+  "group": "chat_leo",
+  "voice": "leo",
+  "text": "Niner kilo, rolling. Thanks, Ground."
+ },
+ {
+  "id": "chat_leo_03",
+  "group": "chat_leo",
+  "voice": "leo",
+  "text": "Ground, niner kilo, we have the lake in sight, descending for the water."
+ },
+ {
+  "id": "chat_dan_00",
+  "group": "chat_dan",
+  "voice": "dan",
+  "text": "Ground, Beaver one two zulu, ten miles south with the mail."
+ },
+ {
+  "id": "chat_dan_01",
+  "group": "chat_dan",
+  "voice": "dan",
+  "text": "One two zulu, cleared to land, wind copied."
+ },
+ {
+  "id": "chat_dan_02",
+  "group": "chat_dan",
+  "voice": "dan",
+  "text": "Beaver one two zulu, on the grass, shutting down. Long day."
+ },
+ {
+  "id": "chat_dan_03",
+  "group": "chat_dan",
+  "voice": "dan",
+  "text": "One two zulu, we are fine, just a bumpy one over the ridge."
+ },
+ {
+  "id": "chat_zac_00",
+  "group": "chat_zac",
+  "voice": "zac",
+  "text": "Otter five six, looking for the traffic."
+ },
+ {
+  "id": "chat_zac_01",
+  "group": "chat_zac",
+  "voice": "zac",
+  "text": "Five six, traffic in sight, will pass behind."
+ },
+ {
+  "id": "chat_zac_02",
+  "group": "chat_zac",
+  "voice": "zac",
+  "text": "Otter five six, copy the soft strip, thanks for the heads up."
+ },
+ {
+  "id": "chat_zac_03",
+  "group": "chat_zac",
+  "voice": "zac",
+  "text": "Five six, say again Ground, you are breaking up."
+ },
+ {
+  "id": "chat_jess_00",
+  "group": "chat_jess",
+  "voice": "jess",
+  "text": "Cub three echo, radio check."
+ },
+ {
+  "id": "chat_jess_01",
+  "group": "chat_jess",
+  "voice": "jess",
+  "text": "Three echo, loud and clear, thank you."
+ },
+ {
+  "id": "chat_jess_02",
+  "group": "chat_jess",
+  "voice": "jess",
+  "text": "Cub three echo, picking up parcels, back in twenty."
+ },
+ {
+  "id": "chat_jess_03",
+  "group": "chat_jess",
+  "voice": "jess",
+  "text": "Three echo, birds in sight by the river, climbing."
+ }
+]
