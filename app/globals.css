@@ -219,3 +219,5 @@ button.ghost{width:100%;padding:9px;font-size:10px;letter-spacing:.12em;backgrou
 @media(max-width:900px){#mainMenu .menu-grid{grid-template-columns:1fr}.hud-readout.left{right:calc(50% + 150px)}.hud-readout.right{left:calc(50% + 150px)}.charter-card{width:230px}}
 .complete-card .modal-actions{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;margin-top:22px}
 .complete-card .modal-actions button{padding:11px 8px;font-size:10.5px;letter-spacing:.06em;white-space:nowrap}
+#mainMenu .menu-buttons{flex-wrap:nowrap;gap:8px}
+#mainMenu .menu-buttons button{padding:10px 12px;font-size:12px;white-space:nowrap}

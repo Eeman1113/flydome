@@ -12,6 +12,7 @@ function goTo(params){const u=new URL(location.href);u.search='';for(const [k,v]
 
 export function renderMenu(){
   renderBoard();renderPilot();renderDaily();
+  if(IS_DAILY){const k=$('worldSeed')?.parentElement;if(k)k.innerHTML=`DAILY CHARTER #${DAILY_NUMBER} · WORLD <span id="worldSeed">#${WORLD_SEED}</span>`;}
   const prev=previousWorld,btn=$('resumeWorldBtn');
   if(prev&&prev.seed!==WORLD_SEED&&!prev.daily){btn.style.display='';btn.querySelector('small').textContent=`World #${prev.seed}`;btn.onclick=()=>goTo({seed:prev.seed});}
   else btn.style.display='none';
