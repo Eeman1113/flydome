@@ -25,7 +25,7 @@ export default function MobileNotice({ readmeHtml, onContinue }) {
           <div className="brand-mark">SB</div>
           <div>
             <div className="brand-name">SKYBOUND</div>
-            <div className="brand-sub">HDR PROCEDURAL WORLD · CESSNA 182 SKYLANE</div>
+            <div className="brand-sub">A BUSH-FLYING EXPLORATION GAME</div>
           </div>
         </div>
         <div className="kicker">LAPTOP OR DESKTOP REQUIRED</div>

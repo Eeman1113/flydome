@@ -289,3 +289,4 @@ body.photo .pf-bar{transform:scaleY(1)}
 #mainMenu .menu-buttons button{padding:10px 11px;font-size:11px}
 .charter.locked{opacity:.45;cursor:not-allowed}
 .charter.water .ch-title .ch-tag{font-style:normal;font-size:9px;letter-spacing:.14em;font-weight:700;color:#7fd3ee;border:1px solid rgba(127,211,238,.35);border-radius:4px;padding:1px 5px;margin-right:7px;vertical-align:2px}
+.handheld-readme img{max-width:100%;height:auto;border-radius:10px}

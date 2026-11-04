@@ -1,48 +1,79 @@
-# SKYBOUND — Cessna 182 Skylane Flight Simulator
+# SKYBOUND
 
-A browser flight simulator built with **Next.js** and **three.js**. Every visit generates a brand-new world — seeded terrain, climate, season, airfield site and clouds — lit by a real HDR sky.
+**A bush-flying exploration game. Every world is uncharted, and you're the first pilot to fly it.**
 
-**Play: [eeman1113.github.io/flydome](https://eeman1113.github.io/flydome/)** — on a laptop or desktop with Chrome or Edge. Phones and tablets are not supported.
+Each time you load the page a new wilderness is generated: coastlines, mountain ranges, rivers, forests, crater lakes and sea stacks that no one has seen before. Take survey charters, find and name its landmarks, haul cargo between grass strips, and bring your Cessna home with a clean landing.
 
-## How to play: First Charter
+**▶ Play free in your browser: [eeman1113.github.io/flydome](https://eeman1113.github.io/flydome/)**
+Needs a laptop or desktop with Chrome or Edge. Keyboard and mouse, or a DualSense controller.
 
-Every world is uncharted wilderness, and you're its first survey pilot.
+![A Cessna 182 banking over a freshly generated world](public/screenshots/skylane-chase.jpg)
 
-1. **Pick a charter** on the menu's charter board. Each one lists three real landmarks of this world (peaks, lakes, islands, forests, rivers, mountain passes), generated from the terrain itself.
-2. **Fly to them.** The compass tape and minimap show `?` markers, and the charter card shows live distances.
-3. **Survey each landmark** with a controlled pass inside its envelope: low over a lake or forest, close to a summit, or threading a pass. Hold it steady until the ring fills, and the landmark is inked onto your chart.
-4. **Land** at any bush strip or the home field to file the charter. Landings are graded **S–D** on sink rate, centreline, alignment and bounces.
-5. A crash keeps your discoveries but costs the charter's landing bonus, and you respawn at the last strip you landed on.
+## The game
 
-Your **pilot logbook** (rank, XP, discovery stamps, landing grades) is saved in the browser and carries across worlds. **Refresh for a brand-new world.** The URL always carries the seed, so you can share it, and **Resume last world** reopens the last world you flew. The **Daily Charter** gives every pilot the same world and charter each day, with a shareable result line. Press **M** for the full expedition chart, which can be saved as a PNG. **Free Flight** lets you explore and chart at will.
+You're a survey pilot. Every world starts as a blank, fogged-out chart, and your job is to fill it in.
 
-## Game modes
+1. **Take a charter.** The charter board offers routes through three real landmarks of this world, all found in the terrain itself: a summit, a lake, a gorge, a lighthouse on a cape, an old wreck in the hills.
+2. **Fly out and survey them.** Each landmark has a survey envelope, such as low over the water, close past the summit, or down inside the gorge. Hold a steady pass until the ring fills and the landmark is inked onto your chart with its new name.
+3. **Bring it home.** Land at the home field or any bush strip to file the charter. Every landing is graded **S to D** on sink rate, centreline, alignment and bounces, so a butter landing is worth real XP.
+4. **Climb the ranks.** XP takes you from Student Pilot to Chief Cartographer. Ranks unlock a second aircraft, new paint schemes and harder work.
 
-- **Charters** (First Charter): survey three named landmarks, then land at a strip.
-- **Bush Pilot**: a job board of deliveries between bush strips and the home field. Cargo weight affects climb, medical runs are timed, and you're paid on landing, then pick the next job from wherever you are.
-- **Explore**: chart the whole world at your own pace and share `World #48213: 7/12 discovered`.
-- **Daily Charter**: one world for everyone each day, with a ghost of your best run.
-- **Flight School**: ten lessons, from throttle to surveying a landmark and landing on a strip.
+A crash keeps your discoveries but loses the charter's landing bonus, and you restart at the last strip you landed on.
 
-## Features
+![Discovering a lake: the name is inked onto the chart](public/screenshots/discovery.jpg)
 
-- **Landmarks from real terrain.** Peaks, lakes, crater lakes inside volcanic rims, islands, forests, rivers, passes, gorge runs, coastal waterfalls, sea stacks and arches, capes and lighthouses, glaciers, rock spires and old plane wrecks. Each is named, and the rare ones carry their own logbook stamp. A survey beacon (a cairn and pennant, or a buoy on water) marks every charted landmark.
-- **Survey gameplay.** Seeded grass bush strips, each with a cabin, windsock and edge cones, sit on flat sites found by a rotated flatness search. A worker-side scanner names 7–8 landmarks per world, and charters, survey envelopes, landing grades, a fog-of-war chart and the logbook turn exploration into the goal.
-- **A new world on every visit.** A random seed drives domain-warped continents and coastlines, ridged mountain ranges, rolling hills, lowland rivers, lakes, temperature/moisture climate and summer or autumn seasons. The airfield is placed automatically at the flattest suitable site and sits in a natural forest clearing. Use `?seed=12345` to revisit a world, or **NEW WORLD** in the menu.
-- **Real HDR skies.** Seven CC0 HDRIs from [Poly Haven](https://polyhaven.com), from dawn through noon to dusk plus overcast; one is picked per world, or force one with `?sky=belfast`. Each HDR is analysed at load: the sun disc is located and integrated for the sun light's direction, colour and strength, sky irradiance sets exposure, and the sun is clamped out of the image-based lighting so it is not counted twice.
-- **Streaming terrain.** Chunks are generated in Web Workers with distance LOD (64/32/16/8 segments) and crack-hiding skirts. Baked terrain self-shadowing, ambient occlusion and a splatting shader give grassland, farmland patchwork, forest, rock with strata, snow lines, beaches and wet shorelines.
-- **Living scenery.** Instanced conifer and broadleaf forests with wind sway, PBR water reflecting the sky, sun-lit cumulus clouds with matching cloud shadows on the ground, and height fog with sun in-scattering.
-- **Cinematic rendering.** HDR render target with MSAA, bloom, ACES tone mapping and grading, a sun-aligned aircraft shadow, and a separate near-plane pass for the cockpit so the world keeps depth precision to the horizon.
-- **Weather & time of day.** Seven CC0 HDR skies (dawn to dusk, plus overcast). Each world has seeded wind and gusts that the flight model feels, rain with windshield droplets on some overcast days, and low cloud.
-- **Two aircraft.** The Cessna 182 Skylane, and a Cessna 208 Caravan Amphibian that unlocks at Bush Pilot rank and lands on lakes as well as runways. With the amphibian, **water strip charters** appear on the board: survey the waters, then alight on the named lake to file. Six paint schemes unlock with rank. Hardcore mode adds fuel limits, refuelling at strips and +50% XP.
-- **Crashes.** A fireball, a smoke plume drifting with the wind, torn-off parts and shards with physics, a crumpled airframe, a shock-distortion pulse and a crash camera. A water landing in the wrong aircraft ends in a splash and steam instead.
-- **Approach guide & photo mode.** A glideslope and centreline cue when lined up with a strip. Photo mode (P) has an orbit camera, depth of field, a letterbox frame and PNG capture.
-- **Automatic quality.** The GPU is detected to pick Low/Medium/High/Ultra, then a runtime governor watches frame rate and adjusts render scale, view distance (4–20 km) and effects. **Settings → Graphics quality** allows a manual override.
-- **Flight model.** Lift perpendicular to the airflow, induced and sideslip drag, ground effect, progressive stall, engine spool-up, density falloff with altitude, rate-commanded controls with expo and an optional wing-levelling assist. Propeller thrust falls off with airspeed, and the numbers are tuned against the real C182: rotate at 58 kt, about 270 m to clear the runway, about 1,000 fpm climb at 85 kt, about 145 kt cruise at 75% power, and a stall near 55 kt. The nose can't over-rotate past the tail-strike attitude on the ground. It is a game flight model, not a certified training simulator.
-- **Flight School.** **TEACH ME TO FLY** walks you through throttle, takeoff roll, rotation, climb, banking and levelling, advancing automatically as you complete each step, with instructions for whichever device you are using.
-- **Procedural engine audio** for the six-cylinder engine, three-blade propeller and airflow, generated live with Web Audio.
+### Game modes
 
-## Controls
+| Mode | What you do |
+|---|---|
+| **Charters** | Survey three named landmarks, then land at a strip. Three charters per world, from a short first-light hop to a long-range expedition. |
+| **Water strip charters** | Amphibian only. Survey the lakes, rivers and coast, then alight on the named lake to file the charter. |
+| **Bush Pilot** | A job board of deliveries between bush strips, the home field and charted lakes: fuel drums, mail, survey crews and timed medical runs. Heavy cargo really does climb slower. You're paid on landing, then pick the next job from wherever you are. |
+| **Explore** | No route, no clock. Chart the whole world at your own pace, then share your result, e.g. `World #48213: 7/12 discovered`. |
+| **Daily Charter** | One world and one route for every pilot each day, with a shareable result and a ghost of your best run to race. |
+| **Flight School** | Ten short lessons, from throttle and takeoff to surveying a landmark and landing on a grass strip. Start here if you've never flown. |
+
+![The Bush Pilot job board](public/screenshots/bush-pilot.jpg)
+
+### What's out there
+
+Every world is generated from a seed and scanned for up to twelve landmarks, each one named:
+
+- **Summits, mountain passes and gorge runs**: thread a gorge end to end below its rims.
+- **Lakes and crater lakes**: water inside the rim of an old volcanic cone, and a perfect place to land the amphibian.
+- **Rivers, forests and islands.**
+- **Coastal waterfalls, sea stacks and arches, capes and lighthouses** (the lighthouse beam sweeps at dusk).
+- **Glaciers and lone rock spires.**
+- **Plane wrecks and stone arches**: rare finds out in the wilds.
+
+Rare finds earn their own logbook stamp. Every charted landmark gets a survey beacon (a cairn and pennant, or a buoy on water). Press **M** for the expedition chart and save it as a PNG.
+
+![A crater lake inside a volcanic rim](public/screenshots/crater-lake.jpg)
+
+![The expedition chart of World #48213](public/screenshots/chart.jpg)
+
+### Aircraft and progression
+
+- **Cessna 182 Skylane.** Your first aircraft: a dependable all-round tourer.
+- **Cessna 208 Caravan Amphibian.** Unlocks at **Bush Pilot** rank. It lands on lakes as well as runways, opens water strip charters, and turns charted lakes into cargo destinations.
+- **Paint schemes.** Six liveries, unlocked by rank, up to Cartographer Gold.
+- **Hardcore charters.** An optional limited-fuel mode: the tank is sized to the route, you refuel by stopping at a strip, and you earn +50% XP.
+
+Your **pilot logbook** saves in the browser and carries across every world: rank, flight time, discovery stamps, landing grades, deliveries and earnings.
+
+![The Caravan Amphibian on a lake](public/screenshots/amphibian.jpg)
+
+### A new world every time
+
+**Refresh for a brand-new world.** The address bar always carries the world's seed (`?seed=48213`), so you can send a friend the exact world you flew. **Resume last world** on the menu takes you back to where you left off. Each world also rolls its own season, sky and weather: seven real HDR skies from dawn to dusk, gusting wind you can feel in the controls, low cloud, and rain on overcast days, with drops on the windshield.
+
+![The charter board on the main menu](public/screenshots/menu.jpg)
+
+## How to fly
+
+**Taking off:** hold **Shift** to full throttle. At about 58 kt, ease back with **W** to around 10° nose-up, and she flies at about 60 kt. Climb at 80 to 85 kt.
+
+**Landing:** line up with a strip and the approach guide appears, with a glideslope and centreline cue. Come in slow (about 65 kt) and lose height steadily, then pull the throttle to idle and flare just above the ground. On a grass strip, stop with plenty of room to spare.
 
 | Action | Keyboard + mouse | DualSense |
 |---|---|---|
@@ -53,64 +84,106 @@ Your **pilot logbook** (rank, XP, discovery stamps, landing grades) is saved in 
 | Camera (cockpit, chase, orbit, free look) | 1–4, C to cycle | ○, D-pad |
 | Steer like a joystick | Hold left mouse + drag | — |
 | Look around | Hold right mouse + drag | Right stick |
-| HUD | H | □ |
 | Expedition chart | M | Touchpad |
 | Minimap zoom | N or scroll | Create |
-| Photo mode | P | — |
+| Photo mode (orbit, depth of field, PNG) | P | — |
+| HUD on / off | H | □ |
 | Pause | Esc / Space | OPTIONS |
 
-**Taking off:** hold Shift to full throttle, wait for about 58 kt, then gently pull back with W.
+**DualSense:** pair it over Bluetooth or USB, then click the page and press a button. For gyro yaw, open **Settings → Pair DualSense Gyro** and calibrate it while holding the controller still. This needs desktop Chrome or Edge.
 
-## DualSense controller
+![The Cessna 182 cockpit](public/screenshots/cockpit.jpg)
 
-Pair the controller over Bluetooth or USB, click the page and press a button so the browser detects it. For gyro yaw, open **Settings → Pair DualSense Gyro**, pick the controller, hold it still and choose **Calibrate Neutral**. The gyro uses WebHID, which needs desktop Chrome or Edge.
+## Under the hood
 
-## Running locally
+SKYBOUND is built with **three.js** and **Next.js**, runs entirely in the browser, and is deployed as a static site on GitHub Pages.
+
+- **Procedural terrain.** Seeded, domain-warped continents, ridged mountains, rivers, lakes, volcanic craters, climate and seasons. Terrain streams in Web Workers with distance LOD, baked self-shadowing and ambient occlusion, and a splatting shader.
+- **Physically calibrated HDR skies.** The sun is located and integrated from each CC0 HDRI, so light, exposure and fog all match the sky. Clouds also cast shadows on the ground.
+- **A real flight model.** Lift, induced drag, ground effect, progressive stall, propeller thrust that falls with airspeed, and density altitude, all tuned against the Cessna 182's real numbers (about 270 m to clear the runway, about 1,000 fpm climb, about 145 kt cruise at 75% power). Barrel rolls are allowed.
+- **Crashes.** A fireball, a smoke plume that drifts with the wind, parts torn away with physics, a crumpled airframe and a shock-distortion pulse.
+- **Automatic quality.** The game detects your GPU, then a runtime governor tunes render scale, view distance (4–20 km) and effects to hold the frame rate.
+- **Procedural audio.** Engine, propeller, airflow, rain and birdsong are synthesised live, and a radio voice calls out your discoveries.
+
+![A hard landing, with fire, debris and a shock pulse](public/screenshots/crash.jpg)
+
+### Run it locally
 
 Requires Node.js 20+.
 
 ```bash
 npm install
 npm run dev          # http://localhost:3000
+npm run build        # static export to out/ (webpack)
 ```
 
-Production build: `npm run build` (a static export in `out/`, built with webpack). On macOS you can double-click `launch-macos.command`, which installs dependencies on first run and starts the dev server.
+URL options: `?seed=12345` (a specific world), `?sky=belfast` (force a sky), `?daily=1` (today's Daily Charter), `?debug` (exposes `window.SKYB`). Every push to `main` is deployed by `.github/workflows/pages.yml`.
 
-URL options: `?seed=12345` (world), `?sky=belfast` (sky), `?debug` (exposes `window.SKYB` for inspection).
-
-Every push to `main` is built and deployed to GitHub Pages by `.github/workflows/pages.yml`.
-
-## Project layout
+<details>
+<summary>Project layout</summary>
 
 ```
-app/                 Next.js App Router: page, simulator UI, handheld notice, styles
+app/                 Next.js App Router: page, game UI, handheld notice, styles
 src/game/
-  engine.js          renderer, scene setup, post-processing, aircraft, frame loop
-  terrainLib.js      seeded terrain/climate generator + chunk mesh builder
-  terrain.worker.js  Web Worker that builds terrain chunks off the main thread
-  chunks.js          chunk streaming, LOD, forests, physics ground queries
-  sky.js             HDR loading, sun/exposure calibration, atmosphere, sky dome
-  materials.js       terrain, water and tree shaders and geometry
-  scenery.js         water plane, clouds, airfield
-  perf.js            GPU detection and the runtime quality governor
+  engine.js          renderer, scene, post-processing, aircraft, frame loop
+  terrainLib.js      seeded terrain, climate, strips, craters, landmark scanner
+  terrain.worker.js  Web Worker that builds terrain chunks
+  chunks.js          chunk streaming, LOD, forests, ground queries
+  sky.js             HDR loading and sun/exposure calibration
+  materials.js       terrain, water, tree and cloud shaders
+  scenery.js         water, clouds, airfield, bush strips, landmark props, beacons
   physics.js         flight model
-  camera.js          camera rigs
-  input.js           keyboard, mouse, gamepad, WebHID gyro
-  audio.js           procedural engine audio
-  survey.js          FIRST CHARTER: landmarks, charters, survey envelopes, landing grades
-  hud.js             minimal HUD: compass tape, minimap, charter card, banners, chart + PNG
-  menu.js            charter board, pilot card, daily charter, logbook
-  progress.js        pilot logbook persistence (localStorage)
-  icons.js           shared vector icon set
+  survey.js          charters, survey envelopes, landing grades, cargo jobs
+  hud.js             compass tape, minimap, cards, banners, expedition chart
+  menu.js            charter board, pilot card, hangar, logbook
+  progress.js        pilot logbook (localStorage)
+  weather.js         wind, gusts, rain, windshield drops, ambience
+  crash.js           fire, smoke, debris, deformation
+  photo.js           photo mode
+  ghost.js           Daily Charter ghost replays
   tutorial.js        Flight School
-  ui.js              settings, modals, button wiring
-public/models/       Cessna 182 GLB (meshopt + WebP, ~5 MB)
+  camera.js, input.js, audio.js, perf.js, icons.js, ui.js
+public/models/       aircraft (glTF, meshopt + WebP compressed)
 public/skies/        CC0 HDR skies
+public/screenshots/  the images on this page
 ```
+
+</details>
 
 ## Credits
 
-- **Amphibian:** "CaravanA" (Cessna 208 Caravan Amphibian) by [helijah](https://sketchfab.com/helijah) on [Sketchfab](https://sketchfab.com/3d-models/caravanazip-125yIM3DWOvlzV70NvXjZElRdel), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-- **Aircraft:** "Cessna 182 Skylane" by VTX on [Sketchfab](https://sketchfab.com/3d-models/cessna-182-skylane-2dde31b1aa8f484f96bb7ee9d9c5ad26), licensed [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (non-commercial, attribution, share-alike). Compressed with glTF-Transform for the web.
-- **Skies:** CC0 HDRIs from [Poly Haven](https://polyhaven.com): Kloofendal 48d Partly Cloudy, Kloofendal Overcast, Qwantani Dawn, Noon, Late Afternoon and Dusk 2, and Belfast Sunset (Pure Sky).
-- Built with [three.js](https://threejs.org) and [Next.js](https://nextjs.org).
+### 3D models
+
+**Cessna 182 Skylane**
+- **Model:** "[Cessna 182 Skylane](https://sketchfab.com/3d-models/cessna-182-skylane-2dde31b1aa8f484f96bb7ee9d9c5ad26)" by **[VTX](https://sketchfab.com/VTX_car)** on Sketchfab.
+- **Licence:** [Creative Commons Attribution-NonCommercial-ShareAlike 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (CC BY-NC-SA 4.0).
+- **Changes:** converted and compressed with glTF-Transform (meshopt geometry, WebP textures), with the propeller separated for animation. In-game, paint schemes are applied as a tint.
+- **Terms:** this adapted model is shared under the same licence and may not be used commercially.
+
+**Cessna 208 Caravan Amphibian**
+- **Model:** "[CaravanA](https://sketchfab.com/3d-models/caravanazip-125yIM3DWOvlzV70NvXjZElRdel)" by **[helijah](https://sketchfab.com/helijah)** on Sketchfab.
+- **Licence:** [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/) (CC BY 4.0).
+- **Changes:** converted from OBJ to glTF and compressed with glTF-Transform, with the propeller split into blades plus a motion-blur disc. In-game, paint schemes are applied as a tint.
+
+All other 3D content (terrain, trees, clouds, the airfield, cabins, windsocks, beacons, lighthouses, arches, sea stacks and the plane wreck) is generated procedurally in code.
+
+### Skies
+
+CC0 HDRIs from [Poly Haven](https://polyhaven.com):
+
+| Sky | Authors |
+|---|---|
+| [Kloofendal 48d Partly Cloudy (Pure Sky)](https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky) | Greg Zaal, Jarod Guest |
+| [Kloofendal Overcast (Pure Sky)](https://polyhaven.com/a/kloofendal_overcast_puresky) | Greg Zaal |
+| [Qwantani Dawn (Pure Sky)](https://polyhaven.com/a/qwantani_dawn_puresky) | Greg Zaal, Jarod Guest |
+| [Qwantani Noon (Pure Sky)](https://polyhaven.com/a/qwantani_noon_puresky) | Greg Zaal, Jarod Guest |
+| [Qwantani Late Afternoon (Pure Sky)](https://polyhaven.com/a/qwantani_late_afternoon_puresky) | Greg Zaal, Jarod Guest |
+| [Qwantani Dusk 2 (Pure Sky)](https://polyhaven.com/a/qwantani_dusk_2_puresky) | Greg Zaal, Jarod Guest |
+| [Belfast Sunset (Pure Sky)](https://polyhaven.com/a/belfast_sunset_puresky) | Greg Zaal, Dimitrios Savva, Jarod Guest |
+
+### Software and fonts
+
+- [three.js](https://threejs.org) (MIT), [Next.js](https://nextjs.org) and [React](https://react.dev) (MIT), [marked](https://marked.js.org) (MIT), [glTF-Transform](https://gltf-transform.dev) (MIT) and [meshoptimizer](https://github.com/zeux/meshoptimizer) (MIT).
+- [Fraunces](https://fonts.google.com/specimen/Fraunces) via Google Fonts (SIL Open Font License).
+
+SKYBOUND is a game, not a certified flight-training tool. The Cessna names refer to the real aircraft the models depict, and the game is not affiliated with or endorsed by Textron Aviation.
