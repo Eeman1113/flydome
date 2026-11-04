@@ -39,7 +39,7 @@ export const AIRCRAFT_VISUAL_SCALE=1.08;
 export const FIXED_STEP=1/60;
 // Tuned light-aircraft parameters. Keep rolling resistance time-based (per second),
 // never as a fixed multiplier per rendered/physics frame.
-export const AIRCRAFT_MASS_KG=1250, WING_AREA_M2=16.2, MAX_ENGINE_THRUST_N=5200, TAKEOFF_ROTATE_KTS=58;
+export const AIRCRAFT_MASS_KG=1250, WING_AREA_M2=16.2, MAX_ENGINE_THRUST_N=3850, TAKEOFF_ROTATE_KTS=58;
 export const simEuler=new THREE.Euler(0,0,0,'YXZ'),simQuaternion=new THREE.Quaternion();
 export const simForward=new THREE.Vector3(),simUp=new THREE.Vector3(),simRight=new THREE.Vector3(),simLiftDirection=new THREE.Vector3(),simAirVelocity=new THREE.Vector3(),simDirection=new THREE.Vector3(),simForce=new THREE.Vector3(),simGravity=new THREE.Vector3(0,-AIRCRAFT_MASS_KG*9.81,0);
 export const camForward=new THREE.Vector3(),camUp=new THREE.Vector3(),camRight=new THREE.Vector3();

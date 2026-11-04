@@ -4,6 +4,7 @@
 export const ICON_PATHS={
   peak:'M2.5 19.5 9.5 6.5l3.6 6.3 2.4-3.3 6 10Z M7.6 10l1.9 1.6 1.7-1.4',
   lake:'M3 9.5c1.6-1.4 3.4-1.4 5 0s3.4 1.4 5 0 3.4-1.4 5 0 2.2 1 3 .6 M3 14.5c1.6-1.4 3.4-1.4 5 0s3.4 1.4 5 0 3.4-1.4 5 0 2.2 1 3 .6',
+  crater:'M1.5 18.5 6 10.5c1.2-2 2.5-2.6 3.5-1.2l.9 1.2h3.2l.9-1.2c1-1.4 2.3-.8 3.5 1.2l4.5 8 M8.6 14.3c1.1-.7 2.3-.7 3.4 0s2.3.7 3.4 0',
   island:'M4 15.5c2-4.2 4.8-6.2 8-6.2s6 2 8 6.2Z M2.5 19c1.6-1.1 3.4-1.1 5 0s3.4 1.1 5 0 3.4-1.1 5 0 2.4.9 4 .2',
   forest:'M8 3.5 3.5 11h2.6L3 16h10l-3.1-5h2.6Z M8 16v4.5 M16.5 7l-3 5h1.9L13 16h7l-2.4-4h1.9Z M16.5 16v4.5',
   river:'M6.5 2.5c5 3.2-3.8 6.4 1 9.6s-3.6 6.4 1 9.4 M13.5 2.5c5 3.2-3.8 6.4 1 9.6s-3.6 6.4 1 9.4',
@@ -20,7 +21,7 @@ export const ICON_PATHS={
   strip:'M7 2.5h10v19H7Z M12 5v2.2 M12 10.9v2.2 M12 16.8v2.2',
   home:'M3.5 11 12 4l8.5 7 M6 9.5V20h12V9.5 M10 20v-5.5h4V20',
 };
-export const TYPE_LABEL={peak:'Summit',lake:'Lake',island:'Island',forest:'Forest',river:'River',pass:'Mountain pass',gorge:'Gorge',falls:'Waterfall',stacks:'Sea stacks',cape:'Cape',glacier:'Glacier',spire:'Rock spire',lighthouse:'Lighthouse',wreck:'Plane wreck',arch:'Stone arch'};
+export const TYPE_LABEL={peak:'Summit',lake:'Lake',crater:'Crater lake',island:'Island',forest:'Forest',river:'River',pass:'Mountain pass',gorge:'Gorge',falls:'Waterfall',stacks:'Sea stacks',cape:'Cape',glacier:'Glacier',spire:'Rock spire',lighthouse:'Lighthouse',wreck:'Plane wreck',arch:'Stone arch'};
 export function iconSvg(type,cls='ico'){
   const d=ICON_PATHS[type]||ICON_PATHS.peak;
   return `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;

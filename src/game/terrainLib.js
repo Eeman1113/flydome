@@ -27,7 +27,7 @@ export function createTerrainLib(seed){
     tempBias:(rnd()-.5)*.34,moistBias:(rnd()-.5)*.3,autumn:rnd()<.3?1:0,
     o1:(rnd()-.5)*4000,o2:(rnd()-.5)*4000
   };
-  let ox=0,oz=0,airportH=40,strips=[];
+  let ox=0,oz=0,airportH=40,strips=[],crater=null;
   const AP={halfW:240,halfL:830,blend:540};
   function base(wx,wz,o){
     const x=wx+ox,z=wz+oz;
@@ -62,7 +62,22 @@ export function createTerrainLib(seed){
       const d=Math.hypot(Math.max(Math.abs(u)-s.halfL-25,0),Math.max(Math.abs(v)-s.halfW-26,0));
       if(d<230)h=mix(h,s.h,1-sstep(0,230,d));
     }
+    if(crater)h=craterShape(wx,wz,h);
     return h;
+  }
+  // Crater lake: a volcanic cone on lowland whose bowl dips below sea level, so the
+  // world's water fills it. The rim is ragged (noise on radius and height).
+  function craterShape(wx,wz,h){
+    const c=crater,dx=wx-c.x,dz=wz-c.z,d2=dx*dx+dz*dz,reach=c.r*3.2;
+    if(d2>reach*reach)return h;
+    const d=Math.sqrt(d2),a=Math.atan2(dz,dx);
+    const n=noise2(Math.cos(a)*1.7+c.x*.001,Math.sin(a)*1.7+c.z*.001),rr=c.r*(1+n*.1);
+    const rim=c.rimH*(1+noise2(Math.cos(a)*3.1-9,Math.sin(a)*3.1+4)*.28)+fbm(wx/120,wz/120,2)*8;
+    const t=d/rr;
+    if(t>=1){const k=Math.pow(1-sstep(1,3.2,t),1.7);return h+rim*k;}
+    // inner wall: steep from the rim, easing into a flat lake floor below sea level
+    const top=h+rim,wall=sstep(.55,1,t);
+    return mix(-14+fbm(wx/90,wz/90,2)*3,top,Math.pow(wall,1.35));
   }
   // Local strip coordinates: u along the strip, v across it.
   function stripLocal(s,wx,wz){const dx=wx-s.x,dz=wz-s.z;return [dx*s.cos+dz*s.sin,-dx*s.sin+dz*s.cos];}
@@ -111,7 +126,23 @@ export function createTerrainLib(seed){
     if(!best)best={x:0,z:0,h:Math.max(30,base(0,0))};
     ox=best.x;oz=best.z;airportH=Math.max(10,best.h);
     strips=findStrips();
-    return {airportH,ox,oz,strips};
+    crater=findCrater();
+    return {airportH,ox,oz,strips,crater};
+  }
+  // Seeded crater site (≈70% of worlds): open lowland 3.5-11 km out, clear of the airfield,
+  // the strips and rivers.
+  function findCrater(){
+    const cr=mulberry32((seed^0xC4A7E)>>>0);if(cr()>.7)return null;
+    for(let t=0;t<500;t++){
+      const R=3500+cr()*7500,a=cr()*6.283,x=Math.cos(a)*R,z=Math.sin(a)*R;
+      if(airportZone(x,z,2600))continue;
+      if(strips.some(s=>Math.hypot(s.x-x,s.z-z)<2900))continue;
+      const o={},h0=base(x,z,o);if(h0<12||h0>160||o.river>.1||o.mtn>.2)continue;
+      let mn=h0;for(let k=0;k<8;k++){const b=k/8*6.283;mn=Math.min(mn,base(x+Math.cos(b)*900,z+Math.sin(b)*900));}
+      if(mn<6)continue;
+      return {x,z,r:430+cr()*220,rimH:150+cr()*130};
+    }
+    return null;
   }
   // Grass bush strips: the flattest seeded sites 2.6-9.8 km out, tested at 8 headings.
   function findStrips(relax=0){
@@ -222,7 +253,9 @@ export function createTerrainLib(seed){
     }
     peaks.sort((a,b)=>b.h-a.h);
     peaks.forEach((p,n)=>cand.push({type:'peak',k:p.k,score:p.h,elev:p.h,rank:n}));
-    const water=comps(k=>H[k]<-.5).filter(c=>!c.border&&c.size>=8);
+    const inCrater=k=>{if(!crater)return false;const p=pos(k);return Math.hypot(p.x-crater.x,p.z-crater.z)<crater.r*1.3;};
+    const water=comps(k=>H[k]<-.5).filter(c=>!c.border&&c.size>=8&&!inCrater(c.k));
+    if(crater){const i=Math.round((crater.x+R)/step),j=Math.round((crater.z+R)/step);if(i>=0&&j>=0&&i<N&&j<N){const k=j*N+i;cand.push({type:'crater',k,score:1,rank:0,area:Math.PI*(crater.r*.6)**2/1e6,elev:crater.rimH});}}
     water.sort((a,b)=>b.size-a.size).forEach((c,n)=>cand.push({type:'lake',k:c.k,score:c.size,area:c.size*km2,rank:n}));
     const isl=comps(k=>H[k]>=-.5).filter(c=>!c.border&&c.size>=4&&c.size<6000);
     isl.sort((a,b)=>b.size-a.size).forEach((c,n)=>cand.push({type:'island',k:c.k,score:c.size,area:c.size*km2,rank:n}));
@@ -289,21 +322,22 @@ export function createTerrainLib(seed){
       sp.sort((a,b)=>b.score-a.score);sp.slice(0,3).forEach((c,n)=>cand.push({type:'spire',k:c.k,score:c.score,rank:n}));
     }
     // Choose up to 8: the best of each type first, then runners-up, spaced across the region.
-    const chosen=[],order=['peak','lake','island','forest','river','falls','lighthouse','wreck','stacks','gorge','arch','pass','cape','glacier','spire'],MAXL=12;
+    const chosen=[],order=['crater','peak','lake','island','forest','river','falls','lighthouse','wreck','stacks','gorge','arch','pass','cape','glacier','spire'],MAXL=12;
     const ok=c=>{const p=pos(c.k),d=Math.hypot(p.x,p.z);if(d<1500||d>R-1200)return false;return !chosen.some(o=>Math.hypot(o.x-p.x,o.z-p.z)<(o.type===c.type?2600:1600));};
     for(let round=0;round<3&&chosen.length<MAXL;round++)for(const t of order){
       if(chosen.length>=MAXL)break;
       const list=cand.filter(c=>c.type===t&&!c.used);
       for(const c of list){if(ok(c)){c.used=true;const p=pos(c.k);chosen.push({...c,x:p.x,z:p.z,y:Math.max(H[c.k],0)});break;}c.used=true;}
     }
-    const TPL={peak:['Mount {N}','{N} Peak','{N} Fell'],lake:['Lake {N}','{N} Mere','{N} Water'],island:['{N} Isle','Isle of {N}'],forest:['{N} Wood','{N} Forest','The {N} Weald'],river:['{N} River','River {N}'],pass:['{N} Pass','{N} Gap','{N} Saddle'],gorge:['{N} Gorge','The {N} Narrows'],falls:['{N} Falls','The {N} Cascade'],stacks:['The {N} Stacks','{N} Arch'],cape:['Cape {N}','{N} Head','{N} Point'],glacier:['{N} Glacier','The {N} Icefield'],spire:['The {N} Needle','{N} Spire'],lighthouse:['{N} Light','{N} Lighthouse'],wreck:['The {N} Wreck','Wreck of the {N}'],arch:['{N} Arch','The {N} Arches']};
+    const TPL={peak:['Mount {N}','{N} Peak','{N} Fell'],lake:['Lake {N}','{N} Mere','{N} Water'],crater:['{N} Crater','The {N} Caldera','{N} Crater Lake'],island:['{N} Isle','Isle of {N}'],forest:['{N} Wood','{N} Forest','The {N} Weald'],river:['{N} River','River {N}'],pass:['{N} Pass','{N} Gap','{N} Saddle'],gorge:['{N} Gorge','The {N} Narrows'],falls:['{N} Falls','The {N} Cascade'],stacks:['The {N} Stacks','{N} Arch'],cape:['Cape {N}','{N} Head','{N} Point'],glacier:['{N} Glacier','The {N} Icefield'],spire:['The {N} Needle','{N} Spire'],lighthouse:['{N} Light','{N} Lighthouse'],wreck:['The {N} Wreck','Wreck of the {N}'],arch:['{N} Arch','The {N} Arches']};
     const highest=chosen.filter(c=>c.type==='peak').sort((a,b)=>b.elev-a.elev)[0];
     const landmarks=chosen.map((c,i)=>{
       const tpl=TPL[c.type],nm=placeName(i+1),t=(c===highest)?'Mount {N}':tpl[Math.floor(mulberry32((seed+i*7919)>>>0)()*tpl.length)];
       const L={id:i,type:c.type,name:t.replace('{N}',nm),x:c.x,z:c.z,y:c.y,elev:c.elev??c.y,area:c.area||0,highest:c===highest,
-        rare:['falls','stacks','glacier','spire','gorge','wreck','arch','lighthouse'].includes(c.type)||(c.type==='island'&&c.rank===0&&c.area<2)||(c===highest&&c.elev>2200)};
+        rare:['crater','falls','stacks','glacier','spire','gorge','wreck','arch','lighthouse'].includes(c.type)||(c.type==='island'&&c.rank===0&&c.area<2)||(c===highest&&c.elev>2200)};
       if(c.type==='falls'){const tp=pos(c.to);L.toX=tp.x;L.toZ=tp.z;}
       if(c.type==='gorge'||c.type==='pass'){const ax=c.axis||[1,0],l=Math.hypot(ax[0],ax[1]);L.ax=ax[0]/l;L.az=ax[1]/l;}
+      if(c.type==='crater'){L.r=crater.r;L.rimH=crater.rimH;L.y=0;L.elev=Math.round(crater.rimH);}
       if(c.type==='spire'){const r2=mulberry32((seed+i*131)>>>0);L.height=75+r2()*65;L.top=c.y+L.height;}
       if(c.type==='stacks'){const r2=mulberry32((seed+i*313)>>>0);L.top=40+r2()*40;}
       return L;
@@ -311,7 +345,7 @@ export function createTerrainLib(seed){
     return {N,step,R,rgba,landmarks};
   }
   return {P,AP,noise2,fbm,base,heightAt,climate,forestAt,init,airportZone,airportClearing,stripClearing,stripAt,stripLocal,scanWorld,placeName,hashI,mulberry32,
-    get airportH(){return airportH;},get strips(){return strips;},setFrame(o){ox=o.ox;oz=o.oz;airportH=o.airportH;strips=o.strips||[];}};
+    get airportH(){return airportH;},get strips(){return strips;},setFrame(o){ox=o.ox;oz=o.oz;airportH=o.airportH;strips=o.strips||[];crater=o.crater||null;},get crater(){return crater;}};
 }
 
 /* Chunk mesh + detail builder. Runs inside workers (stringified) or on main thread as fallback. */

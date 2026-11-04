@@ -24,7 +24,7 @@ export async function initSurvey(){
   const entry=worldEntry(WORLD_SEED);
   mission.landmarks=scan.landmarks.map(l=>({...l,env:envelope(l),hold:0,clean:0}));
   for(const id of entry.discovered)mission.discovered.add(id);
-  mission.charters=buildCharters(mission.landmarks);
+  mission.charters=buildCharters(mission.landmarks);if(waterCharter)mission.charters.push(waterCharter);
   mission.ready=true;saveProgress();
   return mission;
 }
@@ -33,6 +33,7 @@ function envelope(l){
   const areaR=Math.sqrt(Math.max(l.area,.05))*1000*.5;
   switch(l.type){
     case 'peak':return {r:650,minAlt:l.y+15,maxAlt:l.y+650,hint:'Pass within 650 m of the summit'};
+    case 'crater':{const m=Math.round(l.rimH*.85/10)*10;return {r:l.r*.8,maxAGL:m,hint:`Drop inside the rim, below ${m} m over the water`};}
     case 'lake':return {r:Math.max(450,areaR),maxAGL:220,hint:'Fly low over the water, below 220 m'};
     case 'island':return {r:Math.max(420,areaR+150),maxAGL:260,hint:'Overfly the island below 260 m'};
     case 'forest':return {r:750,maxAGL:220,hint:'Skim the canopy, below 220 m'};
@@ -53,7 +54,7 @@ function envelope(l){
 
 // ---------------------------------------------------------------- charters
 const DIRS=['Northern','North-Eastern','Eastern','South-Eastern','Southern','South-Western','Western','North-Western'];
-const THEME={peak:'Highlands',pass:'Highlands',gorge:'Highlands',glacier:'Highlands',spire:'Wilds',lake:'Waters',river:'Waters',falls:'Waters',island:'Coast',stacks:'Coast',cape:'Coast',lighthouse:'Coast',forest:'Wilds',wreck:'Wilds',arch:'Wilds'};
+const THEME={peak:'Highlands',pass:'Highlands',gorge:'Highlands',glacier:'Highlands',spire:'Wilds',lake:'Waters',crater:'Waters',river:'Waters',falls:'Waters',island:'Coast',stacks:'Coast',cape:'Coast',lighthouse:'Coast',forest:'Wilds',wreck:'Wilds',arch:'Wilds'};
 function bearingOf(x,z){return ((Math.atan2(x,-z)/DEG)+360)%360;}
 function routeLength(ls){let d=0,px=0,pz=START_Z;for(const l of ls){d+=Math.hypot(l.x-px,l.z-pz);px=l.x;pz=l.z;}return d+Math.hypot(px,pz);}
 function orderRoute(ls){ // greedy nearest-neighbour from home
@@ -65,6 +66,7 @@ function makeCharter(id,title,ls){
   const route=orderRoute(ls),len=routeLength(route);
   return {id,title,ids:route.map(l=>l.id),km:len/1000,minutes:Math.max(4,Math.round(len/52/60+route.length*.6)),difficulty:len<24000?1:len<38000?2:3};
 }
+let waterCharter=null;
 function buildCharters(L){
   if(L.length<3)return L.length?[makeCharter('c0','Local Survey',L)]:[];
   const byDist=[...L].sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z));
@@ -84,10 +86,21 @@ function buildCharters(L){
   const top=L.find(l=>l.highest)||byDist[byDist.length-1];
   const far=byDist.filter(l=>l!==top).slice(-2);
   out.push(makeCharter('c2',top.type==='peak'?`The ${top.name.replace(/^Mount /,'')} Expedition`:'Long-Range Expedition',[top,...far]));
+  // Water strip charter (amphibian only): survey the waters, then alight on a charted lake.
+  const lakes=L.filter(l=>l.type==='lake'||l.type==='crater');
+  if(lakes.length){
+    const WT=['lake','crater','river','falls','stacks','island','lighthouse','cape'];
+    const alight=[...lakes].sort((a,b)=>(b.type==='crater')-(a.type==='crater')||Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z))[0];
+    const rest=L.filter(l=>l!==alight&&WT.includes(l.type)).sort((a,b)=>Math.hypot(a.x-alight.x,a.z-alight.z)-Math.hypot(b.x-alight.x,b.z-alight.z)).slice(0,2);
+    const c=makeCharter('cw',alight.type==='crater'?`${alight.name.replace(/^The /,'')} Run`:`${alight.name.replace(/^Lake /,'')} Water Run`,[...rest,alight]);
+    // the alighting lake is always the last leg
+    c.ids=[...orderRoute(rest).map(l=>l.id),alight.id];c.water=true;c.alight=alight.id;
+    waterCharter=c;
+  }else waterCharter=null;
   // drop duplicates (same landmark set)
   const seen=new Set();return out.filter(c=>{const k=[...c.ids].sort().join(',');if(seen.has(k))return false;seen.add(k);return true;});
 }
-export function dailyCharter(){return mission.charters[mission.charters.length>1?1:0];}
+export function dailyCharter(){const c=mission.charters.filter(c=>!c.water);return c[c.length>1?1:0];}
 
 // ---------------------------------------------------------------- flow
 export function beginMission(mode,charterIndex=0){
@@ -188,7 +201,7 @@ function siteAt(x,z){
   const s=terrain.stripAt(x,z,6);if(s)return {kind:'strip',name:s.name,halfW:s.halfW,cos:s.cos,sin:s.sin,x:s.x,z:s.z,ref:s};
   if(AIRCRAFT[aircraftState.variant].floats&&isWaterAt(x,z)){
     // Floatplane: lakes are landing sites. Name the water after the nearest charted lake.
-    const lake=mission.landmarks.filter(l=>l.type==='lake'||l.type==='stacks').sort((p,q)=>Math.hypot(p.x-x,p.z-z)-Math.hypot(q.x-x,q.z-z))[0];
+    const lake=mission.landmarks.filter(l=>l.type==='lake'||l.type==='crater'||l.type==='stacks').sort((p,q)=>Math.hypot(p.x-x,p.z-z)-Math.hypot(q.x-x,q.z-z))[0];
     const near=lake&&Math.hypot(lake.x-x,lake.z-z)<2500;
     return {kind:'water',name:near&&mission.discovered.has(lake.id)?lake.name:'Open water',halfW:60,cos:0,sin:1,x,z,ref:{x,z,h:0,water:true,name:near?lake.name:'open water'}};
   }
@@ -237,7 +250,8 @@ function landed(td){
   const label=td.site.kind==='field'?'BUSH LANDING':{S:'BUTTER',A:'SMOOTH',B:'GOOD',C:'FIRM',D:'HARD'}[grade];
   if(mission.mode==='cargo'&&mission.job&&proper&&Math.hypot(td.site.x-mission.job.to.x,td.site.z-mission.job.to.z)<(td.site.kind==='water'?2500:900)){recordLandingOnly(grade);completeJob(td,grade);hudCharterUpdate();return;}
   let xp=proper?{S:60,A:40,B:25,C:12,D:5}[grade]:20;
-  if(mission.charter&&!mission.complete&&charterSurveyed()&&proper){
+  const alightOk=!mission.charter?.water||(td.site.kind==='water'&&(()=>{const l=landmarkById(mission.charter.alight);return l&&Math.hypot(td.site.x-l.x,td.site.z-l.z)<Math.max(1500,(l.r||0)*1.4,Math.sqrt(l.area||0)*1000);})());
+  if(mission.charter&&!mission.complete&&charterSurveyed()&&proper&&alightOk){
     mission.complete=true;
     const bonus=mission.bonusLost?0:{S:150,A:100,B:60,C:30,D:10}[grade];
     const total=Math.round((200+bonus)*(mission.hardcore?1.5:1));const res=addXP(total+xp);
@@ -254,7 +268,7 @@ function landed(td){
     hudCharterComplete({grade,label,fpm,site:td.site.name,time,xp:total+xp,bonusLost:mission.bonusLost,rankUp:res.rankUp?res.rank.name:null,share});
   }else{
     const res=addXP(xp);
-    hudLanding({grade,label,fpm,site:td.site.name,xp,rankUp:res.rankUp?res.rank.name:null,hint:mission.charter&&!mission.complete&&charterSurveyed()&&!proper?'Charters complete at a strip or the home field':null});
+    hudLanding({grade,label,fpm,site:td.site.name,xp,rankUp:res.rankUp?res.rank.name:null,hint:mission.charter&&!mission.complete&&charterSurveyed()&&!alightOk?`Alight on ${landmarkById(mission.charter.alight)?.name} to file this charter`:mission.charter&&!mission.complete&&charterSurveyed()&&!proper?'Charters complete at a strip or the home field':null});
   }
   hudCharterUpdate();
 }
@@ -285,7 +299,7 @@ const CARGO=[
 function cargoSites(){
   const s=[{key:'home',name:'Home Field',x:0,z:0,kind:'runway'}];
   for(const t of mission.strips)s.push({key:`s${t.id}`,name:t.name,x:t.x,z:t.z,kind:'strip'});
-  if(AIRCRAFT[aircraftState.variant].floats)for(const l of mission.landmarks)if(l.type==='lake'&&mission.discovered.has(l.id))s.push({key:`w${l.id}`,name:l.name,x:l.x,z:l.z,kind:'water'});
+  if(AIRCRAFT[aircraftState.variant].floats)for(const l of mission.landmarks)if((l.type==='lake'||l.type==='crater')&&mission.discovered.has(l.id))s.push({key:`w${l.id}`,name:l.name,x:l.x,z:l.z,kind:'water'});
   return s;
 }
 let jobSerial=0;

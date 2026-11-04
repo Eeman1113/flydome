@@ -67,7 +67,9 @@ function markerSet(){
     if(j&&j.to.kind==='water')out.push({x:j.to.x,z:j.to.z,kind:'strip',active:true});
     return out;
   }
-  if(mission.charter&&charterSurveyed()){
+  if(mission.charter?.water&&charterSurveyed()&&!mission.complete){
+    const l=landmarkById(mission.charter.alight);if(l)out.push({x:l.x,z:l.z,kind:'strip',active:true});out.push({x:0,z:0,kind:'home'});
+  }else if(mission.charter&&charterSurveyed()){
     out.push({x:0,z:0,kind:'home',active:true});for(const s of mission.strips)out.push({x:s.x,z:s.z,kind:'strip',active:false,s});
   }else{out.push({x:0,z:0,kind:'home'});for(const s of mission.strips)out.push({x:s.x,z:s.z,kind:'strip',s});}
   return out;
@@ -188,7 +190,7 @@ export function hudCharterUpdate(){
   const ts=charterTargets(),done=ts.filter(l=>mission.discovered.has(l.id)).length,tgt=nextTarget();
   const rows=ts.map(l=>{const d=mission.discovered.has(l.id);return `<li class="${d?'done':tgt&&tgt.id===l.id?'target':''}" data-id="${l.id}">${iconSvg(l.type,'cc-ico')}<span class="cc-name">${l.name}</span><span class="cc-dist">${d?'✓':''}</span></li>`;}).join('');
   const all=done===ts.length;
-  el.innerHTML=`<div class="cc-kicker">${mission.mode==='daily'?`DAILY CHARTER #${DAILY_NUMBER}`:'CHARTER'} · ${done}/${ts.length}${mission.bonusLost?' · <span class="cc-lost">BONUS LOST</span>':''}</div><div class="cc-title">${c.title}</div><ul class="cc-list">${rows}</ul><div class="cc-foot">${mission.complete?'Charter complete':all?'<b>Return and land</b> at any strip or home field':'Survey each landmark, then land'}</div>`;
+  el.innerHTML=`<div class="cc-kicker">${mission.mode==='daily'?`DAILY CHARTER #${DAILY_NUMBER}`:'CHARTER'} · ${done}/${ts.length}${mission.bonusLost?' · <span class="cc-lost">BONUS LOST</span>':''}</div><div class="cc-title">${c.title}</div><ul class="cc-list">${rows}</ul><div class="cc-foot">${mission.complete?'Charter complete':all?(c.water?`<b>Alight</b> on ${landmarkById(c.alight)?.name}`:'<b>Return and land</b> at any strip or home field'):(c.water?`Survey the waters, then alight on ${landmarkById(c.alight)?.name}`:'Survey each landmark, then land')}</div>`;
   updateCardDistances();
 }
 function updateCardDistances(){
@@ -209,11 +211,11 @@ function updateCardDistances(){
 let bannerTimer=0;
 export function hudBanner(b){
   const el=$('discoveryBanner');
-  el.innerHTML=`<div class="db-kicker">${b.rare?'RARE DISCOVERY':'NEW DISCOVERY'}</div><div class="db-row">${iconSvg(b.type,'db-ico')}<div class="db-name">${b.name}</div></div><div class="db-meta">${b.meta}</div><div class="db-xp">+${b.xp} XP${b.clean?' · CLEAN SURVEY':''}${b.rankUp?` · PROMOTED TO ${b.rankUp.toUpperCase()}`:''}</div>${b.charterLeft===0?'<div class="db-next">Charter surveyed — return and land</div>':b.charterLeft?`<div class="db-next">${b.charterLeft} left on this charter</div>`:''}`;
+  el.innerHTML=`<div class="db-kicker">${b.rare?'RARE DISCOVERY':'NEW DISCOVERY'}</div><div class="db-row">${iconSvg(b.type,'db-ico')}<div class="db-name">${b.name}</div></div><div class="db-meta">${b.meta}</div><div class="db-xp">+${b.xp} XP${b.clean?' · CLEAN SURVEY':''}${b.rankUp?` · PROMOTED TO ${b.rankUp.toUpperCase()}`:''}</div>${b.charterLeft===0?`<div class="db-next">${mission.charter?.water?`Charter surveyed — alight on ${landmarkById(mission.charter.alight)?.name}`:'Charter surveyed — return and land'}</div>`:b.charterLeft?`<div class="db-next">${b.charterLeft} left on this charter</div>`:''}`;
   el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
   clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>el.classList.remove('show'),5200);
   playChime(b.rare?2:1);
-  speak(`${b.rare?'Rare find. ':''}${b.name}, charted.${b.charterLeft===0?' Charter surveyed. Return and land.':''}`);
+  speak(`${b.rare?'Rare find. ':''}${b.name}, charted.${b.charterLeft===0?(mission.charter?.water?' Charter surveyed. Alight on the lake.':' Charter surveyed. Return and land.'):''}`);
 }
 let stampTimer=0;
 export function hudLanding(l){

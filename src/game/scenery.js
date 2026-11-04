@@ -352,7 +352,7 @@ export function addBeacon(l){
       flag:new THREE.MeshStandardMaterial({color:0xf3e7c9,roughness:.8,side:THREE.DoubleSide})};
     beaconMats.flag.onBeforeCompile=sh=>{sh.uniforms.uTime=shared.time;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uTime;').replace('#include <begin_vertex>','#include <begin_vertex>\nfloat w=uv.x;transformed.z+=sin(uTime*6.+uv.x*5.)*.35*w;transformed.y+=sin(uTime*4.+uv.x*3.)*.12*w;');};
   }
-  const M=beaconMats,g=new THREE.Group(),water=['lake','river','stacks'].includes(l.type);
+  const M=beaconMats,g=new THREE.Group(),water=['lake','crater','river','stacks'].includes(l.type);
   let y,x=l.x,z=l.z;
   if(l.type==='spire'){y=l.top;}
   else if(l.type==='falls'){y=terrain.heightAt(x,z);}

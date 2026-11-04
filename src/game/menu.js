@@ -25,14 +25,16 @@ function renderBoard(){
     const c=dailyCharter();el.innerHTML=c?cardHtml(c,0,true):'';menuState.charter=0;
     $('startBtn').innerHTML=`FLY DAILY CHARTER&nbsp; ↗`;return;
   }
-  el.innerHTML=mission.charters.map((c,i)=>cardHtml(c,i,i===menuState.charter)).join('')||'<div class="board-empty">No landmarks found — try a new world.</div>';
-  for(const b of el.querySelectorAll('.charter')){b.onclick=()=>{menuState.charter=+b.dataset.i;renderBoard();};b.ondblclick=()=>$('startBtn').click();}
+  const amph=!!AIRCRAFT[aircraftState.variant].floats;
+  if(mission.charters[menuState.charter]?.water&&!amph)menuState.charter=0;
+  el.innerHTML=mission.charters.map((c,i)=>cardHtml(c,i,i===menuState.charter,c.water&&!amph)).join('')||'<div class="board-empty">No landmarks found — try a new world.</div>';
+  for(const b of el.querySelectorAll('.charter:not(.locked)')){b.onclick=()=>{menuState.charter=+b.dataset.i;renderBoard();};b.ondblclick=()=>$('startBtn').click();}
 }
-function cardHtml(c,i,sel){
+function cardHtml(c,i,sel,locked=false){
   const ls=c.ids.map(landmarkById).filter(Boolean),done=ls.filter(l=>mission.discovered.has(l.id)).length;
   const chips=ls.map(l=>`<span class="chip${mission.discovered.has(l.id)?' done':''}" title="${TYPE_LABEL[l.type]}">${iconSvg(l.type,'chip-ico')}${l.name}</span>`).join('');
   const dots=[1,2,3].map(d=>`<i class="${d<=c.difficulty?'on':''}"></i>`).join('');
-  return `<button class="charter${sel?' selected':''}" data-i="${i}"><div class="ch-top"><span class="ch-title">${c.title}</span><span class="ch-diff" title="Difficulty">${dots}</span></div><div class="ch-chips">${chips}</div><div class="ch-meta">${c.km.toFixed(0)} km route · ≈ ${c.minutes} min${done?` · ${done}/${ls.length} charted`:''}</div></button>`;
+  return `<button class="charter${sel?' selected':''}${c.water?' water':''}${locked?' locked':''}" data-i="${i}" ${locked?'disabled':''}><div class="ch-top"><span class="ch-title">${c.water?'<em class="ch-tag">WATER STRIP</em>':''}${c.title}</span><span class="ch-diff" title="Difficulty">${dots}</span></div><div class="ch-chips">${chips}</div><div class="ch-meta">${locked?`Needs the Caravan Amphibian${unlocked(AIRCRAFT.floats.rank)?' · pick it in the hangar':` · unlocks at ${RANKS[AIRCRAFT.floats.rank][1]}`}`:`${c.km.toFixed(0)} km route · ≈ ${c.minutes} min${c.water?` · alight on ${landmarkById(c.alight)?.name}`:''}${done?` · ${done}/${ls.length} charted`:''}`}</div></button>`;
 }
 function renderPilot(){
   const r=rankInfo(),p=progress.pilot;
@@ -52,7 +54,7 @@ function renderDaily(){
 
 export function logbookModal(){
   const r=rankInfo(),p=progress.pilot,h=Math.floor(p.flightTime/3600),m=Math.floor(p.flightTime%3600/60);
-  const stamps=['peak','lake','island','forest','river','pass','gorge','falls','stacks','cape','lighthouse','glacier','spire','arch','wreck'].map(t=>`<div class="stamp${p.stamps[t]?' got':''}">${iconSvg(t,'st-ico')}<span>${TYPE_LABEL[t]}</span><b>${p.stamps[t]||0}</b></div>`).join('')+`<div class="stamp rare${p.stamps.rare?' got':''}">★<span>Rare finds</span><b>${p.stamps.rare||0}</b></div>`;
+  const stamps=['peak','lake','crater','island','forest','river','pass','gorge','falls','stacks','cape','lighthouse','glacier','spire','arch','wreck'].map(t=>`<div class="stamp${p.stamps[t]?' got':''}">${iconSvg(t,'st-ico')}<span>${TYPE_LABEL[t]}</span><b>${p.stamps[t]||0}</b></div>`).join('')+`<div class="stamp rare${p.stamps.rare?' got':''}">★<span>Rare finds</span><b>${p.stamps.rare||0}</b></div>`;
   const ranks=RANKS.map(([xp,n],i)=>`<li class="${i<=r.index?'got':''}"><span>${n}</span><em>${xp.toLocaleString()} XP</em></li>`).join('');
   const g=p.grades,total=Object.values(g).reduce((a,b)=>a+b,0)||1;
   const bars=['S','A','B','C','D'].map(k=>`<div class="gb"><span>${k}</span><i style="width:${g[k]/total*100}%"></i><b>${g[k]}</b></div>`).join('');
@@ -86,7 +88,7 @@ function renderHangar(){
   const lv=LIVERIES.map(l=>{const ok=unlocked(l.rank),sel=aircraftState.livery===l.id;return `<button class="hg-sw${sel?' selected':''}${ok?'':' locked'}" data-lv="${l.id}" title="${l.name}${ok?'':` · unlocks at ${RANKS[l.rank][1]}`}" style="--c:#${l.tint.toString(16).padStart(6,'0')}" ${ok?'':'disabled'}></button>`;}).join('');
   el.innerHTML=`<div class="side-kicker">HANGAR</div><div class="hg-row">${ac}</div><div class="hg-label">Paint · <span>${(LIVERIES.find(l=>l.id===aircraftState.livery)||LIVERIES[0]).name}</span></div><div class="hg-sws">${lv}</div>
     <label class="hg-hard"><input type="checkbox" id="hardcoreToggle" ${progress.pilot.hardcore?'checked':''}><span><strong>Hardcore charters</strong><small>Limited fuel, refuel at strips · +50% XP</small></span></label>`;
-  for(const b of el.querySelectorAll('[data-ac]'))b.onclick=async()=>{if(b.disabled||aircraftState.variant===b.dataset.ac)return;progress.pilot.aircraft=b.dataset.ac;saveProgress();el.classList.add('busy');await swapAircraft(b.dataset.ac);el.classList.remove('busy');renderHangar();};
+  for(const b of el.querySelectorAll('[data-ac]'))b.onclick=async()=>{if(b.disabled||aircraftState.variant===b.dataset.ac)return;progress.pilot.aircraft=b.dataset.ac;saveProgress();el.classList.add('busy');await swapAircraft(b.dataset.ac);el.classList.remove('busy');renderHangar();renderBoard();};
   for(const b of el.querySelectorAll('[data-lv]'))b.onclick=()=>{if(b.disabled)return;progress.pilot.livery=b.dataset.lv;saveProgress();applyLivery(b.dataset.lv);renderHangar();};
   $('hardcoreToggle').onchange=e=>{progress.pilot.hardcore=e.target.checked;saveProgress();};
 }

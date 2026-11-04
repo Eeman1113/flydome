@@ -13,7 +13,7 @@ export function crashAircraft(title,text,msg){
   // Fire/debris/crumple and a short crash-cam orbit before the menu appears.
   state.crashed=true;onCrash();triggerCrash(/ditch/i.test(title)?'water':'impact');
   clearTimeout(crashAircraft.t);crashAircraft.t=setTimeout(()=>{if(!state.crashed)return;state.paused=true;$('pauseMenu').style.display='grid';setHud();},3400);
-  $('pauseMenu').querySelector('h2').textContent=title;
+  $('pauseMenu').querySelector('h2').textContent=title;$('pauseMenu').querySelector('.kicker').textContent='AIRCRAFT LOST';$('resumeBtn').style.display='none';$('restartBtn').classList.add('primary');
   $('pauseMenu').querySelector('.intro').textContent=mission.charter&&!mission.complete?`${text.replace(' Restart the flight to try again.','')} Your discoveries are saved; this charter's landing bonus is lost. Restart to continue the charter.`:text;
   toast(msg);setHud();
 }
@@ -42,7 +42,7 @@ export function stepPhysics(dt,ctrl){
 
   const pitchRateTarget=a.controlPitch*(31*DEG)*authority;
   const bankLimit=65*DEG;
-  const rollRateTarget=a.controlRoll*(78*DEG)*authority-(wasOnGround?0:Math.sin(a.roll)*state.rollStability*.34);
+  const rollRateTarget=a.controlRoll*(62*DEG)*authority-(wasOnGround?0:Math.sin(a.roll)*state.rollStability*.34);
   // Coordinated turn yaw from bank; fades out past knife-edge so rolls and inverted flight stay clean.
   const coordinatedYawRate=(!wasOnGround&&airspeed>7)?-9.81*Math.tan(clamp(a.roll,-bankLimit,bankLimit))*Math.max(Math.cos(a.roll),0)/Math.max(airspeed,12):0;
   const rudderAuthority=wasOnGround?clamp(airspeed/10,0,1):clamp(airspeed/24,.25,1.15);
@@ -54,7 +54,7 @@ export function stepPhysics(dt,ctrl){
   a.pitchRate=lerp(a.pitchRate,pitchRateTarget,pitchResponse);
   a.rollRate=lerp(a.rollRate,rollRateTarget,rollResponse);
   a.yawRate=lerp(a.yawRate,yawRateTarget,yawResponse);
-  a.pitch=clamp(a.pitch+a.pitchRate*dt,-.38,.40);
+  a.pitch=clamp(a.pitch+a.pitchRate*dt,-.38,wasOnGround?11*DEG:.40);if(wasOnGround&&a.pitch>=11*DEG&&a.pitchRate>0)a.pitchRate=0;
   // Airborne the aircraft can roll freely through 360° (barrel/aileron rolls); on the ground bank stays limited.
   a.roll=wasOnGround?clamp(a.roll+a.rollRate*dt,-bankLimit,bankLimit):wrapAngle(a.roll+a.rollRate*dt);
   a.yaw=wrapAngle(a.yaw+a.yawRate*dt);
@@ -76,7 +76,7 @@ export function stepPhysics(dt,ctrl){
   const qbar=.5*rho*airspeedNow*airspeedNow;
   const clLinear=clamp(.22+5.25*alpha,-.55,1.52);
   const stallAlphaBlend=smooth(14*DEG,22*DEG,alpha);
-  const vs=Math.sqrt((2*AIRCRAFT_MASS_KG*9.81)/(rho*WING_AREA_M2*1.52));
+  const vs=Math.sqrt((2*AIRCRAFT_MASS_KG*9.81)/(rho*WING_AREA_M2*1.62));
   const lowSpeedStall=wasOnGround?0:1-smooth(vs*.82,vs*1.06,airspeedNow);
   const stallBlend=wasOnGround?0:Math.max(stallAlphaBlend,lowSpeedStall);
   const cl=lerp(clLinear,.62,stallBlend);
@@ -84,7 +84,7 @@ export function stepPhysics(dt,ctrl){
   const groundEffect=1+(1-smooth(1,14,heightAGL))*.12;
   const lift=qbar*WING_AREA_M2*cl*groundEffect;
   a.stall=!wasOnGround&&stallBlend>.24;
-  const cd=.031+.052*cl*cl+stallBlend*.42;
+  const cd=.024+.075*cl*cl+stallBlend*.42;
   const drag=qbar*WING_AREA_M2*cd;
   const lateralSpeed=simAirVelocity.dot(simRight);
   const sideDrag=.5*rho*airspeedNow*Math.abs(lateralSpeed)*WING_AREA_M2*.72;
@@ -92,7 +92,10 @@ export function stepPhysics(dt,ctrl){
   const spoolTau=state.throttle>a.enginePower?1.15:.72;
   a.enginePower+=(state.throttle-a.enginePower)*(1-Math.exp(-dt/spoolTau));
   // Thrust lapses gently with density (normally aspirated engine).
-  const thrust=a.engineRunning?a.enginePower*MAX_ENGINE_THRUST_N*(AIRCRAFT[aircraftState.variant].thrust||1)*(AIRCRAFT_MASS_KG/(AIRCRAFT_MASS_KG+(mission.cargoKg||0)*.9))*Math.pow(rho/1.225,.7):0;
+  // Propeller thrust falls with airspeed (fixed power), so the aircraft accelerates briskly,
+  // climbs ~1,100 fpm at 80 kt and cruises ~140 kt at 75% like the real C182.
+  const propLapse=clamp(1-.0048*airspeedNow,.35,1);
+  const thrust=a.engineRunning?a.enginePower*MAX_ENGINE_THRUST_N*propLapse*(AIRCRAFT[aircraftState.variant].thrust||1)*(AIRCRAFT_MASS_KG/(AIRCRAFT_MASS_KG+(mission.cargoKg||0)*.9))*Math.pow(rho/1.225,.7):0;
   simLiftDirection.copy(simUp).addScaledVector(simDirection,-simUp.dot(simDirection));
   if(simLiftDirection.lengthSq()<1e-6)simLiftDirection.copy(simUp);
   simLiftDirection.normalize();
@@ -103,7 +106,7 @@ export function stepPhysics(dt,ctrl){
     .add(simGravity);
 
   a.velocity.addScaledVector(simForce,dt/AIRCRAFT_MASS_KG);
-  a.velocity.multiplyScalar(Math.exp(-.012*dt));
+  a.velocity.multiplyScalar(Math.exp(-.002*dt));
   a.position.addScaledVector(a.velocity,dt);
   if(a.stall&&!wasOnGround){
     a.velocity.y-=clamp(2.4+stallBlend*4.0,2.4,6.4)*dt;
@@ -122,7 +125,7 @@ export function stepPhysics(dt,ctrl){
     const lateralV=a.velocity.x*rx+a.velocity.z*rz;
     const paved=onRunway(a.position.x,a.position.z),floats=AIRCRAFT[aircraftState.variant].floats,onWater=isWaterAt(a.position.x,a.position.z);
     // Floats plane water hard but hold more drag than tarmac; grass strips sit in between.
-    const rollingV=forwardV*Math.exp(-(paved?.028:onWater&&floats?.075:.16)*dt);
+    const rollingV=forwardV*Math.exp(-(paved?.028:onWater&&floats?.12:.16)*dt);
     const lateralAfter=lateralV*Math.exp(-1.35*dt);
     a.velocity.x=fx*rollingV+rx*lateralAfter;
     a.velocity.z=fz*rollingV+rz*lateralAfter;

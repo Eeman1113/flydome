@@ -26,7 +26,7 @@ Your **pilot logbook** (rank, XP, discovery stamps, landing grades) is saved in 
 
 ## Features
 
-- **Landmarks from real terrain.** Peaks, lakes, islands, forests, rivers, passes, gorge runs, coastal waterfalls, sea stacks and arches, capes and lighthouses, glaciers, rock spires and old plane wrecks. Each is named, and the rare ones carry their own logbook stamp. A survey beacon (a cairn and pennant, or a buoy on water) marks every charted landmark.
+- **Landmarks from real terrain.** Peaks, lakes, crater lakes inside volcanic rims, islands, forests, rivers, passes, gorge runs, coastal waterfalls, sea stacks and arches, capes and lighthouses, glaciers, rock spires and old plane wrecks. Each is named, and the rare ones carry their own logbook stamp. A survey beacon (a cairn and pennant, or a buoy on water) marks every charted landmark.
 - **Survey gameplay.** Seeded grass bush strips, each with a cabin, windsock and edge cones, sit on flat sites found by a rotated flatness search. A worker-side scanner names 7–8 landmarks per world, and charters, survey envelopes, landing grades, a fog-of-war chart and the logbook turn exploration into the goal.
 - **A new world on every visit.** A random seed drives domain-warped continents and coastlines, ridged mountain ranges, rolling hills, lowland rivers, lakes, temperature/moisture climate and summer or autumn seasons. The airfield is placed automatically at the flattest suitable site and sits in a natural forest clearing. Use `?seed=12345` to revisit a world, or **NEW WORLD** in the menu.
 - **Real HDR skies.** Seven CC0 HDRIs from [Poly Haven](https://polyhaven.com), from dawn through noon to dusk plus overcast; one is picked per world, or force one with `?sky=belfast`. Each HDR is analysed at load: the sun disc is located and integrated for the sun light's direction, colour and strength, sky irradiance sets exposure, and the sun is clamped out of the image-based lighting so it is not counted twice.
@@ -34,11 +34,11 @@ Your **pilot logbook** (rank, XP, discovery stamps, landing grades) is saved in 
 - **Living scenery.** Instanced conifer and broadleaf forests with wind sway, PBR water reflecting the sky, sun-lit cumulus clouds with matching cloud shadows on the ground, and height fog with sun in-scattering.
 - **Cinematic rendering.** HDR render target with MSAA, bloom, ACES tone mapping and grading, a sun-aligned aircraft shadow, and a separate near-plane pass for the cockpit so the world keeps depth precision to the horizon.
 - **Weather & time of day.** Seven CC0 HDR skies (dawn to dusk, plus overcast). Each world has seeded wind and gusts that the flight model feels, rain with windshield droplets on some overcast days, and low cloud.
-- **Two aircraft.** The Cessna 182 Skylane, and a Cessna 208 Caravan Amphibian that unlocks at Bush Pilot rank and lands on lakes as well as runways. Six paint schemes unlock with rank. Hardcore mode adds fuel limits, refuelling at strips and +50% XP.
+- **Two aircraft.** The Cessna 182 Skylane, and a Cessna 208 Caravan Amphibian that unlocks at Bush Pilot rank and lands on lakes as well as runways. With the amphibian, **water strip charters** appear on the board: survey the waters, then alight on the named lake to file. Six paint schemes unlock with rank. Hardcore mode adds fuel limits, refuelling at strips and +50% XP.
 - **Crashes.** A fireball, a smoke plume drifting with the wind, torn-off parts and shards with physics, a crumpled airframe, a shock-distortion pulse and a crash camera. A water landing in the wrong aircraft ends in a splash and steam instead.
 - **Approach guide & photo mode.** A glideslope and centreline cue when lined up with a strip. Photo mode (P) has an orbit camera, depth of field, a letterbox frame and PNG capture.
 - **Automatic quality.** The GPU is detected to pick Low/Medium/High/Ultra, then a runtime governor watches frame rate and adjusts render scale, view distance (4–20 km) and effects. **Settings → Graphics quality** allows a manual override.
-- **Flight model.** Lift perpendicular to the airflow, induced and sideslip drag, ground effect, progressive stall, engine spool-up, density falloff with altitude, rate-commanded controls with expo and an optional wing-levelling assist. It is a game flight model, not a certified training simulator.
+- **Flight model.** Lift perpendicular to the airflow, induced and sideslip drag, ground effect, progressive stall, engine spool-up, density falloff with altitude, rate-commanded controls with expo and an optional wing-levelling assist. Propeller thrust falls off with airspeed, and the numbers are tuned against the real C182: rotate at 58 kt, about 270 m to clear the runway, about 1,000 fpm climb at 85 kt, about 145 kt cruise at 75% power, and a stall near 55 kt. The nose can't over-rotate past the tail-strike attitude on the ground. It is a game flight model, not a certified training simulator.
 - **Flight School.** **TEACH ME TO FLY** walks you through throttle, takeoff roll, rotation, climb, banking and levelling, advancing automatically as you complete each step, with instructions for whichever device you are using.
 - **Procedural engine audio** for the six-cylinder engine, three-blade propeller and airflow, generated live with Web Audio.
 
@@ -46,7 +46,7 @@ Your **pilot logbook** (rank, XP, discovery stamps, landing grades) is saved in 
 
 | Action | Keyboard + mouse | DualSense |
 |---|---|---|
-| Pitch down / up | W / S or ↑ / ↓ | Left stick |
+| Pitch up / down | W / S or ↑ / ↓ | Left stick |
 | Roll left / right | A / D or ← / → | Left stick |
 | Rudder left / right | Q / E | L1 / R1 |
 | Throttle up / down | Shift / Ctrl | R2 / L2 |
