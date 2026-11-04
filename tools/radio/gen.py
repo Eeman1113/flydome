@@ -9,8 +9,8 @@ import torch, numpy as np, soundfile as sf, pyloudnorm as pyln
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from snac import SNAC
 
-TAKES = int(os.environ.get('TAKES', 3))
-BATCH = int(os.environ.get('BATCH', 24))
+TAKES = int(os.environ.get('TAKES', 4))
+BATCH = int(os.environ.get('BATCH', 48))
 SR = 24000
 LINES_URL = 'https://raw.githubusercontent.com/Eeman1113/flydome/main/tools/radio/lines.json'
 lines = json.loads(urllib.request.urlopen(LINES_URL).read())
@@ -67,7 +67,11 @@ for t in range(TAKES):
 
 # ---- pick the best take with Whisper
 asr = pipeline('automatic-speech-recognition', model='openai/whisper-large-v3-turbo', torch_dtype=torch.float16, device=dev)
-norm = lambda s: re.sub(r'[^a-z ]', '', re.sub(r'<[^>]+>', '', s.lower()).replace('niner', 'nine')).split()
+W = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+def norm(s):
+    s = re.sub(r'<[^>]+>', '', s.lower()).replace('niner', 'nine').replace('-', ' ')
+    s = re.sub(r'\d', lambda m: ' ' + W[int(m.group())] + ' ', s)  # Whisper writes "36" for "three six"
+    return re.sub(r'[^a-z ]', '', s).split()
 meter = pyln.Meter(SR)
 
 def trim(a):
@@ -85,16 +89,18 @@ for l in lines:
         a = trim(a)
         dur = len(a) / SR
         words = len(norm(l['text']))
-        if dur > .8 + words * .75 or dur < .12 + words * .12: continue  # runaway or truncated take
+        tags = len(re.findall(r'<[^>]+>', l['text']))
+        if dur > .8 + words * .75 + tags * 2.5 or dur < .12 + words * .12: continue  # runaway or truncated take
         hyp = asr({'raw': a, 'sampling_rate': SR}, generate_kwargs={'language': 'en'})['text']
         score = difflib.SequenceMatcher(None, norm(l['text']), norm(hyp)).ratio()
         if not best or score > best[0]: best = (score, a, hyp)
     if not best:
         print('NO TAKE', l['id']); report.append((l['id'], 0, '')); continue
     score, a, hyp = best
-    try: a = pyln.normalize.loudness(a, meter.integrated_loudness(a), -16.0)
+    try: a = pyln.normalize.loudness(a, meter.integrated_loudness(a), -18.0)
     except Exception: pass
-    a = np.clip(a, -.98, .98)
+    pk = np.abs(a).max()
+    if pk > .89: a = a * (.89 / pk)  # peak-limit instead of clipping
     sf.write('tmp.wav', a, SR)
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'tmp.wav', '-ac', '1', '-c:a', 'libopus', '-b:a', '32k',
                     '-application', 'voip', f"radio/{l['id']}.ogg"], check=True)
