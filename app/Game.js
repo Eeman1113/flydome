@@ -63,6 +63,7 @@ function Simulator({ start }) {
         <div className="hud-readout left">
           <div className="ro-label">IAS</div>
           <div className="ro-main"><span id="spdVal">0</span><small>KT</small></div>
+          <div className="ro-sub spd-sub"><span id="gsVal">GS 0</span><span id="machVal"></span></div>
           <div className="thr"><div className="thr-track"><i id="thrFill"></i></div><span id="thrVal">0%</span></div>
           <div className="thr fuel" id="fuelRow"><div className="thr-track"><i id="fuelFill"></i></div><span id="fuelVal">FUEL</span></div>
         </div>

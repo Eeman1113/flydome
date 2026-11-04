@@ -57,13 +57,50 @@ export function attachJetFx(group,V){
   // folds the gear up into the belly (scaled about its top), then the doors close over it.
   const model=group.userData.visualModel;let on=null,off=null,lamp=null;
   model.traverse(o=>{const nm=o.name||'';if(/landingOnLight/i.test(nm))lamp=o;else if(/landingOn/i.test(nm))on=o;else if(/landingOff/i.test(nm))off=o;});
-  if(on&&off){
-    group.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(on),top=b.max.y,piv=new THREE.Group();
-    const anchor=on.parent;anchor.add(piv);piv.position.copy(anchor.worldToLocal(new THREE.Vector3((b.min.x+b.max.x)/2,top,(b.min.z+b.max.z)/2)));
-    piv.attach(on);if(lamp)piv.attach(lamp);off.visible=false;
-    fx.gear={piv,on,off,lamp,t:1,down:true};
-  }
+  if(on&&off){fx.gear=splitGear(group,[on,lamp].filter(Boolean),off);off.visible=false;}
 }
+// Split the extended-gear mesh into nose and left/right main legs, each on a hinge pivot
+// at the top of its strut (in aircraft space), so retraction is a real 3D fold.
+function splitGear(group,nodes,off){
+  const meshes=[];for(const n of nodes)n.traverse(o=>{if(o.isMesh)meshes.push(o);});
+  group.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const buckets={nose:[],left:[],right:[]},P=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
+  let zmin=1e9,zmax=-1e9;
+  for(const m of meshes){const pos=m.geometry.attributes.position,toL=new THREE.Matrix4().multiplyMatrices(inv,m.matrixWorld);for(let i=0;i<pos.count;i++){P[0].fromBufferAttribute(pos,i).applyMatrix4(toL);zmin=Math.min(zmin,P[0].z);zmax=Math.max(zmax,P[0].z);}}
+  const zCut=zmin+(zmax-zmin)*.45;
+  for(const m of meshes){
+    const g=m.geometry,pos=g.attributes.position,idx=g.index?g.index.array:[...Array(pos.count).keys()],toL=new THREE.Matrix4().multiplyMatrices(inv,m.matrixWorld);
+    for(let t=0;t<idx.length;t+=3){
+      for(let k=0;k<3;k++)P[k].fromBufferAttribute(pos,idx[t+k]).applyMatrix4(toL);
+      const cx=(P[0].x+P[1].x+P[2].x)/3,cz=(P[0].z+P[1].z+P[2].z)/3;
+      buckets[cz<zCut?'nose':cx<0?'left':'right'].push({m,t,toL,i:[idx[t],idx[t+1],idx[t+2]]});
+    }
+    m.visible=false;
+  }
+  const spec={nose:{rx:-Math.PI*.5,rz:0,delay:0},left:{rx:Math.PI*.47,rz:.5,delay:.12},right:{rx:Math.PI*.47,rz:-.5,delay:.12}};
+  const legs=[];
+  for(const [name,all] of Object.entries(buckets)){
+    if(!all.length)continue;
+    const box=new THREE.Box3(),Q=new THREE.Vector3(),N=new THREE.Vector3(),nm=new THREE.Matrix3();
+    for(const tr of all)for(const vi of tr.i){Q.fromBufferAttribute(tr.m.geometry.attributes.position,vi).applyMatrix4(tr.toL);box.expandByPoint(Q);}
+    const hinge=new THREE.Vector3((box.min.x+box.max.x)/2,box.max.y-.05,name==='nose'?box.min.z+(box.max.z-box.min.z)*.35:box.max.z-(box.max.z-box.min.z)*.3);
+    const piv=new THREE.Group();piv.position.copy(hinge);group.add(piv);
+    // one sub-mesh per source mesh (they differ in material and attribute layout)
+    for(const src of new Set(all.map(t=>t.m))){
+      const tris=all.filter(t=>t.m===src),ga=src.geometry.attributes,names=Object.keys(ga).filter(n=>n!=='tangent'),data={};for(const n of names)data[n]=[];
+      for(const tr of tris){nm.getNormalMatrix(tr.toL);
+        for(const vi of tr.i)for(const n of names){const at=ga[n];
+          if(n==='position'){Q.fromBufferAttribute(at,vi).applyMatrix4(tr.toL).sub(hinge);data[n].push(Q.x,Q.y,Q.z);}
+          else if(n==='normal'){N.fromBufferAttribute(at,vi).applyMatrix3(nm).normalize();data[n].push(N.x,N.y,N.z);}
+          else for(let c=0;c<at.itemSize;c++)data[n].push(at.getComponent(vi,c));}}
+      const geo=new THREE.BufferGeometry();for(const n of names)geo.setAttribute(n,new THREE.Float32BufferAttribute(data[n],ga[n].itemSize));geo.computeBoundingSphere();
+      const mesh=new THREE.Mesh(geo,src.material);mesh.castShadow=true;mesh.receiveShadow=true;mesh.layers.mask=src.layers.mask;piv.add(mesh);
+    }
+    legs.push({piv,...spec[name]});
+  }
+  return {legs,off,t:1,down:true};
+}
+const legEase=(t,d)=>{const x=Math.min(1,Math.max(0,(t-d)/(1-d)));return x*x*(3-2*x);};
 export function gearDown(){return !fx?.gear||fx.gear.t>.98;}
 export function detachJetFx(){if(gradePass?.uniforms.uHaze)gradePass.uniforms.uHaze.value=0;if(!fx)return;fx.n.parent?.remove(fx.n);fx.vapour.parent?.remove(fx.vapour);fx=null;}
 export function updateJetFx(dt){
@@ -92,8 +129,9 @@ export function updateJetFx(dt){
     else if(!G.down&&agl<140&&kt<230&&a.verticalSpeed<1)want=true;
     if(want!==G.down){G.down=want;jetAudio.gear(want);}
     const tgt=G.down?1:0;G.t+=Math.sign(tgt-G.t)*Math.min(Math.abs(tgt-G.t),dt/2.2);
-    const e=G.t*G.t*(3-2*G.t);
-    G.piv.scale.set(1,Math.max(.02,e),.6+.4*e);G.on.visible=G.t>.03;G.off.visible=G.t<.12;
+    // each leg swings on its hinge: nose folds aft, mains swing forward and in, then the doors close
+    for(const L of G.legs){const k=1-legEase(G.t,L.delay);L.piv.rotation.set(L.rx*k,0,L.rz*k);L.piv.visible=G.t>.02;}
+    G.off.visible=G.t<.06;
   }
   // vapour cone flickers in from Mach .95 to 1.02 and fades as the aircraft goes supersonic
   const m=a.mach||0,vc=clamp((m-.94)/.05,0,1)*clamp((1.08-m)/.05,0,1);

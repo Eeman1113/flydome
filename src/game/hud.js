@@ -2,7 +2,7 @@
 // Compass tape, speed/altitude readouts, circular relief minimap with fog of war, charter card,
 // survey ring, discovery banners, landing stamps, the full chart and the shareable chart card.
 import { $, DEG, FT_PER_M, KTS_PER_MS, clamp } from './util.js';
-import { DAILY_NUMBER, IS_DAILY, RUNWAY_HALF_L, RUNWAY_HALF_W, WORLD_SEED, WEATHER, aircraft, sky, state } from './config.js';
+import { DAILY_NUMBER, IS_DAILY, RUNWAY_HALF_L, RUNWAY_HALF_W, WORLD_SEED, WEATHER, aircraft, sky, state, AIRCRAFT, aircraftState } from './config.js';
 import { AIRPORT_H, terrain } from './world.js';
 import { mission, charterTargets, nextTarget, charterSurveyed, landmarkById, fmtTime, rankInfo, acceptJob } from './survey.js';
 import { progress, averageGrade } from './progress.js';
@@ -148,6 +148,7 @@ function drawMinimap(){
 export function hudReadouts(){
   const a=aircraft,kts=Math.round(a.airspeed*KTS_PER_MS),agl=Math.round(a.altAGL*FT_PER_M),msl=Math.round(a.position.y*FT_PER_M),vs=Math.round(a.verticalSpeed*196.85/10)*10;
   $('hdgVal').textContent=String(Math.round(headingDeg())%360).padStart(3,'0');
+  {const gs=Math.round(Math.hypot(a.velocity.x,a.velocity.z)*KTS_PER_MS),m=a.mach||a.airspeed/340,mv=$('machVal');$('gsVal').textContent=`GS ${gs}`;if(mv){const show=AIRCRAFT[aircraftState.variant]?.jet||m>.35;mv.textContent=show?`M ${m.toFixed(2)}`:'';mv.classList.toggle('hot',m>.95);}}
   $('spdVal').textContent=kts;$('altVal').textContent=agl.toLocaleString();$('mslVal').textContent=`MSL ${msl.toLocaleString()}`;
   $('vsVal').textContent=`${vs>0?'▲':vs<0?'▼':'•'} ${Math.abs(vs).toLocaleString()}`;
   $('thrFill').style.height=`${state.throttle*100}%`;$('thrVal').textContent=`${Math.round(state.throttle*100)}%`;

@@ -2,6 +2,7 @@ import { updateCrash, clearCrash, crashActive, firePos } from './crash.js';
 import { radioEvent, radioUpdate } from './radio.js';
 import { attachJetFx, updateJetFx, updateJetAudio } from './jet.js';
 import './cheat.js';
+import { updateSpeedFx } from './speedfx.js';
 import { sfx, sfxUpdate } from './sfx.js';
 import { approachState } from './hud.js';
 import { onRunway, isWaterAt } from './chunks.js';
@@ -138,9 +139,9 @@ export function setupPost(){
   bokehPass=new BokehPass(scene,camera,{focus:25,aperture:.0004,maxblur:.008});bokehPass.enabled=false;composer.addPass(bokehPass);
   composer.addPass(new OutputPass());
   gradePass=new ShaderPass({
-    uniforms:{tDiffuse:{value:null},uTime:{value:0},uVig:{value:.55},uShock:{value:0},uHaze:{value:0},uHazeA:{value:new THREE.Vector2()},uHazeB:{value:new THREE.Vector2()},uHazeR:{value:.02},uAspect:{value:1}},
+    uniforms:{tDiffuse:{value:null},uTime:{value:0},uVig:{value:.55},uShock:{value:0},uHaze:{value:0},uSpeed:{value:0},uHazeA:{value:new THREE.Vector2()},uHazeB:{value:new THREE.Vector2()},uHazeR:{value:.02},uAspect:{value:1}},
     vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-    fragmentShader:`uniform sampler2D tDiffuse; uniform float uTime; uniform float uVig; uniform float uShock; uniform float uHaze,uHazeR,uAspect; uniform vec2 uHazeA,uHazeB; varying vec2 vUv;
+    fragmentShader:`uniform sampler2D tDiffuse; uniform float uTime; uniform float uVig; uniform float uShock; uniform float uSpeed; uniform float uHaze,uHazeR,uAspect; uniform vec2 uHazeA,uHazeB; varying vec2 vUv;
       // jet exhaust heat haze: a rippling refraction along the plume, in screen space
       vec2 haze(vec2 uv){ if(uHaze<=0.) return vec2(0.);
         vec2 ab=uHazeB-uHazeA,ap=uv-uHazeA; ab.x*=uAspect; ap.x*=uAspect;
@@ -151,7 +152,9 @@ export function setupPost(){
       void main(){ vec2 q=vUv-.5; float r2=dot(q,q);
         // crash shock: barrel warp, ripple and chromatic split, decaying over ~0.6 s
         vec2 uv=vUv+haze(vUv)+q*r2*uShock*.45+vec2(sin(vUv.y*38.+uTime*42.),cos(vUv.x*31.+uTime*37.))*uShock*.006;
-        float ca=uShock*.018; vec4 c=vec4(texture2D(tDiffuse,uv+q*ca).r,texture2D(tDiffuse,uv).g,texture2D(tDiffuse,uv-q*ca).b,1.);
+        float ca=uShock*.018+uSpeed*r2*.012; vec4 c=vec4(texture2D(tDiffuse,uv+q*ca).r,texture2D(tDiffuse,uv).g,texture2D(tDiffuse,uv-q*ca).b,1.);
+        // radial speed blur toward the edges at jet speeds
+        if(uSpeed>0.){vec3 acc=c.rgb;float w=1.;for(int i=1;i<7;i++){float k=float(i)/6.;vec2 o=q*k*uSpeed*.042*smoothstep(.02,.22,r2);acc+=texture2D(tDiffuse,uv-o).rgb*(1.-k*.5);w+=1.-k*.5;}c.rgb=acc/w;}
         c.rgb+=vec3(1.,.55,.25)*uShock*uShock*.35; c.rgb*=1.-dot(q,q)*uVig;
         c.rgb=mix(c.rgb,c.rgb*c.rgb*(3.-2.*c.rgb),.18);
         float l=dot(c.rgb,vec3(.299,.587,.114)); c.rgb=mix(vec3(l),c.rgb,1.06);
@@ -336,7 +339,7 @@ export function frame(){requestAnimationFrame(frame);frameStartTime=performance.
   if(state.photo)updatePhotoCamera(frameDt);
   updateWorldFx(frameDt);
   {const a=aircraft,p=a.position,onGround=a.altAGL<aircraftGroundOffset+.3,surface=!onGround?null:onRunway(p.x,p.z)?'runway':isWaterAt(p.x,p.z)?'water':terrain.stripAt(p.x,p.z,6)?'strip':'field';
-   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});updateJetFx(frameDt);updateJetAudio(frameDt);radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
+   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});updateJetFx(frameDt);updateJetAudio(frameDt);updateSpeedFx(frameDt);radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
   updateWeather(frameDt);updateBeacons(worldTime);updateLandmarkFx(worldTime);updateGhost();updateCrash(frameDt);
   hudFrame();
   perfTick(frameDt);
