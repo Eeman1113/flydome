@@ -2724,6 +2724,216 @@
   "text": "Copy, fixing that now,"
  },
  {
+  "id": "tfc_lead_00",
+  "group": "tfc_lead",
+  "voice": "tara",
+  "text": "Traffic,"
+ },
+ {
+  "id": "tfc_lead_01",
+  "group": "tfc_lead",
+  "voice": "tara",
+  "text": "Traffic alert,"
+ },
+ {
+  "id": "tfc_lead_02",
+  "group": "tfc_lead",
+  "voice": "tara",
+  "text": "Heads up, traffic,"
+ },
+ {
+  "id": "tfc_lead_03",
+  "group": "tfc_lead",
+  "voice": "tara",
+  "text": "Traffic for you,"
+ },
+ {
+  "id": "tfc_clock_0_00",
+  "group": "tfc_clock_0",
+  "voice": "tara",
+  "text": "twelve o'clock,"
+ },
+ {
+  "id": "tfc_clock_1_00",
+  "group": "tfc_clock_1",
+  "voice": "tara",
+  "text": "one o'clock,"
+ },
+ {
+  "id": "tfc_clock_2_00",
+  "group": "tfc_clock_2",
+  "voice": "tara",
+  "text": "two o'clock,"
+ },
+ {
+  "id": "tfc_clock_3_00",
+  "group": "tfc_clock_3",
+  "voice": "tara",
+  "text": "three o'clock,"
+ },
+ {
+  "id": "tfc_clock_4_00",
+  "group": "tfc_clock_4",
+  "voice": "tara",
+  "text": "four o'clock,"
+ },
+ {
+  "id": "tfc_clock_5_00",
+  "group": "tfc_clock_5",
+  "voice": "tara",
+  "text": "five o'clock,"
+ },
+ {
+  "id": "tfc_clock_6_00",
+  "group": "tfc_clock_6",
+  "voice": "tara",
+  "text": "six o'clock,"
+ },
+ {
+  "id": "tfc_clock_7_00",
+  "group": "tfc_clock_7",
+  "voice": "tara",
+  "text": "seven o'clock,"
+ },
+ {
+  "id": "tfc_clock_8_00",
+  "group": "tfc_clock_8",
+  "voice": "tara",
+  "text": "eight o'clock,"
+ },
+ {
+  "id": "tfc_clock_9_00",
+  "group": "tfc_clock_9",
+  "voice": "tara",
+  "text": "nine o'clock,"
+ },
+ {
+  "id": "tfc_clock_10_00",
+  "group": "tfc_clock_10",
+  "voice": "tara",
+  "text": "ten o'clock,"
+ },
+ {
+  "id": "tfc_clock_11_00",
+  "group": "tfc_clock_11",
+  "voice": "tara",
+  "text": "eleven o'clock,"
+ },
+ {
+  "id": "tfc_mi_1_00",
+  "group": "tfc_mi_1",
+  "voice": "tara",
+  "text": "one mile,"
+ },
+ {
+  "id": "tfc_mi_1_01",
+  "group": "tfc_mi_1",
+  "voice": "tara",
+  "text": "about a mile,"
+ },
+ {
+  "id": "tfc_mi_2_00",
+  "group": "tfc_mi_2",
+  "voice": "tara",
+  "text": "two miles,"
+ },
+ {
+  "id": "tfc_mi_3_00",
+  "group": "tfc_mi_3",
+  "voice": "tara",
+  "text": "three miles,"
+ },
+ {
+  "id": "tfc_same_00",
+  "group": "tfc_same",
+  "voice": "tara",
+  "text": "same altitude."
+ },
+ {
+  "id": "tfc_same_01",
+  "group": "tfc_same",
+  "voice": "tara",
+  "text": "at your altitude."
+ },
+ {
+  "id": "tfc_above_00",
+  "group": "tfc_above",
+  "voice": "tara",
+  "text": "slightly above you."
+ },
+ {
+  "id": "tfc_above_01",
+  "group": "tfc_above",
+  "voice": "tara",
+  "text": "a few hundred feet above."
+ },
+ {
+  "id": "tfc_below_00",
+  "group": "tfc_below",
+  "voice": "tara",
+  "text": "slightly below you."
+ },
+ {
+  "id": "tfc_below_01",
+  "group": "tfc_below",
+  "voice": "tara",
+  "text": "a few hundred feet below."
+ },
+ {
+  "id": "tfc_type_skylane_00",
+  "group": "tfc_type_skylane",
+  "voice": "tara",
+  "text": "a Skylane,"
+ },
+ {
+  "id": "tfc_type_caravan_00",
+  "group": "tfc_type_caravan",
+  "voice": "tara",
+  "text": "a Caravan,"
+ },
+ {
+  "id": "tfc_type_f16_00",
+  "group": "tfc_type_f16",
+  "voice": "tara",
+  "text": "your wingman,"
+ },
+ {
+  "id": "rb_looking_00",
+  "group": "rb_looking",
+  "voice": "dan",
+  "text": "Looking,"
+ },
+ {
+  "id": "rb_looking_01",
+  "group": "rb_looking",
+  "voice": "dan",
+  "text": "Looking for the traffic,"
+ },
+ {
+  "id": "rb_looking_02",
+  "group": "rb_looking",
+  "voice": "dan",
+  "text": "Eyes out, looking,"
+ },
+ {
+  "id": "rb_insight_00",
+  "group": "rb_insight",
+  "voice": "dan",
+  "text": "Traffic in sight,"
+ },
+ {
+  "id": "rb_insight_01",
+  "group": "rb_insight",
+  "voice": "dan",
+  "text": "Got them, in sight,"
+ },
+ {
+  "id": "rb_insight_02",
+  "group": "rb_insight",
+  "voice": "dan",
+  "text": "Tally, traffic in sight,"
+ },
+ {
   "id": "chat_ground_00",
   "group": "chat_ground",
   "voice": "tara",

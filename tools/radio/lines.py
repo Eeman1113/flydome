@@ -512,6 +512,23 @@ add('rb_thanks', ['Thanks, Ground,', 'Appreciate it, Ground,', 'Thank you,', 'Ch
 add('rb_job', ['Copy, loaded and rolling,', 'Cargo aboard, on our way,', 'Copy, we have the load,'], voice=PILOT)
 add('rb_unable', ['Copy, working on it,', 'Roger, correcting,', 'Copy, fixing that now,'], voice=PILOT)
 
+# ------------------------------------------------------------------ traffic advisories (Ground → you, about AI traffic)
+add('tfc_lead', ['Traffic,', 'Traffic alert,', 'Heads up, traffic,', 'Traffic for you,'])
+CLOCK = ['twelve', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven']
+for i, w in enumerate(CLOCK):
+    add(f'tfc_clock_{i}', [f"{w} o'clock,"])
+add('tfc_mi_1', ['one mile,', 'about a mile,'])
+add('tfc_mi_2', ['two miles,'])
+add('tfc_mi_3', ['three miles,'])
+add('tfc_same', ['same altitude.', 'at your altitude.'])
+add('tfc_above', ['slightly above you.', 'a few hundred feet above.'])
+add('tfc_below', ['slightly below you.', 'a few hundred feet below.'])
+add('tfc_type_skylane', ['a Skylane,'])
+add('tfc_type_caravan', ['a Caravan,'])
+add('tfc_type_f16', ['your wingman,'])
+add('rb_looking', ['Looking,', 'Looking for the traffic,', 'Eyes out, looking,'], voice=PILOT)
+add('rb_insight', ['Traffic in sight,', 'Got them, in sight,', 'Tally, traffic in sight,'], voice=PILOT)
+
 # ------------------------------------------------------------------ background chatter (other traffic)
 add('chat_ground', [
     'Caravan niner kilo, taxi to runway three six via alpha, hold short.',
