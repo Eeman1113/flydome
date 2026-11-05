@@ -457,6 +457,15 @@ add('tut_hint', [
     'Still with me? Check the instructions on the panel.',
 ])
 
+# ------------------------------------------------------------------ landing coach (neural network advice on final)
+add('coach_power_up', ['Add a little power.', 'More power, you are sinking.', 'Power up a touch.', 'You are going to land short. Add power.'])
+add('coach_power_down', ['Ease the power back.', 'Bit fast. Bring the power back.', 'Reduce power, you will float.', 'Too much speed. Throttle back.'])
+add('coach_nose_up', ['Nose up a touch.', 'Raise the nose slightly.', 'Start your flare now.', 'Ease back, flare.'])
+add('coach_nose_down', ['Lower the nose a little.', 'Nose down, you are floating.', 'Ease the nose down.', 'You are getting slow. Nose down.'])
+add('coach_left', ['Come left a touch.', 'Drift left, back to the centreline.', 'Little left.', 'You are right of centre. Come left.'])
+add('coach_right', ['Come right a touch.', 'Ease right, onto the centreline.', 'Little right.', 'You are left of centre. Come right.'])
+add('coach_good', ['Looking good, hold it there.', 'Perfect. Keep it just like that.', 'Nice and stable. Hold it.', 'That is a lovely approach.'])
+
 # ------------------------------------------------------------------ the secret F-16 ("fly" cheat)
 add('cs_viper', ['Viper one one,', 'Viper,', 'Viper one one, Skybound Ground,'])
 add('jet_on', [

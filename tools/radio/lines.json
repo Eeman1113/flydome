@@ -2238,6 +2238,174 @@
   "text": "Still with me? Check the instructions on the panel."
  },
  {
+  "id": "coach_power_up_00",
+  "group": "coach_power_up",
+  "voice": "tara",
+  "text": "Add a little power."
+ },
+ {
+  "id": "coach_power_up_01",
+  "group": "coach_power_up",
+  "voice": "tara",
+  "text": "More power, you are sinking."
+ },
+ {
+  "id": "coach_power_up_02",
+  "group": "coach_power_up",
+  "voice": "tara",
+  "text": "Power up a touch."
+ },
+ {
+  "id": "coach_power_up_03",
+  "group": "coach_power_up",
+  "voice": "tara",
+  "text": "You are going to land short. Add power."
+ },
+ {
+  "id": "coach_power_down_00",
+  "group": "coach_power_down",
+  "voice": "tara",
+  "text": "Ease the power back."
+ },
+ {
+  "id": "coach_power_down_01",
+  "group": "coach_power_down",
+  "voice": "tara",
+  "text": "Bit fast. Bring the power back."
+ },
+ {
+  "id": "coach_power_down_02",
+  "group": "coach_power_down",
+  "voice": "tara",
+  "text": "Reduce power, you will float."
+ },
+ {
+  "id": "coach_power_down_03",
+  "group": "coach_power_down",
+  "voice": "tara",
+  "text": "Too much speed. Throttle back."
+ },
+ {
+  "id": "coach_nose_up_00",
+  "group": "coach_nose_up",
+  "voice": "tara",
+  "text": "Nose up a touch."
+ },
+ {
+  "id": "coach_nose_up_01",
+  "group": "coach_nose_up",
+  "voice": "tara",
+  "text": "Raise the nose slightly."
+ },
+ {
+  "id": "coach_nose_up_02",
+  "group": "coach_nose_up",
+  "voice": "tara",
+  "text": "Start your flare now."
+ },
+ {
+  "id": "coach_nose_up_03",
+  "group": "coach_nose_up",
+  "voice": "tara",
+  "text": "Ease back, flare."
+ },
+ {
+  "id": "coach_nose_down_00",
+  "group": "coach_nose_down",
+  "voice": "tara",
+  "text": "Lower the nose a little."
+ },
+ {
+  "id": "coach_nose_down_01",
+  "group": "coach_nose_down",
+  "voice": "tara",
+  "text": "Nose down, you are floating."
+ },
+ {
+  "id": "coach_nose_down_02",
+  "group": "coach_nose_down",
+  "voice": "tara",
+  "text": "Ease the nose down."
+ },
+ {
+  "id": "coach_nose_down_03",
+  "group": "coach_nose_down",
+  "voice": "tara",
+  "text": "You are getting slow. Nose down."
+ },
+ {
+  "id": "coach_left_00",
+  "group": "coach_left",
+  "voice": "tara",
+  "text": "Come left a touch."
+ },
+ {
+  "id": "coach_left_01",
+  "group": "coach_left",
+  "voice": "tara",
+  "text": "Drift left, back to the centreline."
+ },
+ {
+  "id": "coach_left_02",
+  "group": "coach_left",
+  "voice": "tara",
+  "text": "Little left."
+ },
+ {
+  "id": "coach_left_03",
+  "group": "coach_left",
+  "voice": "tara",
+  "text": "You are right of centre. Come left."
+ },
+ {
+  "id": "coach_right_00",
+  "group": "coach_right",
+  "voice": "tara",
+  "text": "Come right a touch."
+ },
+ {
+  "id": "coach_right_01",
+  "group": "coach_right",
+  "voice": "tara",
+  "text": "Ease right, onto the centreline."
+ },
+ {
+  "id": "coach_right_02",
+  "group": "coach_right",
+  "voice": "tara",
+  "text": "Little right."
+ },
+ {
+  "id": "coach_right_03",
+  "group": "coach_right",
+  "voice": "tara",
+  "text": "You are left of centre. Come right."
+ },
+ {
+  "id": "coach_good_00",
+  "group": "coach_good",
+  "voice": "tara",
+  "text": "Looking good, hold it there."
+ },
+ {
+  "id": "coach_good_01",
+  "group": "coach_good",
+  "voice": "tara",
+  "text": "Perfect. Keep it just like that."
+ },
+ {
+  "id": "coach_good_02",
+  "group": "coach_good",
+  "voice": "tara",
+  "text": "Nice and stable. Hold it."
+ },
+ {
+  "id": "coach_good_03",
+  "group": "coach_good",
+  "voice": "tara",
+  "text": "That is a lovely approach."
+ },
+ {
   "id": "cs_viper_00",
   "group": "cs_viper",
   "voice": "tara",
