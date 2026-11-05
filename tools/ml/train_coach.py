@@ -45,11 +45,13 @@ class Noisy:
         R = lambda a: (torch.rand(n, device=dev) * 2 - 1) * a
         # error sizes chosen so outcomes span the whole S…D range, like real players (not mostly crashes)
         s.thr, s.pit, s.rol = R(.2), R(.11), R(.05); s.lazy = torch.rand(n, device=dev) < .2; s.noise = .02 + .06 * torch.rand(n, device=dev)
+        s.k = 1   # common random numbers: the K branches of one snapshot share the same stick noise, so they differ only by the correction
     def __call__(s, a, env, extra=None):
         a = a.clone(); alt = env.st.y - env.ground - tp.VAR[env.var, 6]
         a[:, 3] += s.thr * 2; a[:, 0] += s.pit; a[:, 1] += s.rol
         a[:, 0] -= torch.where(s.lazy & (alt < 9), .35, 0.0)
-        a += torch.randn_like(a) * s.noise[:, None]
+        eps = torch.randn(a.shape[0] // s.k, a.shape[1], device=dev).repeat_interleave(s.k, 0)
+        a += eps * s.noise[:, None]
         if extra is not None: a += extra
         return a.clamp(-1, 1)
 
@@ -85,7 +87,7 @@ def run_round():
     B.task[:] = 1; B.touched[:] = False; B.t[:] = 0
     for k in fm.State.KEYS: getattr(B.st, k)[:] = saved[k][keep].repeat_interleave(K)
     B.st.crashed[:] = False; B.prevAlong[:] = B.rwy()[0]
-    nz = Noisy(n * K)
+    nz = Noisy(n * K); nz.k = K
     for attr in ['thr', 'pit', 'rol', 'lazy', 'noise']: setattr(nz, attr, getattr(noisy, attr)[keep].repeat_interleave(K))
     corr = torch.arange(K, device=dev).repeat(n)
     extra = torch.zeros(n * K, 4, device=dev)
@@ -154,7 +156,10 @@ if __name__ == '__main__':
                 hit = (pv[..., 0].argmin(1) == Yv[..., 0].argmin(1)).float().mean().item()
                 regret = (Yv[..., 0].gather(1, pv[..., 0].argmin(1, keepdim=True)).squeeze(1) - Yv[..., 0].min(1).values).mean().item()
                 gain = (Yv[:, 0, 0] - Yv[..., 0].gather(1, pv[..., 0].argmin(1, keepdim=True)).squeeze(1)).mean().item()
-            print(f'epoch {ep:3d} | val grade MAE {mae:.3f} | best-correction picked {hit*100:.1f}% | regret {regret:.3f} grades | following advice improves the grade by {gain:.2f} on average', flush=True)
+                # when some correction truly helps by >0.5 grade, how often does the coach pick one that does?
+                pick = Yv[..., 0].gather(1, pv[..., 0].argmin(1, keepdim=True)).squeeze(1); matters = (Yv[:, 0, 0] - Yv[..., 0].min(1).values) > .5
+                hit = ((Yv[:, 0, 0] - pick)[matters] > .5).float().mean().item()
+            print(f'epoch {ep:3d} | val grade MAE {mae:.3f} | helpful pick when it matters {hit*100:.1f}% | regret {regret:.3f} grades | following advice improves the grade by {gain:.2f} on average', flush=True)
     J = {'feat': FEAT, 'corr': CORR, 'outputs': ['grade', 'sink', 'offset_frac', 'hdg_deg', 'bounces', 'logit_off_or_crash'],
          'mean': mean.tolist(), 'std': std.tolist(),
          'layers': [{'w': l.weight.detach().cpu().tolist(), 'b': l.bias.detach().cpu().tolist()} for l in net if isinstance(l, nn.Linear)],
