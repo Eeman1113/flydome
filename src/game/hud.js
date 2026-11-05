@@ -2,6 +2,7 @@
 // Compass tape, speed/altitude readouts, circular relief minimap with fog of war, charter card,
 // survey ring, discovery banners, landing stamps, the full chart and the shareable chart card.
 import { $, DEG, FT_PER_M, KTS_PER_MS, clamp } from './util.js';
+import { lucide, iconButton } from './lucide.js';
 import { DAILY_NUMBER, IS_DAILY, RUNWAY_HALF_L, RUNWAY_HALF_W, WORLD_SEED, WEATHER, aircraft, sky, state, AIRCRAFT, aircraftState } from './config.js';
 import { AIRPORT_H, terrain } from './world.js';
 import { mission, charterTargets, nextTarget, charterSurveyed, landmarkById, fmtTime, rankInfo, acceptJob } from './survey.js';
@@ -245,7 +246,7 @@ export function hudCharterComplete(r){
     </div>
     <ul class="cp-list">${list}</ul>
     ${r.share?`<div class="cp-share"><code id="shareText">${r.share}</code><button id="copyShare">COPY</button></div>`:''}
-    <div class="modal-actions"><button class="primary" id="cpChart">SAVE CHART ↓</button><button id="cpNext">NEXT CHARTER</button><button id="cpNewWorld">NEW WORLD</button><button id="cpKeep">KEEP FLYING</button></div>`;
+    <div class="modal-actions"><button class="primary" id="cpChart">${lucide('Download')}SAVE CHART</button><button id="cpNext">${lucide('ArrowRight')}NEXT CHARTER</button><button id="cpNewWorld">${lucide('RefreshCw',{cls:'ic ic-spin'})}NEW WORLD</button><button id="cpKeep">${lucide('Plane')}KEEP FLYING</button></div>`;
   $('completeOverlay').style.display='grid';
   $('cpChart').onclick=()=>downloadChart();
   $('cpKeep').onclick=()=>{$('completeOverlay').style.display='none';};
@@ -373,7 +374,7 @@ export function hudJobBoard({delivered,jobs}){
     <div class="job-receipt"><div><span>Landing</span><strong>${delivered.grade}</strong></div><div><span>Time</span><strong>${fmtTime(delivered.elapsed)}${delivered.late?' · late':''}</strong></div><div><span>Paid</span><strong>$${delivered.pay}${delivered.timeBonus?` <em>(+$${delivered.timeBonus} on time)</em>`:''}</strong></div><div><span>XP</span><strong>+${delivered.xp}${delivered.rankUp?` · ${delivered.rankUp}`:''}</strong></div></div>
     <div class="board-head"><span>NEXT JOBS</span><span class="board-sub">Wallet $${(progress.pilot.cash||0).toLocaleString()}</span></div>`
     :`<div class="kicker">BUSH PILOT · JOB BOARD</div><h2 class="cp-title">Pick a delivery</h2><div class="board-head"><span>AVAILABLE JOBS</span><span class="board-sub">Wallet $${(progress.pilot.cash||0).toLocaleString()}</span></div>`;
-  $('completeCard').innerHTML=`${head}<div class="jobs">${rows}</div><div class="modal-actions"><button id="jbExplore">EXPLORE INSTEAD</button></div>`;
+  $('completeCard').innerHTML=`${head}<div class="jobs">${rows}</div><div class="modal-actions"><button id="jbExplore">${lucide('Compass')}EXPLORE INSTEAD</button></div>`;
   $('completeOverlay').style.display='grid';state.paused=true;
   for(const b of $('completeCard').querySelectorAll('.job'))b.onclick=()=>{acceptJob(jobs[+b.dataset.i]);$('completeOverlay').style.display='none';state.paused=false;hudEvents.setHud?.();};
   $('jbExplore').onclick=()=>{mission.mode='free';mission.job=null;mission.cargoKg=0;hudCharterUpdate();$('completeOverlay').style.display='none';state.paused=false;hudEvents.setHud?.();};

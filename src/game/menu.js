@@ -1,5 +1,6 @@
 // SKYBOUND · menu — charter board, pilot card, daily charter, resume and logbook.
 import { $ } from './util.js';
+import { lucide, iconButton } from './lucide.js';
 import { DAILY_NUMBER, IS_DAILY, WORLD_SEED, AIRCRAFT, LIVERIES, aircraftState, urlParams } from './config.js';
 import { swapAircraft } from './engine.js';
 import { applyLivery } from './engine.js';
@@ -36,7 +37,7 @@ function renderBoard(){
   const el=$('charterBoard');
   if(IS_DAILY){
     const c=dailyCharter();el.innerHTML=c?cardHtml(c,0,true):'';menuState.charter=0;
-    $('startBtn').innerHTML=`FLY DAILY CHARTER&nbsp; ↗`;return;
+    $('startBtn').innerHTML=`${lucide('PlaneTakeoff')}<span>FLY DAILY CHARTER</span>${lucide('ArrowRight',{cls:'ic ic-go'})}`;return;
   }
   const amph=!!AIRCRAFT[aircraftState.variant].floats;
   if(mission.charters[menuState.charter]?.water&&!amph)menuState.charter=0;
@@ -47,7 +48,7 @@ function cardHtml(c,i,sel,locked=false){
   const ls=c.ids.map(landmarkById).filter(Boolean),done=ls.filter(l=>mission.discovered.has(l.id)).length;
   const chips=ls.map(l=>`<span class="chip${mission.discovered.has(l.id)?' done':''}" title="${TYPE_LABEL[l.type]}">${iconSvg(l.type,'chip-ico')}${l.name}</span>`).join('');
   const dots=[1,2,3].map(d=>`<i class="${d<=c.difficulty?'on':''}"></i>`).join('')+`<em>${['Easy','Medium','Hard'][c.difficulty-1]}</em>`;
-  return `<button class="charter${sel?' selected':''}${c.water?' water':''}${locked?' locked':''}" data-i="${i}" ${locked?'disabled':''}><div class="ch-top"><span class="ch-title">${c.water?'<em class="ch-tag">WATER STRIP</em>':''}${c.title}</span><span class="ch-diff" aria-label="Difficulty: ${['easy','medium','hard'][c.difficulty-1]}">${dots}</span></div><div class="ch-chips">${chips}</div><div class="ch-meta">${locked?'<svg class="ch-lock" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5.5 11h13v9.5h-13Z"/></svg>'+`Needs the Caravan Amphibian${unlocked(AIRCRAFT.floats.rank)?' · pick it in the hangar':` · unlocks at ${RANKS[AIRCRAFT.floats.rank][1]}`}`:`${c.km.toFixed(0)} km route · ≈ ${c.minutes} min${c.water?` · alight on ${landmarkById(c.alight)?.name}`:''}${done?` · ${done}/${ls.length} charted`:''}`}</div></button>`;
+  return `<button class="charter${sel?' selected':''}${c.water?' water':''}${locked?' locked':''}" data-i="${i}" ${locked?'disabled':''}><div class="ch-top"><span class="ch-title">${c.water?'<em class="ch-tag">WATER STRIP</em>':''}${c.title}</span><span class="ch-diff" aria-label="Difficulty: ${['easy','medium','hard'][c.difficulty-1]}">${dots}</span></div><div class="ch-chips">${chips}</div><div class="ch-meta">${locked?lucide('Lock',{size:14,cls:'ic ch-lock'})+`Needs the Caravan Amphibian${unlocked(AIRCRAFT.floats.rank)?' · pick it in the hangar':` · unlocks at ${RANKS[AIRCRAFT.floats.rank][1]}`}`:`${c.km.toFixed(0)} km route · ≈ ${c.minutes} min${c.water?` · alight on ${landmarkById(c.alight)?.name}`:''}${done?` · ${done}/${ls.length} charted`:''}`}</div></button>`;
 }
 function renderPilot(){
   const r=rankInfo(),p=progress.pilot;
@@ -61,8 +62,8 @@ function renderDaily(){
   $('dailyTitle').textContent=`Daily Charter #${DAILY_NUMBER}`;
   $('dailyStatus').textContent=res?`Completed · landing ${res.grade} · ${Math.floor(res.time/60)}:${String(res.time%60).padStart(2,'0')}`:'One shared world for every pilot today';
   const b=$('dailyBtn');
-  if(IS_DAILY){b.textContent='EXIT DAILY';b.onclick=()=>goTo({});}
-  else{b.textContent=res?'FLY AGAIN':'PLAY DAILY';b.onclick=()=>goTo({daily:'1'});}
+  if(IS_DAILY){iconButton(b,'X','EXIT DAILY');b.onclick=()=>goTo({});}
+  else{iconButton(b,res?'RotateCcw':'CalendarDays',res?'FLY AGAIN':'PLAY DAILY');b.onclick=()=>goTo({daily:'1'});}
 }
 
 export function logbookModal(){
@@ -97,10 +98,10 @@ export function initialLoadout(){
 function renderHangar(){
   const el=$('hangar');if(!el)return;
   const ac=Object.values(AIRCRAFT).filter(v=>!v.secret||aircraftState.variant===v.id).map(v=>{const ok=unlocked(v.rank),sel=aircraftState.variant===v.id;
-    return `<button class="hg-ac${sel?' selected':''}${ok?'':' locked'}" data-ac="${v.id}" ${ok?'':'disabled'}><strong>${v.short}</strong><small>${ok?(v.jet?'Cheat unlocked · afterburner':v.floats?'Lands on water & runways':'All-round tourer'):`Unlocks at ${RANKS[v.rank][1]}`}</small></button>`;}).join('');
+    return `<button class="hg-ac${sel?' selected':''}${ok?'':' locked'}" data-ac="${v.id}" ${ok?'':'disabled'}><strong>${v.short}</strong><small>${ok?'':lucide('Lock',{size:12,cls:'ic ic-inline'})}${ok?(v.jet?'Cheat unlocked · afterburner':v.floats?'Lands on water & runways':'All-round tourer'):`Unlocks at ${RANKS[v.rank][1]}`}</small></button>`;}).join('');
   const lv=LIVERIES.map(l=>{const ok=unlocked(l.rank),sel=aircraftState.livery===l.id;return `<button class="hg-sw${sel?' selected':''}${ok?'':' locked'}" data-lv="${l.id}" title="${l.name}${ok?'':` · unlocks at ${RANKS[l.rank][1]}`}" style="--c:#${l.tint.toString(16).padStart(6,'0')}" ${ok?'':'disabled'}></button>`;}).join('');
-  el.innerHTML=`<div class="side-kicker">HANGAR</div><div class="hg-row">${ac}</div><div class="hg-label">Paint · <span>${(LIVERIES.find(l=>l.id===aircraftState.livery)||LIVERIES[0]).name}</span></div><div class="hg-sws">${lv}</div>
-    <label class="hg-hard"><input type="checkbox" id="hardcoreToggle" ${progress.pilot.hardcore?'checked':''}><span><strong>Hardcore charters</strong><small>Limited fuel, refuel at strips · +50% XP</small></span></label>`;
+  el.innerHTML=`<div class="side-kicker">${lucide('Plane',{size:13,cls:'ic ic-inline'})}HANGAR</div><div class="hg-row">${ac}</div><div class="hg-label">Paint · <span>${(LIVERIES.find(l=>l.id===aircraftState.livery)||LIVERIES[0]).name}</span></div><div class="hg-sws">${lv}</div>
+    <label class="hg-hard"><input type="checkbox" id="hardcoreToggle" ${progress.pilot.hardcore?'checked':''}><span><strong>${lucide('Flame',{size:14,cls:'ic ic-inline ic-sun'})}Hardcore charters</strong><small>Limited fuel, refuel at strips · +50% XP</small></span></label>`;
   for(const b of el.querySelectorAll('[data-ac]'))b.onclick=async()=>{if(b.disabled||aircraftState.variant===b.dataset.ac)return;progress.pilot.aircraft=b.dataset.ac;saveProgress();el.classList.add('busy');await swapAircraft(b.dataset.ac);el.classList.remove('busy');renderHangar();renderBoard();};
   for(const b of el.querySelectorAll('[data-lv]'))b.onclick=()=>{if(b.disabled)return;progress.pilot.livery=b.dataset.lv;saveProgress();applyLivery(b.dataset.lv);renderHangar();};
   $('hardcoreToggle').onchange=e=>{progress.pilot.hardcore=e.target.checked;saveProgress();};

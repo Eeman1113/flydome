@@ -209,7 +209,7 @@ The radio voices were generated with [Orpheus TTS](https://github.com/canopyai/O
 
 ### Software and fonts
 
-- [three.js](https://threejs.org) (MIT), [Next.js](https://nextjs.org) and [React](https://react.dev) (MIT), [marked](https://marked.js.org) (MIT), [glTF-Transform](https://gltf-transform.dev) (MIT) and [meshoptimizer](https://github.com/zeux/meshoptimizer) (MIT).
+- [three.js](https://threejs.org) (MIT), [Next.js](https://nextjs.org) and [React](https://react.dev) (MIT), [marked](https://marked.js.org) (MIT), [Lucide](https://lucide.dev) icons (ISC), [glTF-Transform](https://gltf-transform.dev) (MIT) and [meshoptimizer](https://github.com/zeux/meshoptimizer) (MIT).
 - [Fraunces](https://fonts.google.com/specimen/Fraunces) via Google Fonts (SIL Open Font License).
 
 SKYBOUND is a game, not a certified flight-training tool. The Cessna names refer to the real aircraft the models depict, and the game is not affiliated with or endorsed by Textron Aviation.

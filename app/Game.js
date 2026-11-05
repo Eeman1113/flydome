@@ -1,4 +1,5 @@
 'use client';
+import { ArrowRight, BookOpen, CalendarDays, Camera, Cloud, Compass, Download, Eye, GraduationCap, History, House, Keyboard, Map as MapIcon, Mountain, Package, Pause, PlaneLanding, PlaneTakeoff, Play, RefreshCw, RotateCcw, Settings, Share2, Volume2, X } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 import MobileNotice from './MobileNotice';
@@ -44,7 +45,7 @@ function Simulator({ start }) {
       <div className="loading" id="loading"><div className="loader-inner"><div className="loader-mark">SB</div><div className="loader-text">INITIALISING RENDERER</div><div className="loader-bar"><i></i></div></div></div>
       <header className="topbar">
         <div className="brand"><div className="brand-mark">SB</div><div><div className="brand-name">SKYBOUND</div><div className="brand-sub">FIRST CHARTER · CESSNA 182 SKYLANE</div></div></div>
-        <div className="top-actions"><button id="hudBtn" title="Toggle HUD (H)">HUD</button><button id="soundBtn" aria-pressed="true">SOUND ON</button><button id="settingsBtn">SETTINGS</button><button id="pauseBtn" title="Pause (Esc)">PAUSE</button></div>
+        <div className="top-actions"><button id="hudBtn" title="Toggle HUD (H)"><Eye className="ic" aria-hidden="true"/>HUD</button><button id="soundBtn" aria-pressed="true"><Volume2 className="ic" aria-hidden="true"/><span>SOUND ON</span></button><button id="settingsBtn"><Settings className="ic" aria-hidden="true"/>SETTINGS</button><button id="pauseBtn" title="Pause (Esc)"><Pause className="ic" aria-hidden="true"/>PAUSE</button></div>
       </header>
       <section className="hud" id="hud">
         <div className="hud-compass">
@@ -94,11 +95,11 @@ function Simulator({ start }) {
             <div><b>SKYBOUND</b><small>FIRST CHARTER · WORLD <span id="worldSeed">—</span></small></div>
           </div>
           <div className="m-world">
-            <span className="m-chip" title="Season and terrain"><span id="worldBiome">—</span></span>
-            <span className="m-chip" title="Sky"><span id="worldSky">—</span></span>
-            <span className="m-chip" title="Home field elevation"><span id="worldAirfield">—</span></span>
-            <button className="m-icon-btn" id="newWorldBtn" title="Generate a new world">NEW WORLD</button>
-            <button className="m-icon-btn" id="resumeWorldBtn" style={{display:'none'}}>RESUME<small></small></button>
+            <span className="m-chip" title="Season and terrain"><Mountain className="ic" aria-hidden="true"/><span id="worldBiome">—</span></span>
+            <span className="m-chip" title="Sky"><Cloud className="ic" aria-hidden="true"/><span id="worldSky">—</span></span>
+            <span className="m-chip" title="Home field elevation"><PlaneLanding className="ic" aria-hidden="true"/><span id="worldAirfield">—</span></span>
+            <button className="m-icon-btn" id="newWorldBtn" title="Generate a new world"><RefreshCw className="ic ic-spin" aria-hidden="true"/>NEW WORLD</button>
+            <button className="m-icon-btn" id="resumeWorldBtn" style={{display:'none'}}><History className="ic" aria-hidden="true"/>RESUME<small></small></button>
           </div>
         </header>
 
@@ -106,17 +107,19 @@ function Simulator({ start }) {
           <h1 className="hero-title">Every world is <em>uncharted.</em></h1>
           <p className="intro">A new wilderness every time you load. Find its landmarks from the air, survey them low and slow, and bring your aircraft home with a clean landing.</p>
 
+          <button className="m-teach" id="teachBtn"><GraduationCap className="ic" aria-hidden="true"/><span><b>Teach me how to fly</b><small>Ten short lessons with Skybound Ground, from throttle to landing</small></span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
+
           <div className="m-tabs" role="tablist" aria-label="Game mode">
-            <button role="tab" data-tab="charters" aria-selected="true">Charters</button>
-            <button role="tab" data-tab="daily" aria-selected="false">Daily</button>
-            <button role="tab" data-tab="cargo" aria-selected="false">Bush Pilot</button>
-            <button role="tab" data-tab="explore" aria-selected="false">Explore</button>
+            <button role="tab" data-tab="charters" aria-selected="true"><MapIcon className="ic" aria-hidden="true"/>Charters</button>
+            <button role="tab" data-tab="daily" aria-selected="false"><CalendarDays className="ic" aria-hidden="true"/>Daily</button>
+            <button role="tab" data-tab="cargo" aria-selected="false"><Package className="ic" aria-hidden="true"/>Bush Pilot</button>
+            <button role="tab" data-tab="explore" aria-selected="false"><Compass className="ic" aria-hidden="true"/>Explore</button>
           </div>
 
           <div className="m-pane" data-pane="charters" role="tabpanel">
             <div className="board-head"><span>Charter board</span><span className="board-sub">Survey 3 landmarks, then land</span></div>
             <div className="charter-board" id="charterBoard"><div className="board-empty">Surveying this world…</div></div>
-            <button className="primary m-cta" id="startBtn">FLY CHARTER{'\u00a0'} ↗</button>
+            <button className="primary m-cta" id="startBtn"><PlaneTakeoff className="ic" aria-hidden="true"/><span>FLY CHARTER</span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
           </div>
           <div className="m-pane" data-pane="daily" role="tabpanel">
             <div className="m-mode">
@@ -125,7 +128,7 @@ function Simulator({ start }) {
               <p className="daily-status" id="dailyStatus"></p>
               <ul className="m-points"><li>Same world, same route for everyone today</li><li>Race a ghost of your best run</li><li>Share your result line</li></ul>
             </div>
-            <button className="primary m-cta" id="dailyBtn">PLAY DAILY</button>
+            <button className="primary m-cta" id="dailyBtn"><CalendarDays className="ic" aria-hidden="true"/><span>PLAY DAILY</span></button>
           </div>
           <div className="m-pane" data-pane="cargo" role="tabpanel">
             <div className="m-mode">
@@ -134,7 +137,7 @@ function Simulator({ start }) {
               <p className="daily-status">Pick a job from the board: fuel drums, mail, survey crews or a timed medical run. Heavy loads climb slowly; you are paid on landing.</p>
               <ul className="m-points"><li>Earn cash and XP per delivery</li><li>Medical runs pay a bonus on time</li><li>Fly on from wherever you land</li></ul>
             </div>
-            <button className="primary m-cta" id="cargoBtn">OPEN JOB BOARD{'\u00a0'} ↗</button>
+            <button className="primary m-cta" id="cargoBtn"><Package className="ic" aria-hidden="true"/><span>OPEN JOB BOARD</span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
           </div>
           <div className="m-pane" data-pane="explore" role="tabpanel">
             <div className="m-mode">
@@ -143,14 +146,13 @@ function Simulator({ start }) {
               <p className="daily-status">Chart the whole world at your own pace. Every landmark you find is named, stamped in your logbook and shareable.</p>
               <ul className="m-points"><li>Up to 12 landmarks per world</li><li>Rare finds earn their own stamp</li><li>Press M for the expedition chart</li></ul>
             </div>
-            <button className="primary m-cta" id="freeBtn">TAKE OFF{'\u00a0'} ↗</button>
+            <button className="primary m-cta" id="freeBtn"><Compass className="ic" aria-hidden="true"/><span>TAKE OFF</span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
           </div>
 
           <div className="m-sub">
-            <button className="m-link" id="teachBtn">Flight School</button>
-            <button className="m-link" id="controlsBtn">Controls</button>
-            <button className="m-link" onClick={()=>document.getElementById('settingsBtn')?.click()}>Settings</button>
-            <button className="m-link" onClick={(e)=>{document.getElementById('soundBtn')?.click();const s=document.getElementById('soundBtn');e.currentTarget.textContent=s?.textContent==='SOUND ON'?'Sound on':'Sound off';}}>Sound on</button>
+                        <button className="m-link" id="controlsBtn"><Keyboard className="ic" aria-hidden="true"/>Controls</button>
+            <button className="m-link" onClick={()=>document.getElementById('settingsBtn')?.click()}><Settings className="ic" aria-hidden="true"/>Settings</button>
+            <button className="m-link" id="menuSoundBtn"><Volume2 className="ic" aria-hidden="true"/><span>Sound on</span></button>
           </div>
         </section>
 
@@ -161,25 +163,25 @@ function Simulator({ start }) {
             <div className="xp-bar" role="progressbar" aria-label="Rank progress"><i id="pilotXpBar"></i></div>
             <div className="pilot-xp" id="pilotXp">0 XP</div>
             <div className="pilot-stats" id="pilotStats"></div>
-            <button className="ghost" id="logbookBtn">LOGBOOK</button>
+            <button className="ghost" id="logbookBtn"><BookOpen className="ic" aria-hidden="true"/>LOGBOOK</button>
           </div>
           <div className="glass m-hangar side-block hangar" id="hangar"></div>
         </aside>
       </div>
 
       <div className="overlay" id="pauseMenu" style={{display:'none'}}>
-        <div className="modal-card pause-card"><div className="kicker">FLIGHT PAUSED</div><h2>Take a breath.</h2><p className="intro">Your aircraft is holding its current state. Ready when you are.</p><div className="modal-actions"><button className="primary" id="resumeBtn">RESUME</button><button id="chartBtn">CHART</button><button id="restartBtn">RESTART</button><button id="returnBtn">MAIN MENU</button></div></div>
+        <div className="modal-card pause-card"><div className="kicker">FLIGHT PAUSED</div><h2>Take a breath.</h2><p className="intro">Your aircraft is holding its current state. Ready when you are.</p><div className="modal-actions"><button className="primary" id="resumeBtn"><Play className="ic" aria-hidden="true"/>RESUME</button><button id="chartBtn"><MapIcon className="ic" aria-hidden="true"/>CHART</button><button id="restartBtn"><RotateCcw className="ic" aria-hidden="true"/>RESTART</button><button id="returnBtn"><House className="ic" aria-hidden="true"/>MAIN MENU</button></div></div>
       </div>
 
       <div className="photo-ui" id="photoUi">
         <div className="pf-bar top"></div><div className="pf-bar bottom"></div>
         <div className="pf-caption"><div className="kicker">SKYBOUND · PHOTO MODE</div><div className="pf-place" id="photoCaption"></div></div>
-        <div className="pf-controls"><span className="pf-hint">DRAG ORBIT · SCROLL ZOOM · WASD ROTATE</span><button id="photoDof" className="on">DEPTH OF FIELD</button><button className="primary" id="photoCapture">CAPTURE ◉</button><button id="photoExit">EXIT · P</button></div>
+        <div className="pf-controls"><span className="pf-hint">DRAG ORBIT · SCROLL ZOOM · WASD ROTATE</span><button id="photoDof" className="on">DEPTH OF FIELD</button><button className="primary" id="photoCapture"><Camera className="ic" aria-hidden="true"/>CAPTURE</button><button id="photoExit"><X className="ic" aria-hidden="true"/>EXIT · P</button></div>
         <div className="pf-flash" id="photoFlash"></div>
       </div>
       <div className="overlay" id="chartOverlay" style={{display:'none'}}>
         <div className="chart-card">
-          <div className="chart-head"><div><div className="kicker">EXPEDITION CHART</div><h2 id="chartTitle">Chart</h2><div className="chart-meta" id="chartMeta"></div></div><div className="chart-actions"><button id="chartShare">COPY SHARE</button><button id="chartSave">SAVE PNG ↓</button><button className="close" id="chartClose">✕</button></div></div>
+          <div className="chart-head"><div><div className="kicker">EXPEDITION CHART</div><h2 id="chartTitle">Chart</h2><div className="chart-meta" id="chartMeta"></div></div><div className="chart-actions"><button id="chartShare"><Share2 className="ic" aria-hidden="true"/><span>COPY SHARE</span></button><button id="chartSave"><Download className="ic" aria-hidden="true"/>SAVE PNG</button><button className="close" id="chartClose" aria-label="Close chart"><X className="ic" aria-hidden="true"/></button></div></div>
           <canvas id="chartCanvas"></canvas>
         </div>
       </div>
@@ -187,13 +189,13 @@ function Simulator({ start }) {
       <div className="overlay" id="completeOverlay" style={{display:'none'}}><div className="modal-card complete-card" id="completeCard"></div></div>
       
       <aside className="tutorial-panel" id="tutorialPanel" style={{display:'none'}} aria-live="polite">
-        <div className="tutorial-top"><span className="tutorial-step" id="tutorialStep">FLIGHT SCHOOL · 01 / 08</span><button id="tutorialClose" aria-label="Close lesson">✕</button></div>
+        <div className="tutorial-top"><span className="tutorial-step" id="tutorialStep">FLIGHT SCHOOL · 01 / 08</span><button id="tutorialClose" aria-label="Close lesson"><X className="ic" aria-hidden="true"/></button></div>
         <div className="tutorial-progress"><i id="tutorialProgress"></i></div>
         <h2 className="tutorial-title" id="tutorialTitle">Power up</h2>
         <p className="tutorial-copy" id="tutorialObjective">Increase throttle before takeoff.</p>
         <div className="tutorial-command active" id="tutorialPrimaryWrap"><span id="tutorialPrimaryLabel">KEYBOARD + MOUSE</span><strong id="tutorialPrimary">Hold LEFT SHIFT to increase throttle.</strong></div>
         <div className="tutorial-status" id="tutorialStatus">WAITING FOR YOUR INPUT</div>
-        <div className="tutorial-actions"><div className="tutorial-auto"><strong>AUTO-ADVANCE ENABLED</strong><br />Complete the action and the instructor moves on automatically. No button presses needed. ESC / OPTIONS pauses.</div><button className="tutorial-exit" id="tutorialExit">EXIT LESSON</button></div>
+        <div className="tutorial-actions"><div className="tutorial-auto"><strong>AUTO-ADVANCE ENABLED</strong><br />Complete the action and the instructor moves on automatically. No button presses needed. ESC / OPTIONS pauses.</div><button className="tutorial-exit" id="tutorialExit"><X className="ic" aria-hidden="true"/>EXIT LESSON</button></div>
       </aside>
       
       <div className="overlay" id="modalOverlay" style={{display:'none'}}><div className="modal-card" id="modalContent"></div></div>
