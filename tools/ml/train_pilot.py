@@ -95,8 +95,8 @@ class Env:
         yaw = R(-math.pi, math.pi); alt = R(150, 1200); v0 = spd[:, 0] + (spd[:, 1] - spd[:, 0]) * torch.rand(k, device=dev)
         x = R(-3000, 3000); z = R(-3000, 3000)
         # landing: on the extended centreline (runway along z, landing toward -z), aim point 150 m past the threshold
-        D = R(800, s.landDist); off = R(-1, 1) * (60 + .12 * D); aim = s.halfL[m] - 150
-        lz = aim + D; lx = off; lalt = (D * math.tan(3 * DEG) + R(-50, 70)).clamp(min=35); lyaw = R(-35, 35) * DEG
+        D = R(1200, s.landDist); off = R(-1, 1) * (30 + .08 * D); aim = s.halfL[m] - 150
+        lz = aim + D; lx = off; lalt = (D * math.tan(3 * DEG) + R(-35, 60)).clamp(min=40); lyaw = R(-25, 25) * DEG
         lv = aspd[:, 0] + (aspd[:, 1] - aspd[:, 0]) * torch.rand(k, device=dev) + 4
         # takeoff: stopped at the runway start
         tz = s.halfL[m] - 25
@@ -224,15 +224,15 @@ def expert(env):
     p_nav = (vs_des / st.airspeed.clamp(min=20) + .03).clamp(-.18, .3)
     nav = torch.stack([pitch_to(p_nav), bank_to(he, 35 * DEG), torch.zeros_like(he), speed_to(env.spdT, torch.where(jet, .55, .6))], 1)
     # --- approach & landing (runway frame: land toward -z, cross > 0 means right of centreline)
-    hdg_des = (cross * .004).clamp(-.4, .4); trk_err = fm.wrap(hdg_des - rh)
+    hdg_des = (cross * .0065).clamp(-.45, .45); trk_err = fm.wrap(hdg_des - rh)
     app_spd = APP[v].mean(1)
     gs_alt = along.clamp(min=0) * math.tan(3 * DEG)
     vs_land = ((gs_alt - alt) * .25 - st.airspeed * math.tan(3 * DEG)).clamp(-6, 3)
     p_app = (vs_land / st.airspeed.clamp(min=20) + .06).clamp(-.15, .2)
-    flare = alt < 7
-    p_land = torch.where(flare, torch.full_like(p_app, .1), p_app)
-    thr_land = torch.where(flare, torch.zeros_like(alt), speed_to(app_spd, torch.where(jet, .35, .4)))
-    roll_land = torch.where(flare, ((-st.roll) * 2.5).clamp(-1, 1), bank_to(trk_err, 20 * DEG))
+    flare = alt < 4.5
+    p_land = torch.where(flare, torch.full_like(p_app, .07), p_app)
+    thr_land = torch.where(alt < 14, torch.zeros_like(alt), speed_to(app_spd - 2, torch.where(jet, .3, .35)))
+    roll_land = torch.where(flare, ((-st.roll) * 2.5).clamp(-1, 1), bank_to(trk_err, 25 * DEG))
     yaw_land = torch.where(st.onGround, ((-rh + cross * .01) * 3).clamp(-1, 1), torch.zeros_like(rh))
     land = torch.stack([pitch_to(p_land), roll_land, yaw_land, thr_land], 1)
     land[:, 3] = torch.where(env.touched, torch.zeros_like(alt), land[:, 3])
@@ -240,7 +240,7 @@ def expert(env):
     # --- takeoff: full power, track the centreline, rotate at ~58 kt (jet ~75 kt), climb at a gentle attitude
     rot = torch.where(jet, 38.0, 30.0)
     p_tko = torch.where(st.onGround, torch.where(st.airspeed > rot, torch.full_like(alt, .17), torch.zeros_like(alt)), torch.full_like(alt, .14))
-    yaw_tko = torch.where(st.onGround, ((-rh + cross * .02) * 3).clamp(-1, 1), torch.zeros_like(rh))
+    yaw_tko = torch.where(st.onGround, ((-rh + cross * .03) * 6).clamp(-1, 1), torch.zeros_like(rh))
     roll_tko = torch.where(st.onGround, torch.zeros_like(rh), bank_to(fm.wrap((cross * .004).clamp(-.3, .3) - rh), 15 * DEG))
     tko = torch.stack([pitch_to(p_tko), roll_tko, yaw_tko, torch.where(jet, torch.full_like(alt, .9), torch.ones_like(alt))], 1)
     a = torch.where((task == 0)[:, None], nav, torch.where((task == 1)[:, None], land, tko))
