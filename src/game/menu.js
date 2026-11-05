@@ -33,16 +33,28 @@ export function renderMenu(){
   if(prev&&prev.seed!==WORLD_SEED&&!prev.daily){btn.style.display='';btn.querySelector('small').textContent=`World #${prev.seed}`;btn.onclick=()=>goTo({seed:prev.seed});}
   else btn.style.display='none';
 }
+// Minimal charter picker: one line with the selected charter, stepped with the arrows.
+function availableCharters(){const amph=!!AIRCRAFT[aircraftState.variant].floats;return mission.charters.map((c,i)=>({c,i,locked:c.water&&!amph}));}
 function renderBoard(){
-  const el=$('charterBoard');
+  const name=$('chName'),meta=$('chMeta'),label=$('startBtn')?.querySelector('.mn-label');
   if(IS_DAILY){
-    const c=dailyCharter();el.innerHTML=c?cardHtml(c,0,true):'';menuState.charter=0;
-    $('startBtn').innerHTML=`${lucide('PlaneTakeoff')}<span>FLY DAILY CHARTER</span>${lucide('ArrowRight',{cls:'ic ic-go'})}`;return;
+    const c=dailyCharter();menuState.charter=0;if(label)label.textContent='Fly daily charter';
+    if(name)name.textContent=c?c.title:'—';if(meta)meta.textContent=c?charterMeta(c):'';
+    for(const id of ['chPrev','chNext'])$(id)&&($(id).hidden=true);return;
   }
-  const amph=!!AIRCRAFT[aircraftState.variant].floats;
-  if(mission.charters[menuState.charter]?.water&&!amph)menuState.charter=0;
-  el.innerHTML=mission.charters.map((c,i)=>cardHtml(c,i,i===menuState.charter,c.water&&!amph)).join('')||'<div class="board-empty">No landmarks found — try a new world.</div>';
-  for(const b of el.querySelectorAll('.charter:not(.locked)')){b.onclick=()=>{menuState.charter=+b.dataset.i;renderBoard();};b.ondblclick=()=>$('startBtn').click();}
+  const list=availableCharters();
+  if(!list.length){if(name)name.textContent='No landmarks found';if(meta)meta.textContent='Try a new world';return;}
+  if(!list[menuState.charter]||list[menuState.charter].locked)menuState.charter=list.find(x=>!x.locked)?.i??0;
+  const cur=list[menuState.charter],c=cur.c;
+  if(name)name.textContent=c.title;
+  if(meta)meta.textContent=cur.locked?'Needs the Caravan Amphibian':charterMeta(c);
+  const step=d=>{const open=list.filter(x=>!x.locked);const k=open.findIndex(x=>x.i===menuState.charter);menuState.charter=open[(k+d+open.length)%open.length].i;renderBoard();};
+  $('chPrev').onclick=()=>step(-1);$('chNext').onclick=()=>step(1);
+  const multi=list.filter(x=>!x.locked).length>1;$('chPrev').hidden=$('chNext').hidden=!multi;
+}
+function charterMeta(c){
+  const ls=c.ids.map(landmarkById).filter(Boolean),done=ls.filter(l=>mission.discovered.has(l.id)).length;
+  return `${ls.map(l=>l.name).join(' · ')}  —  ${c.km.toFixed(0)} km · ${['easy','medium','hard'][c.difficulty-1]}${c.water?' · water':''}${done?` · ${done}/${ls.length} charted`:''}`;
 }
 function cardHtml(c,i,sel,locked=false){
   const ls=c.ids.map(landmarkById).filter(Boolean),done=ls.filter(l=>mission.discovered.has(l.id)).length;
@@ -58,12 +70,13 @@ function renderPilot(){
   $('pilotStats').innerHTML=`<span><b>${p.discoveries}</b> charted</span><span><b>${p.charters}</b> charters</span><span><b>$${(p.cash||0).toLocaleString()}</b> earned</span><span><b>${averageGrade()}</b> avg</span>`;
 }
 function renderDaily(){
-  const res=progress.daily[DAILY_NUMBER];
+  const res=progress.daily[DAILY_NUMBER],b=$('dailyBtn');
   $('dailyTitle').textContent=`Daily Charter #${DAILY_NUMBER}`;
-  $('dailyStatus').textContent=res?`Completed · landing ${res.grade} · ${Math.floor(res.time/60)}:${String(res.time%60).padStart(2,'0')}`:'One shared world for every pilot today';
-  const b=$('dailyBtn');
-  if(IS_DAILY){iconButton(b,'X','EXIT DAILY');b.onclick=()=>goTo({});}
-  else{iconButton(b,res?'RotateCcw':'CalendarDays',res?'FLY AGAIN':'PLAY DAILY');b.onclick=()=>goTo({daily:'1'});}
+  const label=b.querySelector('.mn-label');
+  if(IS_DAILY){label.textContent='Leave daily';$('dailyStatus').textContent='Back to this week\u2019s worlds';b.onclick=()=>goTo({});return;}
+  label.textContent=`Daily charter #${DAILY_NUMBER}`;
+  $('dailyStatus').textContent=res?`Done · ${res.grade} landing · ${Math.floor(res.time/60)}:${String(res.time%60).padStart(2,'0')}`:'One world for every pilot today';
+  b.onclick=()=>goTo({daily:'1'});
 }
 
 export function logbookModal(){
@@ -95,14 +108,17 @@ export function initialLoadout(){
   const L=LIVERIES.find(l=>l.id===p.livery);aircraftState.livery=L&&unlocked(L.rank)?L.id:'factory';
   return aircraftState.variant;
 }
+// Minimal hangar: aircraft name with arrows, paint dots, and a quiet hardcore toggle.
 function renderHangar(){
   const el=$('hangar');if(!el)return;
-  const ac=Object.values(AIRCRAFT).filter(v=>!v.secret||aircraftState.variant===v.id).map(v=>{const ok=unlocked(v.rank),sel=aircraftState.variant===v.id;
-    return `<button class="hg-ac${sel?' selected':''}${ok?'':' locked'}" data-ac="${v.id}" ${ok?'':'disabled'}><strong>${v.short}</strong><small>${ok?'':lucide('Lock',{size:12,cls:'ic ic-inline'})}${ok?(v.jet?'Cheat unlocked · afterburner':v.floats?'Lands on water & runways':'All-round tourer'):`Unlocks at ${RANKS[v.rank][1]}`}</small></button>`;}).join('');
-  const lv=LIVERIES.map(l=>{const ok=unlocked(l.rank),sel=aircraftState.livery===l.id;return `<button class="hg-sw${sel?' selected':''}${ok?'':' locked'}" data-lv="${l.id}" title="${l.name}${ok?'':` · unlocks at ${RANKS[l.rank][1]}`}" style="--c:#${l.tint.toString(16).padStart(6,'0')}" ${ok?'':'disabled'}></button>`;}).join('');
-  el.innerHTML=`<div class="side-kicker">${lucide('Plane',{size:13,cls:'ic ic-inline'})}HANGAR</div><div class="hg-row">${ac}</div><div class="hg-label">Paint · <span>${(LIVERIES.find(l=>l.id===aircraftState.livery)||LIVERIES[0]).name}</span></div><div class="hg-sws">${lv}</div>
-    <label class="hg-hard"><input type="checkbox" id="hardcoreToggle" ${progress.pilot.hardcore?'checked':''}><span><strong>${lucide('Flame',{size:14,cls:'ic ic-inline ic-sun'})}Hardcore charters</strong><small>Limited fuel, refuel at strips · +50% XP</small></span></label>`;
-  for(const b of el.querySelectorAll('[data-ac]'))b.onclick=async()=>{if(b.disabled||aircraftState.variant===b.dataset.ac)return;progress.pilot.aircraft=b.dataset.ac;saveProgress();el.classList.add('busy');await swapAircraft(b.dataset.ac);el.classList.remove('busy');renderHangar();renderBoard();};
+  const fleet=Object.values(AIRCRAFT).filter(v=>(!v.secret||aircraftState.variant===v.id)&&unlocked(v.rank)),cur=AIRCRAFT[aircraftState.variant];
+  const lockedNext=Object.values(AIRCRAFT).find(v=>!v.secret&&!unlocked(v.rank));
+  const lv=LIVERIES.map(l=>{const ok=unlocked(l.rank),sel=aircraftState.livery===l.id;return `<button class="mn-sw${sel?' on':''}" data-lv="${l.id}" ${ok?'':'disabled'} aria-label="${l.name}${ok?'':' (locked)'}" title="${l.name}${ok?'':` · ${RANKS[l.rank][1]}`}" style="--c:#${l.tint.toString(16).padStart(6,'0')}"></button>`;}).join('');
+  el.innerHTML=`<div class="mn-ac">${fleet.length>1?`<button class="mn-step" data-step="-1" aria-label="Previous aircraft">${lucide('ChevronLeft')}</button>`:''}<div><b>${cur.short}</b><small>${lockedNext?`${lockedNext.short} at ${RANKS[lockedNext.rank][1]}`:'All aircraft unlocked'}</small></div>${fleet.length>1?`<button class="mn-step" data-step="1" aria-label="Next aircraft">${lucide('ChevronRight')}</button>`:''}</div>
+    <div class="mn-sws" role="group" aria-label="Paint">${lv}</div>
+    <label class="mn-hard"><input type="checkbox" id="hardcoreToggle" ${progress.pilot.hardcore?'checked':''}><span>Hardcore</span></label>`;
+  for(const b of el.querySelectorAll('[data-step]'))b.onclick=async()=>{const k=fleet.findIndex(v=>v.id===aircraftState.variant),n=fleet[(k+ +b.dataset.step+fleet.length)%fleet.length];if(!n||n.id===aircraftState.variant)return;
+    progress.pilot.aircraft=n.id;saveProgress();el.classList.add('busy');await swapAircraft(n.id);el.classList.remove('busy');renderHangar();renderBoard();};
   for(const b of el.querySelectorAll('[data-lv]'))b.onclick=()=>{if(b.disabled)return;progress.pilot.livery=b.dataset.lv;saveProgress();applyLivery(b.dataset.lv);renderHangar();};
   $('hardcoreToggle').onchange=e=>{progress.pilot.hardcore=e.target.checked;saveProgress();};
 }
