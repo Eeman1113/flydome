@@ -176,14 +176,15 @@ class Env:
         rl = torch.where(air, prog - .25 * (1 - torch.exp(-cross.abs() / 35)) - .3 * (1 - torch.exp(-gsd.abs() / 18)) - .2 * (1 - torch.exp(-rh.abs() / .15))
                          - .1 * ((st.airspeed - APP[s.var].mean(1)).abs() / 10).clamp(max=2) * (along < 2500).float(),
                          decel - .3 * (1 - torch.exp(-cross.abs() / 6)) - .3 * ((a[:, 3] + 1) / 2)) - .02
-        td_ok = onRwy & (along > -s.halfL * 1.1)
+        td_ok = onRwy
         bonus = 12 - 5 * (sink - 1.0).clamp(min=0) - .12 * cross.abs() - .25 * (rh.abs() / DEG)
         rl = rl + torch.where(firstTouch, torch.where(td_ok, bonus, -12.0), 0.0)
         offRwyAfter = s.touched & (~onRwy) & st.onGround
         stopped = s.touched & onRwy & (st.airspeed < 15) & st.onGround
         rl = rl + torch.where(stopped, 30.0, 0.0) + torch.where(offRwyAfter, -12.0, 0.0) + torch.where(st.crashed, -30.0, 0.0)
         r += torch.where(land, rl, 0.0)
-        done |= land & (stopped | offRwyAfter | (s.t > 220) | ((~s.touched) & (along < -s.halfL)))
+        overflew = (~s.touched) & (st.z < -s.halfL)
+        done |= land & (stopped | offRwyAfter | (s.t > 220) | overflew)
         r += torch.where(land & (s.t > 220) & ~stopped, -10.0, 0.0)
         succ |= land & stopped
         # takeoff: reward speed gained on the runway and height gained in the air (both potential-based), costs for drift
@@ -198,7 +199,7 @@ class Env:
         done |= st.crashed
         why = torch.zeros(s.n, dtype=torch.long, device=dev)   # landing outcome: 1 stopped, 2 crash, 3 off runway, 4 overflew, 5 timeout, 6 touched off-runway
         why = torch.where(land & stopped, 1, why); why = torch.where(land & st.crashed, 2, why); why = torch.where(land & offRwyAfter & ~st.crashed, 3, why)
-        why = torch.where(land & (~s.touched) & (along < -s.halfL), 4, why); why = torch.where(land & (s.t > 220) & ~stopped, 5, why)
+        why = torch.where(land & overflew, 4, why); why = torch.where(land & (s.t > 220) & ~stopped, 5, why)
         why = torch.where(land & firstTouch & ~td_ok, 6, why)
         twhy = torch.zeros(s.n, dtype=torch.long, device=dev)  # takeoff: 1 climbed, 2 crash, 3 off runway, 4 timeout
         twhy = torch.where(tko & climbed, 1, twhy); twhy = torch.where(tko & st.crashed, 2, twhy)
@@ -227,7 +228,7 @@ def expert(env):
     p_nav = (vs_des / st.airspeed.clamp(min=20) + .03).clamp(-.18, .3)
     nav = torch.stack([pitch_to(p_nav), bank_to(he, 35 * DEG), torch.zeros_like(he), speed_to(env.spdT, torch.where(jet, .55, .6))], 1)
     # --- approach & landing (runway frame: land toward -z, cross > 0 means right of centreline)
-    hdg_des = (cross * .0065).clamp(-.45, .45); trk_err = fm.wrap(hdg_des - rh)
+    hdg_des = (cross * .008 + st.vx * .06).clamp(-.45, .45); trk_err = fm.wrap(hdg_des - rh)
     app_spd = APP[v].mean(1)
     gs_alt = along.clamp(min=0) * math.tan(3 * DEG)
     vs_gs = ((gs_alt - alt) * .25 - st.airspeed * math.tan(3 * DEG)).clamp(-6, 3)
@@ -267,6 +268,18 @@ def evaluate_expert(n=4096, steps=2600):
     print(f"expert: landing success {succ[1]/max(tot[1],1)*100:.1f}% of {tot[1]} | takeoff success {succ[2]/max(tot[2],1)*100:.1f}% of {tot[2]} | touchdown sink {sum(sinks)/max(len(sinks),1):.2f} m/s", flush=True)
     print('landing outcomes:', dict(zip(['other', 'stopped', 'crash', 'off_rwy', 'overflew', 'timeout', 'touch_off_rwy'], why)), flush=True)
     print('takeoff outcomes:', dict(zip(['other', 'climbed', 'crash', 'off_rwy', 'timeout'], twhy)), flush=True)
+
+def evaluate_policy(actor, norm, n=2048, steps=2200):
+    """Deterministic test flights (mean actions): landing and takeoff success, touchdown sink."""
+    env = Env(n); env.landDist = 7000.0; env.reset(torch.ones(n, dtype=torch.bool, device=dev))
+    s_ = {1: 0, 2: 0}; t_ = {1: 0, 2: 0}; sinks = []
+    for _ in range(steps):
+        with torch.no_grad(): a = actor(norm(env.obs())).clamp(-1, 1)
+        task = env.task.clone(); _, d, info = env.step(a)
+        if info['first'].any(): sinks.append(info['sink'][info['first']].mean().item())
+        for k in (1, 2): s_[k] += int((info['succ'] & (task == k)).sum()); t_[k] += int((d & (task == k)).sum())
+        env.reset(d)
+    return s_[1] / max(t_[1], 1), s_[2] / max(t_[2], 1), sum(sinks) / max(len(sinks), 1)
 
 # ---------------------------------------------------------------- PPO
 class RunningNorm:
@@ -309,21 +322,21 @@ def main():
             if it % 10 == 0 or it == BC - 1: print(f'imitation {it:3d}/{BC} | loss {l.item():.4f} | expert share {beta:.2f}', flush=True)
         with torch.no_grad(): logstd.fill_(-1.2)
         env.reset(torch.ones(N, dtype=torch.bool, device=dev)); env.landDist = 7000.0
-    GAMMA, LAM, CLIP, EPOCHS, MB = .99, .95, .2, 5, 4
+    GAMMA, LAM, CLIP, EPOCHS, MB = .99, .95, .12, 4, 4
     best, hist = -1e9, []; last_ls = 0.0
     o = env.obs()
     t0 = time.time()
     for upd in range(1, UPDATES + 1):
         frac = 1 - (upd - 1) / UPDATES
-        for g in opt.param_groups: g['lr'] = (1e-4 if BC else 3e-4) * max(frac, .1)
+        for g in opt.param_groups: g['lr'] = (6e-5 if BC else 3e-4) * max(frac, .1)
         # curriculum: approaches start close in and move out only while the pilot is succeeding
         env.landDist = 7000.0 if BC else (min(7500.0, max(1500.0, env.landDist + (120 if last_ls > .45 else -40 if last_ls < .2 else 0))) if upd > 1 else 1500.0)
-        bo, ba, blp, br, bd, bv = [], [], [], [], [], []
+        bo, ba, blp, br, bd, bv, be = [], [], [], [], [], [], []
         stats = {'succ': 0., 'land': 0., 'tko': 0., 'tkos': 0., 'sink': [], 'r': 0.}
         for t in range(T):
             with torch.no_grad():
                 norm.update(o); on = norm(o)
-                mu = actor(on); std = logstd.exp(); a = mu + std * torch.randn_like(mu)
+                mu = actor(on); std = logstd.exp(); a = mu + std * torch.randn_like(mu); be.append(expert(env))
                 lp = (-((a - mu) ** 2) / (2 * std ** 2) - logstd - .5 * math.log(2 * math.pi)).sum(1)
                 v = critic(on).squeeze(1)
             r, d, info = env.step(a)
@@ -342,7 +355,7 @@ def main():
                 delta = br[t] + GAMMA * nxt * (1 - bd[t]) - bv[t]
                 last = delta + GAMMA * LAM * (1 - bd[t]) * last; adv[t] = last
             ret = adv + torch.stack(bv)
-        O, A, LP, ADV, RET = torch.cat(bo), torch.cat(ba), torch.cat(blp), adv.reshape(-1), ret.reshape(-1)
+        O, A, LP, ADV, RET, EA = torch.cat(bo), torch.cat(ba), torch.cat(blp), adv.reshape(-1), ret.reshape(-1), torch.cat(be)
         ADV = (ADV - ADV.mean()) / (ADV.std() + 1e-8)
         idx = torch.arange(O.shape[0], device=dev)
         for ep in range(EPOCHS):
@@ -354,8 +367,10 @@ def main():
                 pl = -torch.min(ratio * ADV[mb], ratio.clamp(1 - CLIP, 1 + CLIP) * ADV[mb]).mean()
                 vl = .5 * ((critic(O[mb]).squeeze(1) - RET[mb]) ** 2).mean()
                 ent = (logstd + .5 * math.log(2 * math.pi * math.e)).sum()
-                pw = 0.0 if (BC and upd <= 15) else 1.0      # critic warm-up: protect the imitation prior
-                loss = pw * pl + .5 * vl - .002 * ent * pw
+                pw = 0.0 if (BC and upd <= 20) else 1.0      # critic warm-up: protect the imitation prior
+                bcw = (.6 * frac + .05) if BC else 0.0         # imitation anchor, decaying: improve on the expert without forgetting it
+                bcl = ((mu - EA[mb]) ** 2).mean()
+                loss = pw * pl + .5 * vl - .002 * ent * pw + bcw * bcl
                 opt.zero_grad(); loss.backward(); nn.utils.clip_grad_norm_(list(actor.parameters()) + list(critic.parameters()) + [logstd], .5); opt.step()
             with torch.no_grad(): logstd.clamp_(-2.5, 0)
         ls = stats['succ'] / max(stats['land'], 1); ts = stats['tkos'] / max(stats['tko'], 1); last_ls = ls
@@ -364,11 +379,17 @@ def main():
         hist.append((upd, ls, ts, sink))
         if upd % 10 == 0 or upd == 1:
             print(f"upd {upd:4d} | land {ls*100:5.1f}% (dist≤{env.landDist:.0f}m) | takeoff {ts*100:5.1f}% | touchdown sink {sink:.2f} m/s | r {stats['r']/T:+.3f} | std {logstd.exp().mean():.2f} | {time.time()-t0:.0f}s", flush=True)
-        if score > best and upd > UPDATES * .3:
+        if upd % 25 == 0 or upd == 1 or upd == UPDATES:
+            el, et, es = evaluate_policy(actor, norm)
+            score = el + .5 * et - .05 * max(0, es - 1.5)
+            print(f'   eval (deterministic) | landing {el*100:.1f}% | takeoff {et*100:.1f}% | sink {es:.2f} m/s | score {score:.3f}', flush=True)
+        else:
+            score = -1e9
+        if score > best:
             best = score
             W = {'obs_mean': norm.mean.tolist(), 'obs_std': torch.sqrt(norm.var + 1e-8).tolist(),
                  'layers': [{'w': l.weight.detach().cpu().tolist(), 'b': l.bias.detach().cpu().tolist()} for l in actor if isinstance(l, nn.Linear)],
-                 'act': 'tanh', 'obs': OBS, 'hz': 10, 'dt': DT, 'meta': {'update': upd, 'land_success': ls, 'takeoff_success': ts, 'sink': sink}}
+                 'act': 'tanh', 'obs': OBS, 'hz': 10, 'dt': DT, 'meta': {'update': upd, 'land_success': el, 'takeoff_success': et, 'sink': es}}
             json.dump(W, open('pilot.json', 'w'))
     print('best score', best, 'saved pilot.json')
 

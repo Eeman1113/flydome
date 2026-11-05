@@ -118,7 +118,7 @@ def step(s, c, P, ground, paved_fn, wind, contact, dt):
     gfx, gfz, grx, grz = -torch.sin(s.yaw), -torch.cos(s.yaw), torch.cos(s.yaw), -torch.sin(s.yaw)
     fv, lv = vx * gfx + vz * gfz, vx * grx + vz * grz
     pv = paved_fn(x, z)
-    rollV = fv * torch.exp(-torch.where(pv, .028, .16) * dt); la = lv * math.exp(-14 * dt)
+    rollV = fv * torch.exp(-torch.where(pv, .028, .05) * dt); la = lv * math.exp(-14 * dt)
     vx = torch.where(hit, gfx * rollV + grx * la, vx); vz = torch.where(hit, gfz * rollV + grz * la, vz)
     s.pr = torch.where(hit, s.pr * math.exp(-dt * 1.1), s.pr); s.rr = torch.where(hit, s.rr * math.exp(-dt * 2.4), s.rr)
     crash = hit & ((impact > 13) | (s.roll.abs() > .82) | ((~pv) & (fv.abs() > 42)))

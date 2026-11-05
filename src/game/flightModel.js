@@ -84,7 +84,7 @@ export function stepFM(s,c,P,E,dt){
     const impact=Math.abs(s.vy);s.y=cy;if(s.vy<0){s.touch=-s.vy;s.vy=0;}
     const fx=-Math.sin(s.yaw),fz=-Math.cos(s.yaw),rx=Math.cos(s.yaw),rz=-Math.sin(s.yaw);
     const fv=s.vx*fx+s.vz*fz,lv=s.vx*rx+s.vz*rz,paved=E.paved(s.x,s.z);
-    const roll=fv*Math.exp(-(paved?.028:.16)*dt),la=lv*Math.exp(-14*dt);
+    const roll=fv*Math.exp(-(paved?.028:.05)*dt),la=lv*Math.exp(-14*dt);
     s.vx=fx*roll+rx*la;s.vz=fz*roll+rz*la;s.pr*=Math.exp(-dt*1.1);s.rr*=Math.exp(-dt*2.4);
     if(impact>13||Math.abs(s.roll)>.82||(!paved&&Math.abs(fv)>42))s.crashed=true;
   }

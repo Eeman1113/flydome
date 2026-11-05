@@ -149,7 +149,7 @@ export function stepPhysics(dt,ctrl){
     const lateralV=a.velocity.x*rx+a.velocity.z*rz;
     const paved=onRunway(a.position.x,a.position.z),floats=AIRCRAFT[aircraftState.variant].floats,onWater=isWaterAt(a.position.x,a.position.z);
     // Floats plane water hard but hold more drag than tarmac; grass strips sit in between.
-    const rollingV=forwardV*Math.exp(-(paved?.028:onWater&&floats?.12:.16)*dt);
+    const rollingV=forwardV*Math.exp(-(paved?.028:onWater&&floats?.12:.05)*dt); // grass rolls slower than tarmac but still allows takeoff
     // Tyres grip sideways (no sliding across the runway in a crosswind); floats slip more.
     const lateralAfter=lateralV*Math.exp(-(onWater&&floats?3:14)*dt);
     a.velocity.x=fx*rollingV+rx*lateralAfter;
