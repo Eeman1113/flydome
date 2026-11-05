@@ -46,8 +46,20 @@ function model(type,livery){
       inner.traverse(o=>{if(!o.isMesh||!o.material?.map||o.material.transparent||/int|gauge|glass|windshield|light|sign/i.test(o.material.name||''))return;
         box.setFromObject(o).getSize(sz);if(Math.max(sz.x,sz.y,sz.z)<1.6)return;o.material=o.material.clone();o.material.color.multiply(col);});}
     // contact height from the model's lowest point
-    g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(inner);T.contact=Math.max(.8,-b.min.y+.035);return g;});
+    g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(inner);T.contact=Math.max(.8,-b.min.y+.035);
+    // navigation lights: red left tip, green right tip, white strobes, red beacon; fixed screen size so distant
+    // traffic still shows as a blinking point
+    const wy=b.min.y+(b.max.y-b.min.y)*.72,cz=(b.min.z+b.max.z)/2,L={};
+    const add=(k,c,x,y,z,sc)=>{const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),color:c,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,sizeAttenuation:false}));
+      sp.position.set(x,y,z);sp.scale.setScalar(sc);sp.renderOrder=5;g.add(sp);L[k]=sp;};
+    add('red',0xff2a1a,b.min.x+.1,wy,cz,.010);add('green',0x2aff6a,b.max.x-.1,wy,cz,.010);
+    add('strobeL',0xffffff,b.min.x+.05,wy,cz,.016);add('strobeR',0xffffff,b.max.x-.05,wy,cz,.016);add('beacon',0xff3320,0,b.max.y-.15,cz+1.2,.009);
+    g.userData.lights=L;g.userData.inner=inner;return g;});
 }
+let GLOW=null;
+function glowTex(){if(GLOW)return GLOW;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),gr=x.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.25,'rgba(255,255,255,.85)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);
+  GLOW=new THREE.CanvasTexture(c);return GLOW;}
 
 // Runways and strips as landing sites, each with a landing heading.
 function sites(){
@@ -76,7 +88,8 @@ class AI{
   }
   sync(){const s=this.s;this.g.position.set(s.x,s.y,s.z);
     // beyond ~7 km an aircraft is a pixel or two: skip its ~55 draw calls (it stays on the minimap)
-    const c=aircraft.position;this.g.visible=(s.x-c.x)**2+(s.z-c.z)**2<4.9e7;this.g.rotation.order='YXZ';this.g.rotation.set(s.pitch,s.yaw,-s.roll);}
+    const c=aircraft.position,inner=this.g.userData.inner||this.g;inner.visible=(s.x-c.x)**2+(s.z-c.z)**2<4.9e7;
+    this.lights();this.g.rotation.order='YXZ';this.g.rotation.set(s.pitch,s.yaw,-s.roll);}
   env(){return {ground:(x,z)=>groundLevelAt(x,z),paved:(x,z)=>onRunway(x,z),wind:[state.wind.x,state.wind.z],contact:this.T.contact};}
   decide(){
     const s=this.s,g=groundLevelAt(s.x,s.z),wind=[state.wind.x,state.wind.z],T=this.T;
@@ -151,6 +164,9 @@ class AI{
     if(s.crashed||!Number.isFinite(s.x)){if(typeof window!=='undefined'&&window.__trafficCrash)window.__trafficCrash(this);this.respawn();return;}
     this.spinProp(dt);this.sync();
   }
+  lights(){const L=this.g.userData.lights;if(!L)return;const on=this.phase!=='parked',t=performance.now()/1000+(this.callsign.length*.37);
+    const st=on&&((t%1.3)<.05||((t%1.3)>.14&&(t%1.3)<.19)),bc=on&&(t%1.1)<.12;
+    L.red.visible=L.green.visible=on;L.red.material.opacity=L.green.material.opacity=.75;L.strobeL.visible=L.strobeR.visible=st;L.beacon.visible=bc;}
   spinProp(dt){if(!this.prop){this.prop=this.g.getObjectByName('prop_1_33')||null;this.prop&&(this.propAxis='y');}if(this.prop)this.prop.rotation[this.propAxis]+=dt*(18+this.s.power*205);}
   respawn(){const S=sites();this.spawnSite(S[Math.floor(Math.random()*S.length)]);}
   spawnSite(site){const dir=site.axis;Object.assign(this.s,newState(site.x+dir[0]*(site.halfL-60),site.h+this.T.contact,site.z+dir[1]*(site.halfL-60),Math.atan2(dir[0],dir[1])));this.site=site;this.phase='parked';this.wait=10+Math.random()*30;this.sync();}
