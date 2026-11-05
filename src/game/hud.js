@@ -2,6 +2,7 @@
 // Compass tape, speed/altitude readouts, circular relief minimap with fog of war, charter card,
 // survey ring, discovery banners, landing stamps, the full chart and the shareable chart card.
 import { $, DEG, FT_PER_M, KTS_PER_MS, clamp } from './util.js';
+import { trafficList } from './traffic.js';
 import { lucide, iconButton } from './lucide.js';
 import { DAILY_NUMBER, IS_DAILY, RUNWAY_HALF_L, RUNWAY_HALF_W, WORLD_SEED, WEATHER, aircraft, sky, state, AIRCRAFT, aircraftState } from './config.js';
 import { AIRPORT_H, terrain } from './world.js';
@@ -135,6 +136,14 @@ function drawMinimap(){
     if(disc){g.fillStyle='rgba(8,18,28,.65)';g.beginPath();g.arc(sx,sz,8,0,Math.PI*2);g.fill();drawIcon(g,l.type,sx,sz,11,C.cream,1.6);}
     else{g.save();g.translate(sx,sz);g.rotate(Math.PI/4);const s=tgt&&tgt.id===l.id?9:7;g.fillStyle=isT?'rgba(113,216,238,.25)':'rgba(8,18,28,.5)';g.strokeStyle=isT?C.cyan:'rgba(238,246,252,.7)';g.lineWidth=1.3;g.fillRect(-s/2,-s/2,s,s);g.strokeRect(-s/2,-s/2,s,s);g.restore();
       g.fillStyle=isT?C.cyan:'rgba(238,246,252,.85)';g.font='700 8px Inter, system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText('?',sx,sz+.5);}
+  }
+  // traffic (TCAS-style): amber chevron along its heading, relative height in hundreds of feet
+  for(const t of trafficList()){
+    if(t.crashed||t.phase==='parked')continue;
+    const [sx,sz]=toS(t.x,t.z);if(Math.hypot(sx-S/2,sz-S/2)>S/2-6)continue;
+    g.save();g.translate(sx,sz);g.rotate(-t.yaw);g.fillStyle=C.warn;g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1;
+    g.beginPath();g.moveTo(0,-5.5);g.lineTo(4,4);g.lineTo(0,2);g.lineTo(-4,4);g.closePath();g.fill();g.stroke();g.restore();
+    const dh=Math.round((t.y-a.y)*FT_PER_M/100);if(Math.abs(dh)<100){g.fillStyle=C.warn;g.font='600 8px Inter, system-ui';g.textAlign='left';g.textBaseline='middle';g.fillText(`${dh>0?'+':dh<0?'−':''}${String(Math.abs(dh)).padStart(2,'0')}`,sx+6,sz);}
   }
   g.restore();
   // rim, north mark, aircraft

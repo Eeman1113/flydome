@@ -209,10 +209,23 @@ export function radioUpdate(dt,ctxState){
     chatT-=dt;
     if(chatT<0&&!playing&&!queue.length){
       chatT=55+Math.random()*70;
-      const pool=Object.keys(groups).filter(g=>g.startsWith('chat_'));
-      if(pool.length)call([pool[Math.floor(Math.random()*pool.length)]],{chatter:true,pri:0,ttl:3000});
+      const pool=Object.keys(manifest).filter(id=>id.startsWith('chat_')&&!EVENT_IDS.has(id));
+      if(pool.length)call(['#'+pool[Math.floor(Math.random()*pool.length)]],{chatter:true,pri:0,ttl:3000});
     }
   }
+}
+// Live traffic: the AI aircraft's real moments (traffic.js), voiced with the chatter clips that name them.
+const TRAFFIC_LINES={
+  caravan:{ready:['chat_leo_00','chat_ground_00','chat_leo_01'],takeoff:['chat_ground_07','chat_leo_02']},
+  beaver:{approach:['chat_dan_00','chat_ground_01','chat_dan_01'],landed:['chat_dan_02','chat_ground_05']},
+  otter:{approach:['chat_ground_06','chat_zac_02'],takeoff_near:['chat_ground_02','chat_zac_00','chat_zac_01']},
+};
+const EVENT_IDS=new Set(Object.values(TRAFFIC_LINES).flatMap(o=>Object.values(o).flat()));
+export function trafficRadio(who,ev){
+  if(!radioSettings.on||!radioSettings.chatter||!manifest||queue.length>2)return;
+  const seq=TRAFFIC_LINES[who]?.[ev];if(!seq)return;
+  for(const id of seq)call(['#'+id],{chatter:true,pri:0,ttl:25000});
+  chatT=Math.max(chatT,45);   // no random chatter straight after a live exchange
 }
 export function radioReady(){return !!manifest;}
 // Landing-coach advice (coach.js), spoken as a short call.
