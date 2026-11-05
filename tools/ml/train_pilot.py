@@ -81,6 +81,9 @@ class Env:
         st = s.st
         s.t[m] = 0; s.task[m] = torch.multinomial(torch.tensor([.38, .44, .18], device=dev), k, replacement=True) if s.force_task is None else s.force_task
         s.var[m] = torch.multinomial(torch.tensor([.45, .2, .35], device=dev), k, replacement=True)
+        # the F-16 only flies (it is the player's formation wingman); it never needs to land on a bush strip
+        if s.force_task is None: s.task[m] = torch.where(s.var[m] == 2, 0, s.task[m])
+        else: s.var[m] = torch.where(s.var[m] == 2, torch.randint(0, 2, (k,), device=dev), s.var[m])
         s.ground[m] = R(0, 700); ws = R(0, 9) * (torch.rand(k, device=dev) < .8); wd = R(-math.pi, math.pi)
         s.wx[m], s.wz[m] = ws * torch.sin(wd), ws * torch.cos(wd)
         paved = torch.rand(k, device=dev) < .5
