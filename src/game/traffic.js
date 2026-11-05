@@ -2,6 +2,7 @@
 // as the player (flightModel.js). Each plane runs a small mission loop: parked → take off → cruise to another
 // strip clearing terrain → join a long final → land → park. In the F-16, a wingman flies formation on you.
 import { trafficRadio } from './radio.js';
+import { unlock } from './achievements.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
@@ -155,7 +156,7 @@ class AI{
     trafficRadio(this.callsign.split(' ')[0].toLowerCase(),ev);}
 }
 
-const fleet=[];let wingman=null,started=false;
+const fleet=[];let wingman=null,started=false,formT=0;
 export async function startTraffic(){
   if(started)return;started=true;
   await loadPilot();if(!pilotReady())return;
@@ -172,5 +173,11 @@ export function updateTraffic(dt){
     s.vx=a.velocity.x;s.vy=a.velocity.y;s.vz=a.velocity.z;s.pitch=a.pitch;s.power=.8;s.onGround=false;wingman.s=s;wingman.phase='formation';});}
   if(!AIRCRAFT[aircraftState.variant]?.jet&&wingman){wingman.remove();wingman=null;}
   if(wingman?.s){wingman.update(dt);if(wingman.s.crashed){wingman.remove();wingman=null;}}
+  // achievements: close pass with traffic, and 30 s of formation with the wingman
+  const ap=aircraft.position;
+  if(state.started&&!state.crashed&&!aircraft.onGround){
+    for(const ai of fleet)if(ai.s&&ai.phase!=='parked'&&!ai.s.onGround&&Math.hypot(ai.s.x-ap.x,ai.s.y-ap.y,ai.s.z-ap.z)<300){unlock('tallyHo');break;}
+    if(wingman?.s&&Math.hypot(wingman.s.x-ap.x,wingman.s.y-ap.y,wingman.s.z-ap.z)<150){formT+=dt;if(formT>30)unlock('formation');}else formT=0;
+  }
 }
 export function trafficList(){return [...fleet,...(wingman?[wingman]:[])].filter(a=>a.s).map(a=>({callsign:a.callsign,type:a.type,yaw:a.s.yaw,x:Math.round(a.s.x),y:Math.round(a.s.y),z:Math.round(a.s.z),alt:Math.round(a.s.alt||0),kt:Math.round((a.s.airspeed||0)*1.944),phase:a.phase,crashed:a.s.crashed,target:a.target?.name||null}));}

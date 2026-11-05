@@ -30,6 +30,8 @@ export const ACHIEVEMENTS=[
   {id:'worldHopper',name:'World Hopper',desc:'Fly in 5 different worlds',icon:'RefreshCw',test:()=>P().worlds>=5},
   {id:'hours',name:'Ten Hours',desc:'Log 10 hours of flight time',icon:'Clock',test:()=>P().flightTime>=36000},
   {id:'rough',name:'Learning Experience',desc:'Crash 5 times',icon:'Flame',test:()=>(P().crashes||0)>=5},
+  {id:'tallyHo',name:'Tally Ho',desc:'Fly within 300 m of other traffic',icon:'Eye'},
+  {id:'formation',name:'Wingman',desc:'Hold formation with Viper two for 30 seconds',icon:'Plane',secret:true},
   {id:'viper',name:'Classified',desc:'Find the secret aircraft',icon:'Plane',secret:true},
   {id:'mach',name:'Sound Barrier',desc:'Break Mach 1',icon:'Flame',secret:true},
 ];
