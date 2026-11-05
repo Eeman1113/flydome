@@ -196,7 +196,11 @@ class Env:
         r += torch.where(tko & (s.t > 90) & ~climbed, -10.0, 0.0)
         succ |= climbed
         done |= st.crashed
-        info = {'succ': succ, 'land_done': land & done, 'sink': sink, 'first': firstTouch & td_ok, 'tko_done': tko & done}
+        why = torch.zeros(s.n, dtype=torch.long, device=dev)   # landing outcome: 1 stopped, 2 crash, 3 off runway, 4 overflew, 5 timeout, 6 touched off-runway
+        why = torch.where(land & stopped, 1, why); why = torch.where(land & st.crashed, 2, why); why = torch.where(land & offRwyAfter & ~st.crashed, 3, why)
+        why = torch.where(land & (~s.touched) & (along < -s.halfL), 4, why); why = torch.where(land & (s.t > 220) & ~stopped, 5, why)
+        why = torch.where(land & firstTouch & ~td_ok, 6, why)
+        info = {'succ': succ, 'land_done': land & done, 'sink': sink, 'first': firstTouch & td_ok, 'tko_done': tko & done, 'why': why}
         return r, done, info
 
 # ---------------------------------------------------------------- scripted expert (classic autopilot)
@@ -245,14 +249,17 @@ def expert(env):
 
 def evaluate_expert(n=4096, steps=2600):
     env = Env(n); env.landDist = 7000.0; env.reset(torch.ones(n, dtype=torch.bool, device=dev))
-    succ = {0: 0, 1: 0, 2: 0}; tot = {0: 0, 1: 0, 2: 0}; sinks = []
+    succ = {0: 0, 1: 0, 2: 0}; tot = {0: 0, 1: 0, 2: 0}; sinks = []; why = [0] * 7
     for _ in range(steps):
         task = env.task.clone(); r, d, info = env.step(expert(env))
         if info['first'].any(): sinks.append(info['sink'][info['first']].mean().item())
         for k in (1, 2):
             succ[k] += int((info['succ'] & (task == k)).sum()); tot[k] += int((d & (task == k)).sum())
+        w = info['why'][d & (task == 1)]
+        for c in range(7): why[c] += int((w == c).sum())
         env.reset(d)
     print(f"expert: landing success {succ[1]/max(tot[1],1)*100:.1f}% of {tot[1]} | takeoff success {succ[2]/max(tot[2],1)*100:.1f}% of {tot[2]} | touchdown sink {sum(sinks)/max(len(sinks),1):.2f} m/s", flush=True)
+    print('landing outcomes:', dict(zip(['other', 'stopped', 'crash', 'off_rwy', 'overflew', 'timeout', 'touch_off_rwy'], why)), flush=True)
 
 # ---------------------------------------------------------------- PPO
 class RunningNorm:
