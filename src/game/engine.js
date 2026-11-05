@@ -1,6 +1,6 @@
 import { updateCrash, clearCrash, crashActive, firePos } from './crash.js';
 import { radioSay } from './radio.js';
-import { updateTraffic, startTraffic, trafficList } from './traffic.js';
+import { updateTraffic, startTraffic, trafficList, addNavLights, animateNavLights } from './traffic.js';
 import { updateCoach, loadCoach } from './coach.js';
 import { updateAchievements } from './achievements.js';
 import { updateHaptics } from './haptics.js';
@@ -233,6 +233,7 @@ export async function makeAircraft(variantId=aircraftState.variant){
   // Only the large exterior parts need to cast the aircraft's ground shadow.
   model.traverse(o=>{if(o.isMesh&&o.castShadow){const s=new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3());if(Math.max(s.x,s.y,s.z)<1.6)o.castShadow=false;}});
   const bounds=new THREE.Box3().setFromObject(visual);
+  group.userData.navLights=addNavLights(visual,bounds,1);
   aircraftGroundOffset=Math.max(.8,-bounds.min.y+.035);
   const prop=model.getObjectByName('prop_1_33'),propSlow=model.getObjectByName('prop_1_slow_31'),propFast=model.getObjectByName('prop_1_fast_32');
   group.userData.prop=prop||propPivot||null;group.userData.propAxis=propPivot?'x':'y';group.userData.propSlow=propSlow||propPivot?.userData.blades||null;group.userData.propFast=propFast||propPivot?.userData.disc||null;
@@ -346,7 +347,7 @@ export function frame(){requestAnimationFrame(frame);frameStartTime=performance.
   if(state.photo)updatePhotoCamera(frameDt);
   updateWorldFx(frameDt);
   {const a=aircraft,p=a.position,onGround=a.altAGL<aircraftGroundOffset+.3,surface=!onGround?null:onRunway(p.x,p.z)?'runway':isWaterAt(p.x,p.z)?'water':terrain.stripAt(p.x,p.z,6)?'strip':'field';
-   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});updateJetFx(frameDt);updateJetAudio(frameDt);updateSpeedFx(frameDt);updateHaptics(frameDt,{onGround,surface});updateAchievements(frameDt);updateCoach(frameDt,approachState.active?approachState:null,radioSay);updateTraffic(frameDt);radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
+   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});updateJetFx(frameDt);updateJetAudio(frameDt);updateSpeedFx(frameDt);updateHaptics(frameDt,{onGround,surface});updateAchievements(frameDt);updateCoach(frameDt,approachState.active?approachState:null,radioSay);updateTraffic(frameDt);animateNavLights(plane?.userData.navLights,!state.crashed&&aircraft.engineRunning!==false);radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
   updateWeather(frameDt);updateBeacons(worldTime);updateLandmarkFx(worldTime);updateGhost();updateCrash(frameDt);
   hudFrame();
   perfTick(frameDt);

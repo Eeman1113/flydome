@@ -47,14 +47,30 @@ function model(type,livery){
         box.setFromObject(o).getSize(sz);if(Math.max(sz.x,sz.y,sz.z)<1.6)return;o.material=o.material.clone();o.material.color.multiply(col);});}
     // contact height from the model's lowest point
     g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(inner);T.contact=Math.max(.8,-b.min.y+.035);
-    // navigation lights: red left tip, green right tip, white strobes, red beacon; fixed screen size so distant
-    // traffic still shows as a blinking point
-    const wy=b.min.y+(b.max.y-b.min.y)*.72,cz=(b.min.z+b.max.z)/2,L={};
-    const add=(k,c,x,y,z,sc)=>{const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),color:c,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,sizeAttenuation:false}));
-      sp.position.set(x,y,z);sp.scale.setScalar(sc);sp.renderOrder=5;g.add(sp);L[k]=sp;};
-    add('red',0xff2a1a,b.min.x+.1,wy,cz,.010);add('green',0x2aff6a,b.max.x-.1,wy,cz,.010);
-    add('strobeL',0xffffff,b.min.x+.05,wy,cz,.016);add('strobeR',0xffffff,b.max.x-.05,wy,cz,.016);add('beacon',0xff3320,0,b.max.y-.15,cz+1.2,.009);
+    const L=addNavLights(g,b);
     g.userData.lights=L;g.userData.inner=inner;return g;});
+}
+// Navigation lights for any aircraft group, from its bounding box b (forward = -z, wingspan along x): red left tip,
+// green right tip, white double-flash strobes and a red beacon, drawn at a fixed screen size so distant aircraft
+// still show as a blinking point. layer: render layer (the player's aircraft draws on layer 1).
+export function addNavLights(g,b,layer=0){
+  // wingtips: average the vertices in the outermost 3% of the span on each side (works for high and low wings)
+  const span=b.max.x-b.min.x,tip={l:[0,0,0],r:[0,0,0]},v=new THREE.Vector3(),inv=new THREE.Matrix4();g.updateMatrixWorld(true);inv.copy(g.matrixWorld).invert();
+  g.traverse(o=>{if(!o.isMesh||!o.geometry?.attributes.position)return;const P=o.geometry.attributes.position,step=Math.max(1,Math.floor(P.count/4000));
+    for(let i=0;i<P.count;i+=step){v.fromBufferAttribute(P,i);if(o.isSkinnedMesh)o.applyBoneTransform(i,v);v.applyMatrix4(o.matrixWorld).applyMatrix4(inv);
+      const t=v.x<b.min.x+span*.03?tip.l:v.x>b.max.x-span*.03?tip.r:null;if(t){t[0]++;t[1]+=v.y;t[2]+=v.z;}}});
+  const at=(t,x)=>t[0]?[x,t[1]/t[0],t[2]/t[0]]:[x,b.min.y+(b.max.y-b.min.y)*.5,(b.min.z+b.max.z)/2];
+  const [lx,ly,lz]=at(tip.l,b.min.x+.1),[rx,ry,rz]=at(tip.r,b.max.x-.1),wy=(ly+ry)/2,cz=(b.min.z+b.max.z)/2,L={};
+  const add=(k,c,x,y,z,sc)=>{const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),color:c,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,sizeAttenuation:false}));
+    sp.position.set(x,y,z);sp.scale.setScalar(sc);sp.renderOrder=5;sp.layers.set(layer);g.add(sp);L[k]=sp;};
+  add('red',0xff2a1a,lx,ly,lz,.010);add('green',0x2aff6a,rx,ry,rz,.010);
+  add('strobeL',0xffffff,lx-.05,ly,lz+.15,.016);add('strobeR',0xffffff,rx+.05,ry,rz+.15,.016);add('beacon',0xff3320,0,b.max.y-.15,cz+1.2,.009);
+  return L;
+}
+export function animateNavLights(L,on,phase=0){
+  if(!L)return;const t=performance.now()/1000+phase,m=t%1.3;
+  L.red.visible=L.green.visible=on;L.red.material.opacity=L.green.material.opacity=.75;
+  L.strobeL.visible=L.strobeR.visible=on&&(m<.05||(m>.14&&m<.19));L.beacon.visible=on&&(t%1.1)<.12;
 }
 let GLOW=null;
 function glowTex(){if(GLOW)return GLOW;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),gr=x.createRadialGradient(32,32,0,32,32,32);
@@ -164,9 +180,7 @@ class AI{
     if(s.crashed||!Number.isFinite(s.x)){if(typeof window!=='undefined'&&window.__trafficCrash)window.__trafficCrash(this);this.respawn();return;}
     this.spinProp(dt);this.sync();
   }
-  lights(){const L=this.g.userData.lights;if(!L)return;const on=this.phase!=='parked',t=performance.now()/1000+(this.callsign.length*.37);
-    const st=on&&((t%1.3)<.05||((t%1.3)>.14&&(t%1.3)<.19)),bc=on&&(t%1.1)<.12;
-    L.red.visible=L.green.visible=on;L.red.material.opacity=L.green.material.opacity=.75;L.strobeL.visible=L.strobeR.visible=st;L.beacon.visible=bc;}
+  lights(){animateNavLights(this.g.userData.lights,this.phase!=='parked',this.callsign.length*.37);}
   spinProp(dt){if(!this.prop){this.prop=this.g.getObjectByName('prop_1_33')||null;this.prop&&(this.propAxis='y');}if(this.prop)this.prop.rotation[this.propAxis]+=dt*(18+this.s.power*205);}
   respawn(){const S=sites();this.spawnSite(S[Math.floor(Math.random()*S.length)]);}
   spawnSite(site){const dir=site.axis;Object.assign(this.s,newState(site.x+dir[0]*(site.halfL-60),site.h+this.T.contact,site.z+dir[1]*(site.halfL-60),Math.atan2(dir[0],dir[1])));this.site=site;this.phase='parked';this.wait=10+Math.random()*30;this.sync();}
