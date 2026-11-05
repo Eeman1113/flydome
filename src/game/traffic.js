@@ -79,6 +79,11 @@ class AI{
     }
     if(this.phase==='approach'){task=1;opts={...opts,task:1,rw:this.plan.rw,touched:this.touched};}
     const info=buildObs(s,OBS,opts);act(OBS,CTRL);this.ctrl={...CTRL};
+    // envelope protection on top of the network: rotate if still rolling past rotation speed, and climb away
+    // from terrain when low in cruise (the network was trained over flat ground)
+    const kt=s.airspeed*1.944,c=this.ctrl;
+    if(this.phase==='takeoff'&&s.onGround&&kt>(T.variant===2?75:57)){c.pitch=Math.max(c.pitch,.7);c.throttle=1;}
+    if(this.phase==='cruise'&&s.alt<80&&kt>62){const want=Math.max(-1,Math.min(1,(.14-s.pitch)*5-s.pr*.6));c.pitch=Math.max(c.pitch,want);c.throttle=1;c.roll=Math.max(-1,Math.min(1,-s.roll*2));}
     if(this.phase==='approach'){
       if(s.touch>0)this.touched=true;
       if(this.touched&&s.onGround&&s.airspeed<14){this.phase='parked';this.site=this.target;this.wait=15+Math.random()*40;}
@@ -131,4 +136,4 @@ export function updateTraffic(dt){
   if(!AIRCRAFT[aircraftState.variant]?.jet&&wingman){wingman.remove();wingman=null;}
   if(wingman?.s){wingman.update(dt);if(wingman.s.crashed){wingman.remove();wingman=null;}}
 }
-export function trafficList(){return fleet.filter(a=>a.s).map(a=>({callsign:a.callsign,x:a.s.x,z:a.s.z,phase:a.phase}));}
+export function trafficList(){return fleet.filter(a=>a.s).map(a=>({callsign:a.callsign,x:Math.round(a.s.x),y:Math.round(a.s.y),z:Math.round(a.s.z),alt:Math.round(a.s.alt||0),kt:Math.round((a.s.airspeed||0)*1.944),phase:a.phase,crashed:a.s.crashed,target:a.target?.name||null}));}

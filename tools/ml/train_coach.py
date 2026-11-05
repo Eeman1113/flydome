@@ -7,7 +7,7 @@
 # branched into 7 futures: hold, more power, less power, nose up, nose down, steer left, steer right. Each branch
 # is flown to touchdown and graded with the game's own rules. The model predicts the outcome of every branch.
 import os, math, json, time, torch, torch.nn as nn
-os.environ.setdefault('SKIP_PARITY', '1'); os.environ.setdefault('COMPILE', '1')
+os.environ.setdefault('SKIP_PARITY', '1'); os.environ.setdefault('COMPILE', '0')
 import fm, train_pilot as tp
 dev = tp.dev; DEG = math.pi / 180
 ROUNDS = int(os.environ.get('ROUNDS', 70)); M = int(os.environ.get('M', 3072)); K = 7
@@ -43,7 +43,8 @@ class Noisy:
     """Human-like pilot errors on top of the trained policy (fixed per approach)."""
     def __init__(s, n):
         R = lambda a: (torch.rand(n, device=dev) * 2 - 1) * a
-        s.thr, s.pit, s.rol = R(.35), R(.22), R(.12); s.lazy = torch.rand(n, device=dev) < .3; s.noise = .05 + .1 * torch.rand(n, device=dev)
+        # error sizes chosen so outcomes span the whole S…D range, like real players (not mostly crashes)
+        s.thr, s.pit, s.rol = R(.2), R(.11), R(.05); s.lazy = torch.rand(n, device=dev) < .2; s.noise = .02 + .06 * torch.rand(n, device=dev)
     def __call__(s, a, env, extra=None):
         a = a.clone(); alt = env.st.y - env.ground - tp.VAR[env.var, 6]
         a[:, 3] += s.thr * 2; a[:, 0] += s.pit; a[:, 1] += s.rol

@@ -1,6 +1,6 @@
 import { updateCrash, clearCrash, crashActive, firePos } from './crash.js';
 import { radioSay } from './radio.js';
-import { updateTraffic, startTraffic } from './traffic.js';
+import { updateTraffic, startTraffic, trafficList } from './traffic.js';
 import { updateCoach, loadCoach } from './coach.js';
 import { updateAchievements } from './achievements.js';
 import { updateHaptics } from './haptics.js';
@@ -362,7 +362,7 @@ export async function startGame(){
   if(booted)return;booted=true;
   try{
     await setupScene();
-    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx,mission,WEATHER};
+    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx,mission,WEATHER,trafficList};
     $('loading').classList.add('hidden');
     setTimeout(()=>{const l=$('loading');if(l)l.style.display='none';},500);
     frame();
