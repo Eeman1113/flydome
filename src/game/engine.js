@@ -362,7 +362,7 @@ export async function startGame(){
   if(booted)return;booted=true;
   try{
     await setupScene();
-    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx,mission,WEATHER,trafficList,testTerrainNet};
+    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx,mission,WEATHER,trafficList,testTerrainNet,composer};
     $('loading').classList.add('hidden');
     setTimeout(()=>{const l=$('loading');if(l)l.style.display='none';},500);
     frame();

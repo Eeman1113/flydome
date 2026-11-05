@@ -17,7 +17,7 @@ function init(){
 }
 export function updateSpeedFx(dt){
   const a=aircraft,k=state.started&&!state.crashed&&!state.photo?smooth(115,320,a.airspeed):0;
-  if(gradePass?.uniforms.uSpeed)gradePass.uniforms.uSpeed.value=k*(state.camera===1?.7:1);
+  if(gradePass?.uniforms.uSpeed)gradePass.uniforms.uSpeed.value=k*(state.camera===1?.28:1);
   if(!lines){if(k<=0)return;init();}
   lines.visible=k>.01;if(!lines.visible)return;
   // denser and brighter close to the ground, where speed reads best

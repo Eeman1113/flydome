@@ -78,6 +78,11 @@ function breakApart(v,water){
       W.applyMatrix4(inv);P.setXYZ(i,W.x,W.y,W.z);
     }
     P.needsUpdate=true;m.geometry.computeVertexNormals();
+    // crumpling collapses some triangles; a zero-length normal makes the lighting shader output NaN, which bloom
+    // then smears into black blocks across the screen
+    const N=m.geometry.attributes.normal;
+    for(let i=0;i<N.count;i++){const x=N.getX(i),y=N.getY(i),z=N.getZ(i);if(!(x*x+y*y+z*z>1e-8))N.setXYZ(i,0,1,0);}
+    m.geometry.deleteAttribute('tangent');
   }
 }
 export function updateCrash(dt){

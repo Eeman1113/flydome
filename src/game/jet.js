@@ -136,7 +136,7 @@ export function updateJetFx(dt){
   }
   // vapour cone flickers in from Mach .95 to 1.02 and fades as the aircraft goes supersonic
   const m=a.mach||0,vc=clamp((m-.94)/.05,0,1)*clamp((1.08-m)/.05,0,1);
-  fx.vapour.material.opacity=vc*(.28+.12*Math.random());fx.vapour.visible=vc>.01;
+  fx.vapour.material.opacity=vc*(.28+.12*Math.random());fx.vapour.visible=vc>.01&&state.camera!==1;   // from inside it is just a white dome
   if(fx.lastMach<1&&m>=1){jetAudio.boom();radioEvent('boom');haptic.boom();}fx.lastMach=m;
 }
 

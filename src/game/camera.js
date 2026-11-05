@@ -23,13 +23,15 @@ export function updateCamera(dt,ctrl){
   // cockpit stays steady at any airspeed and frame rate.
   // high-speed buffet (jet only: never felt below ~290 kt), stronger through the transonic band
   const trans=Math.max(0,1-Math.abs((a.mach||0)-1)/.08);
-  const shakeAmt=onGround?smooth(3,30,a.airspeed)*(state.camera===1?.006:.012):(smooth(150,330,a.airspeed)*.035+trans*.05+(a.abLevel||0)*.012)*(state.camera===1?.6:1);
+  const shakeAmt=onGround?smooth(3,30,a.airspeed)*(state.camera===1?.006:.012):(smooth(150,330,a.airspeed)*.035+trans*.05+(a.abLevel||0)*.012)*(state.camera===1?.1:1);
   const t=worldTime;camShake.set(Math.sin(t*11.3)*Math.sin(t*2.1)+Math.sin(t*37.1)*.4,Math.sin(t*13.7+1.3)*Math.sin(t*1.7)+Math.sin(t*41.3)*.4,0).multiplyScalar(shakeAmt);
   // afterburner kick: the chase camera falls back as the jet surges ahead
   const acc=(a.airspeed-(lastSpd??a.airspeed))/Math.max(dt,1e-3);lastSpd=a.airspeed;pull=lerp(pull,clamp(acc/12,0,1)+fast*.35,1-Math.exp(-dt*1.5));
   if(state.camera===1){
-    camPos.copy(cockpitEyeLocal).applyQuaternion(q).add(a.position).addScaledVector(camUp,camShake.y).addScaledVector(camRight,camShake.x);
-    camTarget.copy(camPos).addScaledVector(camForward,100).addScaledVector(camUp,-7.0);
+    // the eye is fixed to the airframe (moving it inside the cockpit makes the panel jitter); buffet is a tiny
+    // rotation of the whole view instead, so cockpit and world shake together (≤ ~0.15°)
+    camPos.copy(cockpitEyeLocal).applyQuaternion(q).add(a.position);
+    camTarget.copy(camPos).addScaledVector(camForward,100).addScaledVector(camUp,-7.0+camShake.y*15).addScaledVector(camRight,camShake.x*15);
     camera.position.copy(camPos);camera.up.copy(camUp);camera.lookAt(camTarget);
   }
   else if(state.camera===2){
