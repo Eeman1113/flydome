@@ -125,6 +125,7 @@ if __name__ == '__main__':
                                'layers': layers, 'meta': {'step': step, 'val_err_m': e_model, 'baseline_m': e_zero, 'tiles': len(tiles)}}, open('terrain_net.json', 'w'))
     # golden test for the WebGL engine: features + expected net output on a 64×64 patch (replicate-padded like the shader)
     J = json.load(open('terrain_net.json')); ref = Net().to(dev)
+    torch.backends.cudnn.allow_tf32 = False; torch.backends.cuda.matmul.allow_tf32 = False   # full fp32, as the browser runs it
     with torch.no_grad():
         for c, L in zip(ref.convs, J['layers'][:-1]): c.weight.copy_(torch.tensor(L['w'])); c.bias.copy_(torch.tensor(L['b']))
         ref.out.weight.copy_(torch.tensor(J['layers'][-1]['w'])); ref.out.bias.copy_(torch.tensor(J['layers'][-1]['b']))

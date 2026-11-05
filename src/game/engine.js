@@ -7,7 +7,7 @@ import { updateHaptics } from './haptics.js';
 import { radioEvent, radioUpdate } from './radio.js';
 import { attachJetFx, updateJetFx, updateJetAudio } from './jet.js';
 import './cheat.js';
-import { runTerrainNet, TERRAIN_NET_RES } from './terrainNet.js';
+import { runTerrainNet, testTerrainNet, TERRAIN_NET_RES } from './terrainNet.js';
 import { updateSpeedFx } from './speedfx.js';
 import { sfx, sfxUpdate } from './sfx.js';
 import { approachState } from './hud.js';
@@ -362,7 +362,7 @@ export async function startGame(){
   if(booted)return;booted=true;
   try{
     await setupScene();
-    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx,mission,WEATHER,trafficList};
+    if(urlParams.has('debug'))window.SKYB={THREE,scene,camera,renderer,perf,terrain,chunks,sky,aircraft,state,mats,applyTier,fx,mission,WEATHER,trafficList,testTerrainNet};
     $('loading').classList.add('hidden');
     setTimeout(()=>{const l=$('loading');if(l)l.style.display='none';},500);
     frame();

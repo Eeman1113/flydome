@@ -198,7 +198,7 @@ export function radioUpdate(dt,ctxState){
   const ap=ctxState?.approach;
   if(ap&&ap.along<2600){
     if(!live.approachSaid){live.approachSaid=true;call([cs(),'approach'],{pri:2,ttl:6000});readback('rb_land',{pri:2,ttl:9000});}
-    else if(!coachReady()&&ap.along<1900&&ap.along>350){
+    else if(!(coachReady()&&groups.coach_power_up)&&ap.along<1900&&ap.along>350){
       if(ap.dev>.8){if(call(['approach_high'],{key:'aphigh',cd:14,ttl:2500}))readback('rb_unable',{chance:.4,ttl:5000});}
       else if(ap.dev<-.8){if(call(['approach_low'],{key:'aplow',cd:14,ttl:2500}))readback('rb_unable',{chance:.4,ttl:5000});}
       else if(kt>88)call(['approach_fast'],{key:'apfast',cd:16,ttl:2500});

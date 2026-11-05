@@ -49,14 +49,15 @@ export async function runTerrainNet(heights,W=RES,H=RES){
 export async function testTerrainNet(){
   const net=await loadNet();if(!net?.test)return null;const T=net.test,H=T.out.length,W=T.out[0].length;
   const inp=new Float32Array(W*H*4);for(let y=0;y<H;y++)for(let x=0;x<W;x++){inp[(y*W+x)*4]=T.inp[0][y][x];inp[(y*W+x)*4+1]=T.inp[1][y][x];}
-  const out=infer(net,inp,W,H);if(!out)return null;let m=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)m=Math.max(m,Math.abs(out[y*W+x]-T.out[y][x]));return m;
+  const out=infer(net,inp,W,H);if(!out)return null;let m=0,at=0,om=0,sum=0,big=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const d=Math.abs(out[y*W+x]-T.out[y][x]);if(d>m){m=d;at=[x,y,out[y*W+x],T.out[y][x]];}om=Math.max(om,Math.abs(out[y*W+x]));sum+=d;if(d>.01)big++;}return {max:m,at,outAbsMax:om,mean:sum/(W*H),big};
 }
 function infer(net,inp,W,H){
   const canvas=typeof OffscreenCanvas!=='undefined'?new OffscreenCanvas(1,1):document.createElement('canvas');
   const gl=canvas.getContext('webgl2',{antialias:false,depth:false,preserveDrawingBuffer:false});
   if(!gl||!gl.getExtension('EXT_color_buffer_float'))return null;
   try{
-    const tex=(data)=>{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,W,H,0,gl.RGBA,gl.FLOAT,data);
+    // create on a spare unit (9): binding on the active unit would clobber the weights texture on unit 8
+    const tex=(data)=>{const t=gl.createTexture();gl.activeTexture(gl.TEXTURE9);gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,W,H,0,gl.RGBA,gl.FLOAT,data);
       for(const p of [gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER])gl.texParameteri(gl.TEXTURE_2D,p,gl.NEAREST);
       for(const p of [gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T])gl.texParameteri(gl.TEXTURE_2D,p,gl.CLAMP_TO_EDGE);return t;};
     // ---- pack weights: for each layer, out group G, in group g, tap t → 4 rows (mat4 columns = input channel)
@@ -70,7 +71,7 @@ function infer(net,inp,W,H){
     }
     // weights as a 256-wide 2D texture (a single column would exceed MAX_TEXTURE_SIZE)
     const nRows=rows.length/4,hW=Math.ceil(nRows/256),wdata=new Float32Array(256*hW*4);wdata.set(rows);
-    const wt=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,wt);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,256,hW,0,gl.RGBA,gl.FLOAT,wdata);
+    const wt=gl.createTexture();gl.activeTexture(gl.TEXTURE9);gl.bindTexture(gl.TEXTURE_2D,wt);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,256,hW,0,gl.RGBA,gl.FLOAT,wdata);
     for(const p of [gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER])gl.texParameteri(gl.TEXTURE_2D,p,gl.NEAREST);
     // ---- program
     const sh=(type,src)=>{const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
