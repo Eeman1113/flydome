@@ -83,6 +83,8 @@ class AI{
     // from terrain when low in cruise (the network was trained over flat ground)
     const kt=s.airspeed*1.944,c=this.ctrl;
     if(this.phase==='takeoff'&&s.onGround&&kt>(T.variant===2?75:57)){c.pitch=Math.max(c.pitch,.7);c.throttle=1;}
+    // formation: hold the leader's height precisely (the network's altitude hold is too relaxed for close formation)
+    if(this.phase==='formation'){const dyE=aircraft.position.y-s.y-s.vy*1.5;c.pitch=Math.max(-1,Math.min(1,c.pitch+Math.max(-.35,Math.min(.35,dyE*.012))));}
     if(this.phase==='cruise'&&s.alt<80&&kt>62){const want=Math.max(-1,Math.min(1,(.14-s.pitch)*5-s.pr*.6));c.pitch=Math.max(c.pitch,want);c.throttle=1;c.roll=Math.max(-1,Math.min(1,-s.roll*2));}
     if(this.phase==='approach'){
       if(s.touch>0)this.touched=true;
@@ -136,4 +138,4 @@ export function updateTraffic(dt){
   if(!AIRCRAFT[aircraftState.variant]?.jet&&wingman){wingman.remove();wingman=null;}
   if(wingman?.s){wingman.update(dt);if(wingman.s.crashed){wingman.remove();wingman=null;}}
 }
-export function trafficList(){return fleet.filter(a=>a.s).map(a=>({callsign:a.callsign,x:Math.round(a.s.x),y:Math.round(a.s.y),z:Math.round(a.s.z),alt:Math.round(a.s.alt||0),kt:Math.round((a.s.airspeed||0)*1.944),phase:a.phase,crashed:a.s.crashed,target:a.target?.name||null}));}
+export function trafficList(){return [...fleet,...(wingman?[wingman]:[])].filter(a=>a.s).map(a=>({callsign:a.callsign,x:Math.round(a.s.x),y:Math.round(a.s.y),z:Math.round(a.s.z),alt:Math.round(a.s.alt||0),kt:Math.round((a.s.airspeed||0)*1.944),phase:a.phase,crashed:a.s.crashed,target:a.target?.name||null}));}

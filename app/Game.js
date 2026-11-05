@@ -58,7 +58,7 @@ function Simulator({ start }) {
           <div className="ap-kicker">FINAL · <span id="apName"></span></div>
           <div className="ap-body">
             <div className="ap-scale"><i className="ap-mark" id="apGlide"></i><span>3°</span></div>
-            <div className="ap-center"><div className="ap-loc"><i id="apLoc"></i></div><div className="ap-dist" id="apDist"></div></div>
+            <div className="ap-center"><div className="ap-loc"><i id="apLoc"></i></div><div className="ap-dist" id="apDist"></div><div className="ap-coach" id="apCoach"></div></div>
           </div>
         </div>
         <div className="hud-readout left">

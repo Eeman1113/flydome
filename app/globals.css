@@ -478,3 +478,7 @@ button:hover > .ic-spin,.m-icon-btn:hover .ic-spin{transform:rotate(120deg)}
 .ach .ach-ic{display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:9px;color:var(--ink-3,#8ea4b8);background:rgba(255,255,255,.05)}
 .ach.got .ach-ic{color:#2a1a00;background:var(--sun,#ffc978)}
 .ach b{display:block;font-size:13px}.ach em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-3,#8ea4b8)}
+/* landing coach chip on the approach guide */
+.ap-coach{margin-top:4px;font-size:10px;font-weight:800;letter-spacing:.16em;color:var(--ink-2,#b7c8d6);min-height:12px}
+.ap-coach[data-g=S],.ap-coach[data-g=A]{color:#8ff0b8}.ap-coach[data-g=B]{color:var(--sky,#71d8ee)}.ap-coach[data-g=C]{color:var(--sun,#ffc978)}
+.ap-coach[data-g=D],.ap-coach[data-g=OFF],.ap-coach[data-g=CRASH]{color:#ff8d83}
