@@ -27,7 +27,7 @@ export function createTerrainLib(seed){
     tempBias:(rnd()-.5)*.34,moistBias:(rnd()-.5)*.3,autumn:rnd()<.3?1:0,
     o1:(rnd()-.5)*4000,o2:(rnd()-.5)*4000
   };
-  let ox=0,oz=0,airportH=40,strips=[],crater=null;
+  let ox=0,oz=0,airportH=40,strips=[],crater=null,detail=null;
   const AP={halfW:240,halfL:830,blend:540};
   function base(wx,wz,o){
     const x=wx+ox,z=wz+oz;
@@ -50,11 +50,20 @@ export function createTerrainLib(seed){
     h-=valley*valley*Math.min(Math.max(h,0)*.5,120)*(1-sstep(350,700,h));
     const channel=(1-sstep(.007,.026,rv))*inland*(1-sstep(45,115,h));
     h=mix(h,-4,channel);
+    // Learned erosion detail (terrainNet.js): only on land, faded near water and at the grid edge.
+    if(detail&&h>2){const dd=sampleDetail(wx,wz);if(dd)h+=dd*sstep(2,25,h);}
     // Steepen the ground across sea level so coasts never lie nearly flush with the water
     // (prevents shoreline z-fighting from altitude); monotonic, untouched beyond ±4 m.
     {const x=h/1.5;h+=1.2*h*Math.exp(-x*x);}
     if(o){o.cont=cont;o.mtn=mmask;o.river=valley;o.px=px;o.pz=pz;}
     return h;
+  }
+  function sampleDetail(wx,wz){
+    const D=detail,half=D.res*D.cell/2,gx=(wx+half)/D.cell,gz=(wz+half)/D.cell;
+    if(gx<0||gz<0||gx>=D.res-1||gz>=D.res-1)return 0;
+    const ix=gx|0,iz=gz|0,fx=gx-ix,fz=gz-iz,a=D.data,r=D.res,i=iz*r+ix;
+    const v=(a[i]*(1-fx)+a[i+1]*fx)*(1-fz)+(a[i+r]*(1-fx)+a[i+r+1]*fx)*fz;
+    const edge=Math.min(gx,gz,D.res-1-gx,D.res-1-gz)*D.cell;return v*sstep(0,2500,edge);
   }
   function flatten(wx,wz,h){
     const ax=Math.max(Math.abs(wx)-AP.halfW,0),az=Math.max(Math.abs(wz)-AP.halfL,0),ad=Math.hypot(ax,az);
@@ -348,7 +357,7 @@ export function createTerrainLib(seed){
     return {N,step,R,rgba,landmarks};
   }
   return {P,AP,noise2,fbm,base,heightAt,climate,forestAt,init,airportZone,airportClearing,stripClearing,stripAt,stripLocal,scanWorld,placeName,hashI,mulberry32,
-    get airportH(){return airportH;},get strips(){return strips;},setFrame(o){ox=o.ox;oz=o.oz;airportH=o.airportH;strips=o.strips||[];crater=o.crater||null;},get crater(){return crater;}};
+    get airportH(){return airportH;},get strips(){return strips;},setFrame(o){ox=o.ox;oz=o.oz;airportH=o.airportH;strips=o.strips||[];crater=o.crater||null;if(o.detail)detail=o.detail;},setDetail(d){detail=d;},get detail(){return detail;},get crater(){return crater;}};
 }
 
 /* Chunk mesh + detail builder. Runs inside workers (stringified) or on main thread as fallback. */

@@ -340,19 +340,20 @@ export const approachState={active:false,along:0,dev:0,cross:0};
 function approachGuide(){
   const el=$('approachGuide'),a=aircraft,p=a.position;approachState.active=false;
   if(!state.started||a.altAGL<3||a.altAGL>520){el.classList.remove('show');return;}
-  const fx=-Math.sin(a.yaw),fz=-Math.cos(a.yaw),sites=[{name:'Home Field',x:0,z:0,cos:0,sin:1,halfL:RUNWAY_HALF_L,h:AIRPORT_H}];
-  for(const s of mission.strips)sites.push({name:s.name,x:s.x,z:s.z,cos:s.cos,sin:s.sin,halfL:s.halfL,h:s.h});
+  const fx=-Math.sin(a.yaw),fz=-Math.cos(a.yaw),sites=[{name:'Home Field',x:0,z:0,cos:0,sin:1,halfL:RUNWAY_HALF_L,halfW:RUNWAY_HALF_W,h:AIRPORT_H}];
+  for(const s of mission.strips)sites.push({name:s.name,x:s.x,z:s.z,cos:s.cos,sin:s.sin,halfL:s.halfL,halfW:s.halfW,h:s.h});
   let best=null;
   for(const s of sites)for(const dir of [1,-1]){
     const dx=s.cos*dir,dz=s.sin*dir;if(fx*dx+fz*dz<Math.cos(35*DEG))continue;
     const tx=s.x-dx*(s.halfL-60),tz=s.z-dz*(s.halfL-60),rx=tx-p.x,rz=tz-p.z,along=rx*dx+rz*dz,cross=-rx*dz+rz*dx;
     if(along<120||along>4500||Math.abs(cross)>along*.35+60)continue;
-    if(!best||along<best.along)best={s,along,cross};
+    if(!best||along<best.along)best={s,along,cross,dx,dz};
   }
   if(!best){el.classList.remove('show');return;}
   el.classList.add('show');
   const target=best.s.h+best.along*Math.tan(3*DEG),dev=(p.y-target)/Math.max(6,best.along*Math.tan(1*DEG));
   approachState.active=true;approachState.along=best.along;approachState.dev=dev;approachState.cross=best.cross;
+  approachState.site={x:best.s.x,z:best.s.z,yaw:Math.atan2(-best.dx,-best.dz),halfL:best.s.halfL,halfW:best.s.halfW,h:best.s.h};
   $('apName').textContent=best.s.name.toUpperCase();
   $('apGlide').style.top=`${50-clamp(dev,-1,1)*44}%`;
   $('apLoc').style.left=`${50+clamp(best.cross/Math.max(12,best.along*.06),-1,1)*46}%`;

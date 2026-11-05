@@ -1,9 +1,13 @@
 import { updateCrash, clearCrash, crashActive, firePos } from './crash.js';
+import { radioSay } from './radio.js';
+import { updateTraffic, startTraffic } from './traffic.js';
+import { updateCoach, loadCoach } from './coach.js';
 import { updateAchievements } from './achievements.js';
 import { updateHaptics } from './haptics.js';
 import { radioEvent, radioUpdate } from './radio.js';
 import { attachJetFx, updateJetFx, updateJetAudio } from './jet.js';
 import './cheat.js';
+import { runTerrainNet, TERRAIN_NET_RES } from './terrainNet.js';
 import { updateSpeedFx } from './speedfx.js';
 import { sfx, sfxUpdate } from './sfx.js';
 import { approachState } from './hud.js';
@@ -32,7 +36,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { Pass } from 'three/addons/postprocessing/Pass.js';
 import { $, clamp } from './util.js';
 import { BASE_PATH, AIRCRAFT_VISUAL_SCALE, FIXED_STEP, SKY, START_Z, WORLD_SEED, aircraft, cockpitEyeLocal, fx, glass, shared, sky, state, urlParams } from './config.js';
-import { AIRPORT_H, terrain } from './world.js';
+import { AIRPORT_H, terrain, terrainFrame } from './world.js';
 import { TIERS, applyTier, detectHardware, perf, perfTick, updateCameraFar, viewDistanceM } from './perf.js';
 import { installAtmosphereShaderChunks, loadSky, makeSkyDome } from './sky.js';
 import { createGeometries, createMaterials, mats } from './materials.js';
@@ -92,6 +96,7 @@ export async function setupScene(){
   setupPost();
   updateCameraFar();
 
+  await refineTerrain();
   initWorkers();
   setLoading('LOADING CESSNA 182 SKYLANE MODEL',22);
   await aircraftPromise;
@@ -341,7 +346,7 @@ export function frame(){requestAnimationFrame(frame);frameStartTime=performance.
   if(state.photo)updatePhotoCamera(frameDt);
   updateWorldFx(frameDt);
   {const a=aircraft,p=a.position,onGround=a.altAGL<aircraftGroundOffset+.3,surface=!onGround?null:onRunway(p.x,p.z)?'runway':isWaterAt(p.x,p.z)?'water':terrain.stripAt(p.x,p.z,6)?'strip':'field';
-   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});updateJetFx(frameDt);updateJetAudio(frameDt);updateSpeedFx(frameDt);updateHaptics(frameDt,{onGround,surface});updateAchievements(frameDt);radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
+   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});updateJetFx(frameDt);updateJetAudio(frameDt);updateSpeedFx(frameDt);updateHaptics(frameDt,{onGround,surface});updateAchievements(frameDt);updateCoach(frameDt,approachState.active?approachState:null,radioSay);updateTraffic(frameDt);radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
   updateWeather(frameDt);updateBeacons(worldTime);updateLandmarkFx(worldTime);updateGhost();updateCrash(frameDt);
   hudFrame();
   perfTick(frameDt);
@@ -349,7 +354,7 @@ export function frame(){requestAnimationFrame(frame);frameStartTime=performance.
   renderFrame(frameDt);
   afterRender();
 }
-export function startFlight(mode='free',charterIndex=0){camera.clearViewOffset();ensureAircraftAudio();state.started=true;state.paused=false;state.crashed=false;physicsAccumulator=0;$('mainMenu').style.display='none';$('pauseMenu').style.display='none';beginMission(mode,charterIndex);sfx.resume();sfx.starter();radioEvent('start',{mode});$('flightTag').textContent=mode==='cargo'?`BUSH PILOT · WORLD #${WORLD_SEED}`:mission.charter?`${mode==='daily'?'DAILY CHARTER':'CHARTER'} · WORLD #${WORLD_SEED}`:`EXPLORER · WORLD #${WORLD_SEED}`;state.camera=2;setHud();if(mode!=='cargo')toast(mission.charter?`${mission.charter.title}: survey ${mission.charter.ids.length} landmarks, then land. Shift for throttle.`:'Explorer. Fly low over ? markers to chart them. Shift for throttle.');}
+export function startFlight(mode='free',charterIndex=0){camera.clearViewOffset();ensureAircraftAudio();state.started=true;state.paused=false;state.crashed=false;physicsAccumulator=0;$('mainMenu').style.display='none';$('pauseMenu').style.display='none';beginMission(mode,charterIndex);loadCoach();startTraffic();sfx.resume();sfx.starter();radioEvent('start',{mode});$('flightTag').textContent=mode==='cargo'?`BUSH PILOT · WORLD #${WORLD_SEED}`:mission.charter?`${mode==='daily'?'DAILY CHARTER':'CHARTER'} · WORLD #${WORLD_SEED}`:`EXPLORER · WORLD #${WORLD_SEED}`;state.camera=2;setHud();if(mode!=='cargo')toast(mission.charter?`${mission.charter.title}: survey ${mission.charter.ids.length} landmarks, then land. Shift for throttle.`:'Explorer. Fly low over ? markers to chart them. Shift for throttle.');}
 export function restart(){const rebuild=crashActive();if(rebuild||state.crashed)radioEvent('respawn',{strip:!!mission.respawn});clearCrash();if(rebuild)makeAircraft(aircraftState.variant).then(()=>syncPlaneTransform());state.crashed=false;state.paused=false;aircraft.engineRunning=true;if(mission.hardcore)mission.fuel=Math.max(mission.fuel,.5);physicsAccumulator=0;$('pauseMenu').querySelector('h2').textContent='Take a breath.';$('pauseMenu').querySelector('.kicker').textContent='FLIGHT PAUSED';$('resumeBtn').style.display='';$('restartBtn').classList.remove('primary');$('pauseMenu').querySelector('.intro').textContent='Your aircraft is holding its current state. Ready when you are.';state.throttle=0;const rp=respawnPoint(aircraftGroundOffset);aircraft.position.set(rp.x,rp.y,rp.z);aircraft.velocity.set(0,0,0);aircraft.pitch=aircraft.roll=aircraft.pitchRate=aircraft.rollRate=aircraft.yawRate=0;aircraft.yaw=rp.yaw;aircraft.controlPitch=aircraft.controlRoll=aircraft.controlYaw=0;aircraft.enginePower=0;aircraft.airspeed=0;aircraft.stall=false;state.flightTime=0;state.gear=true;$('pauseMenu').style.display='none';state.started=true;setHud();syncPlaneTransform();updateChunks(true);toast(mission.respawn?`Aircraft reset at ${mission.respawn.name}.`:'Aircraft reset on the home runway.');}
 window.addEventListener('resize',()=>{if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);if(composer){composer.setPixelRatio(renderer.getPixelRatio());composer.setSize(innerWidth,innerHeight);}});
 export let booted=false;
@@ -368,6 +373,16 @@ export async function startGame(){
 }
 
 // Swap airframe from the hangar while parked (keeps the aircraft on its spot).
+// Learned terrain: sample the procedural world on the network's grid, run it on the GPU, and give the resulting
+// erosion detail to the main thread (physics) and the chunk workers (via terrainFrame).
+async function refineTerrain(){
+  if(urlParams.has('noterrainnet'))return;
+  setLoading('SHAPING TERRAIN',18);await new Promise(r=>setTimeout(r,0));
+  const t0=performance.now(),R=TERRAIN_NET_RES,cell=62.5,half=R*cell/2,h=new Float32Array(R*R);
+  for(let j=0;j<R;j++)for(let i=0;i<R;i++)h[j*R+i]=terrain.base(-half+i*cell,-half+j*cell);
+  const d=await runTerrainNet(h,R,R);
+  if(d){const D={data:d,res:R,cell};terrain.setDetail(D);terrainFrame.detail=D;console.info(`[SKYBOUND] learned terrain applied in ${Math.round(performance.now()-t0)} ms`);}
+}
 export async function swapAircraft(id){
   await makeAircraft(id);
   aircraft.position.y=groundLevelAt(aircraft.position.x,aircraft.position.z)+aircraftGroundOffset;syncPlaneTransform();

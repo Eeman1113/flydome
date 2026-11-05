@@ -1,0 +1,56 @@
+// SKYBOUND · coach: the landing-coach network (tools/ml/train_coach.py). On final it predicts the landing grade
+// you are heading for and, for each of 7 corrections (hold, power ±, nose ±, left/right), the grade that
+// correction would give. If one is clearly better, Skybound Ground says it. Plain-JS MLP, ~20k MACs per call.
+import { BASE_PATH, aircraft, state, AIRCRAFT, aircraftState } from './config.js';
+import { aircraftGroundOffset } from './engine.js';
+import { $ } from './util.js';
+
+const DEG=Math.PI/180;let NET=null,loading=null;
+export function loadCoach(){
+  if(loading)return loading;
+  loading=fetch(`${BASE_PATH}/models/coach.json`).then(r=>r.ok?r.json():null).then(j=>{
+    if(!j)return;NET={j,mean:Float32Array.from(j.mean),std:Float32Array.from(j.std),
+      layers:j.layers.map(l=>({W:Float32Array.from(l.w.flat()),b:Float32Array.from(l.b),out:l.b.length,inp:l.w[0].length}))};
+    NET.buf=NET.layers.map(l=>new Float32Array(l.out));NET.x=new Float32Array(j.feat);
+  }).catch(()=>{});
+  return loading;
+}
+export function coachReady(){return !!NET;}
+function forward(f){
+  const n=NET,x=n.x;for(let i=0;i<x.length;i++)x[i]=(f[i]-n.mean[i])/n.std[i];
+  let inp=x;n.layers.forEach((l,L)=>{const o=n.buf[L],last=L===n.layers.length-1;
+    for(let j=0;j<l.out;j++){let s=l.b[j];const r=j*l.inp;for(let i=0;i<l.inp;i++)s+=l.W[r+i]*inp[i];o[j]=last?s:Math.tanh(s);}inp=o;});
+  return inp;   // K×6: grade, sink, offset fraction, heading err, bounces, logit(off/crash)
+}
+const F=new Float32Array(21);
+// Features exactly as coach_features() in training; `site` is the runway being approached.
+function features(site){
+  const a=aircraft,c=Math.cos(site.yaw),sn=Math.sin(site.yaw),dx=a.position.x-site.x,dz=a.position.z-site.z;
+  const lx=dx*c-dz*sn,lz=dx*sn+dz*c,along=lz-(site.halfL-150),cross=lx;
+  const alt=a.altAGL-aircraftGroundOffset;
+  const gsd=(a.position.y-site.h-aircraftGroundOffset)-Math.max(0,along)*Math.tan(3*DEG);
+  let rh=a.yaw-site.yaw;while(rh>Math.PI)rh-=2*Math.PI;while(rh<-Math.PI)rh+=2*Math.PI;
+  const w=state.wind,fx=-Math.sin(a.yaw),fz=-Math.cos(a.yaw),hw=-(w.x*fx+w.z*fz),xw=w.x*Math.cos(a.yaw)-w.z*Math.sin(a.yaw);
+  const V=AIRCRAFT[aircraftState.variant],v=V.jet?2:V.floats?1:0,cl=(x,lo,hi)=>x<lo?lo:x>hi?hi:x;
+  const vals=[a.airspeed/50,a.verticalSpeed/10,a.pitch*2,Math.sin(a.roll),Math.cos(a.roll),a.enginePower,cl(alt/100,0,4),cl(along/2000,-1,2),cl(cross/50,-4,4),cl(gsd/30,-4,4),
+    Math.sin(rh),Math.cos(rh),hw/10,xw/10,v===0?1:0,v===1?1:0,v===2?1:0,site.halfW/22,state.stallSim?0:1,a.pitchRate,a.rollRate];
+  for(let i=0;i<21;i++)F[i]=vals[i];return {along,alt};
+}
+const LETTER=['S','A','B','C','D','OFF','CRASH'];
+let t=0,lastAdvice='',lastAdviceT=0,lastGoodT=0;
+// approach: {site:{x,z,yaw,halfL,halfW,h}} from the HUD's approach guide, or null. say(group) queues a radio call.
+export function updateCoach(dt,approach,say){
+  const chip=$('apCoach');
+  if(!NET||!approach||!state.started||state.paused||state.crashed){if(chip)chip.textContent='';return;}
+  t-=dt;if(t>0)return;t=1;
+  const {along,alt}=features(approach.site);
+  if(along>2300||alt<2.5){if(chip)chip.textContent='';return;}
+  const out=forward(F),K=7,g=k=>out[k*6];
+  const hold=g(0);let best=0;for(let k=1;k<K;k++)if(g(k)<g(best))best=k;
+  const pred=Math.max(0,Math.min(6,Math.round(hold)));
+  if(chip){chip.textContent=`PREDICTED ${LETTER[pred]}`;chip.dataset.g=LETTER[pred];}
+  const now=performance.now()/1000,name=NET.j.corr[best];
+  if(best!==0&&hold-g(best)>.6&&(name!==lastAdvice||now-lastAdviceT>7)&&now-lastAdviceT>4.5){
+    lastAdvice=name;lastAdviceT=now;say(`coach_${name}`);
+  }else if(best===0&&hold<1.3&&along<1500&&now-lastGoodT>25&&now-lastAdviceT>6){lastGoodT=now;say('coach_good');}
+}
