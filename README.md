@@ -71,7 +71,7 @@ Your **pilot logbook** saves in the browser and carries across every world: rank
 You're never flying alone. **Skybound Ground**, the controller back at the home field, is on the radio for the whole flight:
 - **On the ground:** she clears you for takeoff with the live wind and weather.
 - **On a charter:** she gives you the bearing and range to each target, talks you through survey passes, and cheers the rare finds.
-- **Landing:** she clears you to land, warns you when you're high, low or fast on final, and grades your touchdown out loud.
+- **Landing:** she clears you to land and coaches you down final. A neural landing coach predicts the grade you're heading for (shown on the approach guide) and tells you which correction would help most (more power, nose up, come left...). She grades your touchdown out loud.
 - **Emergencies:** she shouts when you stall or get too close to the ground, and calls a mayday when it all goes wrong.
 - **Flight School:** she teaches every lesson.
 
@@ -123,6 +123,8 @@ SKYBOUND is built with **three.js** and **Next.js**, runs entirely in the browse
 - **Automatic quality.** The game detects your GPU, then a runtime governor tunes render scale, view distance (4–20 km) and effects to hold the frame rate.
 - **Procedural audio.** The engine, propeller and airflow are synthesised live. So are the sound effects: tyre chirps on touchdown, rumble on grass strips, spray on the floats, the reed stall horn, gust buffeting, rain on the airframe, thunder, the starter and engine catch, crash impacts, fire and debris, and UI clicks.
 - **A neural autopilot.** The AI traffic is flown by a small neural network trained with reinforcement learning (PPO), first copying a scripted expert pilot. It trained on a GPU against an exact PyTorch copy of the game's flight model (`tools/ml/`), and the two simulations stay within 6 cm of each other over 40 seconds of flight. In the game it runs in plain JavaScript at 30 Hz per aircraft, with an envelope-protection layer that keeps it from stalling.
+- **A neural landing coach.** On final, a second network predicts your landing grade, and the grade you would get with each of seven corrections. It learned from 130,000 simulated approaches: each one was replayed seven times from the same moment, with the same stick wobble and one correction changed, and every version was graded by the game's own rules. A sanity filter makes sure any advice it speaks points the right way for your height, speed and centreline position.
+- **Learned terrain.** A small convolutional network, trained on real-world elevation tiles (AWS Terrain Tiles) from 24 mountain and coastal regions, adds the erosion detail that noise alone can't make: drainage, ridgelines, valley floors. It runs once per world on the GPU in a hand-written WebGL2 inference engine, in under a second.
 - **The radio.** Over 400 voice clips were generated offline on a GPU with Orpheus TTS (`tools/radio/`). Each line was rendered four times, and Whisper transcribed every take so the clip closest to the script won. The game assembles calls from these clips and runs them through a band-pass, saturation, compression and static chain in Web Audio.
 
 ![A hard landing, with fire, debris and a shock pulse](public/screenshots/crash.jpg)
@@ -213,6 +215,10 @@ CC0 HDRIs from [Poly Haven](https://polyhaven.com):
 ### Voices
 
 The radio voices were generated with [Orpheus TTS](https://github.com/canopyai/Orpheus-TTS) by Canopy Labs (Apache-2.0; weights via [unsloth/orpheus-3b-0.1-ft](https://huggingface.co/unsloth/orpheus-3b-0.1-ft)), decoded with [SNAC](https://github.com/hubertsiuzdak/snac) (MIT), and checked with OpenAI [Whisper](https://github.com/openai/whisper) large-v3-turbo (MIT). The script and the generator are in `tools/radio/`.
+
+### Terrain data
+
+The learned-terrain network was trained on [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) from the AWS Open Data registry (Mapzen), which combine SRTM, GMTED, ETOPO1, NED and other public elevation sources. Only the trained weights ship with the game.
 
 ### Software and fonts
 
