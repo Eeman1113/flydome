@@ -200,7 +200,10 @@ class Env:
         why = torch.where(land & stopped, 1, why); why = torch.where(land & st.crashed, 2, why); why = torch.where(land & offRwyAfter & ~st.crashed, 3, why)
         why = torch.where(land & (~s.touched) & (along < -s.halfL), 4, why); why = torch.where(land & (s.t > 220) & ~stopped, 5, why)
         why = torch.where(land & firstTouch & ~td_ok, 6, why)
-        info = {'succ': succ, 'land_done': land & done, 'sink': sink, 'first': firstTouch & td_ok, 'tko_done': tko & done, 'why': why}
+        twhy = torch.zeros(s.n, dtype=torch.long, device=dev)  # takeoff: 1 climbed, 2 crash, 3 off runway, 4 timeout
+        twhy = torch.where(tko & climbed, 1, twhy); twhy = torch.where(tko & st.crashed, 2, twhy)
+        twhy = torch.where(tko & st.onGround & (~onRwy) & (st.airspeed > 5) & ~st.crashed, 3, twhy); twhy = torch.where(tko & (s.t > 90) & ~climbed, 4, twhy)
+        info = {'twhy': twhy, 'succ': succ, 'land_done': land & done, 'sink': sink, 'first': firstTouch & td_ok, 'tko_done': tko & done, 'why': why}
         return r, done, info
 
 # ---------------------------------------------------------------- scripted expert (classic autopilot)
@@ -227,12 +230,13 @@ def expert(env):
     hdg_des = (cross * .0065).clamp(-.45, .45); trk_err = fm.wrap(hdg_des - rh)
     app_spd = APP[v].mean(1)
     gs_alt = along.clamp(min=0) * math.tan(3 * DEG)
-    vs_land = ((gs_alt - alt) * .25 - st.airspeed * math.tan(3 * DEG)).clamp(-6, 3)
-    p_app = (vs_land / st.airspeed.clamp(min=20) + .06).clamp(-.15, .2)
-    flare = alt < 4.5
-    p_land = torch.where(flare, torch.full_like(p_app, .07), p_app)
-    thr_land = torch.where(alt < 14, torch.zeros_like(alt), speed_to(app_spd - 2, torch.where(jet, .3, .35)))
-    roll_land = torch.where(flare, ((-st.roll) * 2.5).clamp(-1, 1), bank_to(trk_err, 25 * DEG))
+    vs_gs = ((gs_alt - alt) * .25 - st.airspeed * math.tan(3 * DEG)).clamp(-6, 3)
+    # sink-rate flare: below 12 m the target descent rate shrinks with height, so the wheels arrive gently
+    flare = alt < 12
+    vs_land = torch.where(flare, -(.45 + alt * .25), vs_gs)
+    p_land = (vs_land / st.airspeed.clamp(min=20) + .06 + (vs_land - st.vy) * .02).clamp(-.15, .2)
+    thr_land = torch.where(alt < 3, torch.zeros_like(alt), speed_to(app_spd, torch.where(jet, .35, .4)))
+    roll_land = torch.where(alt < 5, ((-st.roll) * 2.5).clamp(-1, 1), bank_to(trk_err, 25 * DEG))
     yaw_land = torch.where(st.onGround, ((-rh + cross * .01) * 3).clamp(-1, 1), torch.zeros_like(rh))
     land = torch.stack([pitch_to(p_land), roll_land, yaw_land, thr_land], 1)
     land[:, 3] = torch.where(env.touched, torch.zeros_like(alt), land[:, 3])
@@ -249,7 +253,7 @@ def expert(env):
 
 def evaluate_expert(n=4096, steps=2600):
     env = Env(n); env.landDist = 7000.0; env.reset(torch.ones(n, dtype=torch.bool, device=dev))
-    succ = {0: 0, 1: 0, 2: 0}; tot = {0: 0, 1: 0, 2: 0}; sinks = []; why = [0] * 7
+    succ = {0: 0, 1: 0, 2: 0}; tot = {0: 0, 1: 0, 2: 0}; sinks = []; why = [0] * 7; twhy = [0] * 5
     for _ in range(steps):
         task = env.task.clone(); r, d, info = env.step(expert(env))
         if info['first'].any(): sinks.append(info['sink'][info['first']].mean().item())
@@ -257,9 +261,12 @@ def evaluate_expert(n=4096, steps=2600):
             succ[k] += int((info['succ'] & (task == k)).sum()); tot[k] += int((d & (task == k)).sum())
         w = info['why'][d & (task == 1)]
         for c in range(7): why[c] += int((w == c).sum())
+        w2 = info['twhy'][d & (task == 2)]
+        for c in range(5): twhy[c] += int((w2 == c).sum())
         env.reset(d)
     print(f"expert: landing success {succ[1]/max(tot[1],1)*100:.1f}% of {tot[1]} | takeoff success {succ[2]/max(tot[2],1)*100:.1f}% of {tot[2]} | touchdown sink {sum(sinks)/max(len(sinks),1):.2f} m/s", flush=True)
     print('landing outcomes:', dict(zip(['other', 'stopped', 'crash', 'off_rwy', 'overflew', 'timeout', 'touch_off_rwy'], why)), flush=True)
+    print('takeoff outcomes:', dict(zip(['other', 'climbed', 'crash', 'off_rwy', 'timeout'], twhy)), flush=True)
 
 # ---------------------------------------------------------------- PPO
 class RunningNorm:
