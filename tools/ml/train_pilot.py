@@ -10,7 +10,7 @@ import fm
 dev = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(0)
 N = int(os.environ.get('ENVS', 8192)); T = 64; UPDATES = int(os.environ.get('UPDATES', 500))
-SUB, DT = 6, 1 / 60            # policy at 10 Hz, physics at 60 Hz (the game's FIXED_STEP)
+SUB, DT = 3, 1 / 30            # policy at 10 Hz, AI physics at 30 Hz (traffic.js steps AI aircraft at the same rate)
 DEG = math.pi / 180
 
 # ---------------------------------------------------------------- parity check against the JS flight model
@@ -39,6 +39,13 @@ def parity():
     return worst
 if os.environ.get('SKIP_PARITY') != '1':
     torch.set_default_dtype(torch.float32); parity()
+
+if os.environ.get('COMPILE', '1') == '1' and dev == 'cuda':
+    try:
+        fm.step = torch.compile(fm.step, dynamic=False)
+        print('torch.compile enabled for the flight model')
+    except Exception as e:
+        print('compile unavailable:', e)
 
 # ---------------------------------------------------------------- environment
 VAR = torch.tensor([[62, 31, 1.0, 1.0, 0.0, 0, 1.35], [62, 31, 1.3, 1.0, 0.0, 0, 2.8], [220, 50, 4.0, .7, 1.6, 1, 1.9]], device=dev)
@@ -257,6 +264,6 @@ for upd in range(1, UPDATES + 1):
         best = score
         W = {'obs_mean': norm.mean.tolist(), 'obs_std': torch.sqrt(norm.var + 1e-8).tolist(),
              'layers': [{'w': l.weight.detach().cpu().tolist(), 'b': l.bias.detach().cpu().tolist()} for l in actor if isinstance(l, nn.Linear)],
-             'act': 'tanh', 'obs': OBS, 'hz': 10, 'meta': {'update': upd, 'land_success': ls, 'takeoff_success': ts, 'sink': sink}}
+             'act': 'tanh', 'obs': OBS, 'hz': 10, 'dt': DT, 'meta': {'update': upd, 'land_success': ls, 'takeoff_success': ts, 'sink': sink}}
         json.dump(W, open('pilot.json', 'w'))
 print('best score', best, 'saved pilot.json')
