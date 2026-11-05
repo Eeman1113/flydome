@@ -377,7 +377,7 @@ def main():
                 vl = .5 * ((critic(O[mb]).squeeze(1) - RET[mb]) ** 2).mean()
                 ent = (logstd + .5 * math.log(2 * math.pi * math.e)).sum()
                 pw = 0.0 if (BC and upd <= 20) else 1.0      # critic warm-up: protect the imitation prior
-                bcw = (.6 * frac + .05) if BC else 0.0         # imitation anchor, decaying: improve on the expert without forgetting it
+                bcw = float(os.environ.get('BCW', .4)) if BC else 0.0   # constant imitation anchor: improve on the expert without forgetting it
                 bcl = ((mu - EA[mb]) ** 2).mean()
                 loss = pw * pl + .5 * vl - .002 * ent * pw + bcw * bcl
                 opt.zero_grad(); loss.backward(); nn.utils.clip_grad_norm_(list(actor.parameters()) + list(critic.parameters()) + [logstd], .5); opt.step()
@@ -388,7 +388,7 @@ def main():
         hist.append((upd, ls, ts, sink))
         if upd % 10 == 0 or upd == 1:
             print(f"upd {upd:4d} | land {ls*100:5.1f}% (dist≤{env.landDist:.0f}m) | takeoff {ts*100:5.1f}% | touchdown sink {sink:.2f} m/s | r {stats['r']/T:+.3f} | std {logstd.exp().mean():.2f} | {time.time()-t0:.0f}s", flush=True)
-        if upd % 25 == 0 or upd == 1 or upd == UPDATES:
+        if upd % int(os.environ.get('EVAL_EVERY', 10)) == 0 or upd == 1 or upd == UPDATES:
             el, et, es = evaluate_policy(actor, norm)
             score = el + .5 * et - .05 * max(0, es - 1.5)
             print(f'   eval (deterministic) | landing {el*100:.1f}% | takeoff {et*100:.1f}% | sink {es:.2f} m/s | score {score:.3f}', flush=True)
