@@ -77,6 +77,10 @@ You're never flying alone. **Skybound Ground**, the controller back at the home 
 
 Each call is built from hundreds of recorded variants (callsigns, numbers, landmark types and lines for every situation), so she rarely repeats herself. Everything plays through a live radio filter with static and squelch. Your own pilot reads back her clearances in a second voice. Other pilots chat on the frequency in the background. Every transmission is subtitled, and **Settings** lets you turn the radio, the chatter or the subtitles off.
 
+### Traffic in the sky
+
+You share the sky. A Caravan, a Beaver and an Otter live at the home field: they taxi out, take off, cruise between strips, fly real approaches and land. A **neural network** flies them (more under *Under the hood*). If you find the secret jet, a second F-16, callsign *Viper two*, forms up on your wing and holds formation all the way past Mach 1.
+
 ### A new world every time
 
 **Refresh for a brand-new world.** The address bar always carries the world's seed (`?seed=48213`), so you can send a friend the exact world you flew. **Resume last world** on the menu takes you back to where you left off. Each world also rolls its own season, sky and weather: seven real HDR skies from dawn to dusk, gusting wind you can feel in the controls, low cloud, and rain on overcast days, with drops on the windshield.
@@ -118,6 +122,7 @@ SKYBOUND is built with **three.js** and **Next.js**, runs entirely in the browse
 - **Crashes.** A fireball, a smoke plume that drifts with the wind, parts torn away with physics, a crumpled airframe and a shock-distortion pulse.
 - **Automatic quality.** The game detects your GPU, then a runtime governor tunes render scale, view distance (4–20 km) and effects to hold the frame rate.
 - **Procedural audio.** The engine, propeller and airflow are synthesised live. So are the sound effects: tyre chirps on touchdown, rumble on grass strips, spray on the floats, the reed stall horn, gust buffeting, rain on the airframe, thunder, the starter and engine catch, crash impacts, fire and debris, and UI clicks.
+- **A neural autopilot.** The AI traffic is flown by a small neural network trained with reinforcement learning (PPO), first copying a scripted expert pilot. It trained on a GPU against an exact PyTorch copy of the game's flight model (`tools/ml/`), and the two simulations stay within 6 cm of each other over 40 seconds of flight. In the game it runs in plain JavaScript at 30 Hz per aircraft, with an envelope-protection layer that keeps it from stalling.
 - **The radio.** Over 400 voice clips were generated offline on a GPU with Orpheus TTS (`tools/radio/`). Each line was rendered four times, and Whisper transcribed every take so the clip closest to the script won. The game assembles calls from these clips and runs them through a band-pass, saturation, compression and static chain in Web Audio.
 
 ![A hard landing, with fire, debris and a shock pulse](public/screenshots/crash.jpg)
