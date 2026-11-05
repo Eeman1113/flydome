@@ -16,10 +16,13 @@ import { loadPilot, pilotReady, act, buildObs } from './aipilot.js';
 
 const AI_DT=1/30; // must match train_pilot.py DT
 const DEG=Math.PI/180,OBS=new Float32Array(32),CTRL={pitch:0,roll:0,yaw:0,throttle:0};
+// traffic flies with stall simulation off (but without the forgiving "never sink" assist, which floats its flare): an AI recovering from a
+// stall while a safety layer pulls the nose up only makes it worse
+const AI_FM={stall:false,forgiving:false};
 const TYPES={
-  skylane:{file:'cessna_182_skylane.glb',scale:1.08,yaw:0,variant:0,P:{...DEFAULT_PARAMS},contact:1.35,cruise:52},
-  caravan:{file:'cessna_208_amphibian.glb',scale:1,yaw:-Math.PI/2,variant:1,P:{...DEFAULT_PARAMS,thrust:1.3},contact:2.8,cruise:50},
-  f16:{file:'f16_fighting_falcon.glb',lengthM:15.06,yaw:Math.PI/2,variant:2,P:{...DEFAULT_PARAMS,rollRate:220,pitchRate:50,thrust:4,cdMul:.7,ab:1.6,jet:true},contact:1.9,cruise:150},
+  skylane:{file:'cessna_182_skylane.glb',scale:1.08,yaw:0,variant:0,P:{...DEFAULT_PARAMS,...AI_FM},contact:1.35,cruise:52},
+  caravan:{file:'cessna_208_amphibian.glb',scale:1,yaw:-Math.PI/2,variant:1,P:{...DEFAULT_PARAMS,...AI_FM,thrust:1.3},contact:2.8,cruise:50},
+  f16:{file:'f16_fighting_falcon.glb',lengthM:15.06,yaw:Math.PI/2,variant:2,P:{...DEFAULT_PARAMS,...AI_FM,rollRate:220,pitchRate:50,thrust:4,cdMul:.7,ab:1.6,jet:true},contact:1.9,cruise:150},
 };
 const loader=new GLTFLoader();loader.setMeshoptDecoder(MeshoptDecoder);
 const cache={};
@@ -108,6 +111,10 @@ class AI{
     if(this.phase==='cruise'&&s.alt<80&&kt>62){const want=Math.max(-1,Math.min(1,(.14-s.pitch)*5-s.pr*.6));c.pitch=Math.max(c.pitch,want);c.throttle=1;c.roll=Math.max(-1,Math.min(1,-s.roll*2));}
     // approach: never dive at the runway (a high entry makes the network push over); cap the sink rate
     if(this.phase==='approach'&&!s.onGround){const lim=s.alt>40?-7:-4.5;if(s.vy<lim)c.pitch=Math.max(-1,Math.min(1,c.pitch+Math.min(.8,(lim-s.vy)*.12)));}
+    if(this.phase==='approach'&&!s.onGround&&!this.touched){
+      if(kt>92&&T.variant!==2){c.pitch=Math.max(c.pitch,Math.max(-1,Math.min(1,(.06-s.pitch)*4)));c.throttle=0;}   // too fast: trade speed for height
+      if(s.alt<20&&info.along>400){c.throttle=1;c.pitch=Math.max(c.pitch,Math.max(-1,Math.min(1,(.15-s.pitch)*5-s.pr*.6)));}   // undershooting: power and climb
+    }
     if(this.phase==='approach'){
       if(s.touch>0)this.touched=true;
       if(this.touched&&s.onGround&&s.airspeed<14){this.phase='parked';this.site=this.target;this.wait=25+Math.random()*40;this.say('landed');}
@@ -131,9 +138,11 @@ class AI{
       }
       this.sync();return;
     }
-    this.decT-=dt;if(this.decT<=0){this.decT=.1;this.decide();}
+    // decide every 0.1 s of *simulated* time, inside the step loop, so a long frame (tab hitch, chunk build) can't
+    // fly seconds of physics on one stale control input; catch-up is capped at a quarter second
     const E=this.env();
-    this.acc=(this.acc||0)+dt;while(this.acc>=AI_DT){stepFM(s,this.ctrl,this.T.P,E,AI_DT);this.acc-=AI_DT;}
+    this.acc=Math.min((this.acc||0)+dt,.25);
+    while(this.acc>=AI_DT){this.decT-=AI_DT;if(this.decT<=0||!this.ctrl){this.decT=.1;this.decide();if(this.phase==="parked")break;}stepFM(s,this.ctrl,this.T.P,E,AI_DT);this.acc-=AI_DT;}
     if(s.crashed||!Number.isFinite(s.x)){if(typeof window!=='undefined'&&window.__trafficCrash)window.__trafficCrash(this);this.respawn();return;}
     this.spinProp(dt);this.sync();
   }
@@ -164,4 +173,4 @@ export function updateTraffic(dt){
   if(!AIRCRAFT[aircraftState.variant]?.jet&&wingman){wingman.remove();wingman=null;}
   if(wingman?.s){wingman.update(dt);if(wingman.s.crashed){wingman.remove();wingman=null;}}
 }
-export function trafficList(){return [...fleet,...(wingman?[wingman]:[])].filter(a=>a.s).map(a=>({callsign:a.callsign,yaw:a.s.yaw,x:Math.round(a.s.x),y:Math.round(a.s.y),z:Math.round(a.s.z),alt:Math.round(a.s.alt||0),kt:Math.round((a.s.airspeed||0)*1.944),phase:a.phase,crashed:a.s.crashed,target:a.target?.name||null}));}
+export function trafficList(){return [...fleet,...(wingman?[wingman]:[])].filter(a=>a.s).map(a=>({callsign:a.callsign,type:a.type,yaw:a.s.yaw,x:Math.round(a.s.x),y:Math.round(a.s.y),z:Math.round(a.s.z),alt:Math.round(a.s.alt||0),kt:Math.round((a.s.airspeed||0)*1.944),phase:a.phase,crashed:a.s.crashed,target:a.target?.name||null}));}

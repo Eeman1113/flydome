@@ -4,6 +4,7 @@
 // live radio chain (band-pass, grit, compression, static bed, squelch on key-up and release).
 import { BASE_PATH, AIRCRAFT, aircraftState, aircraft, state, WEATHER } from './config.js';
 import { coachReady } from './coach.js';
+import { trafficList } from './traffic.js';
 import { $, clamp, DEG } from './util.js';
 import { mission, nextTarget, charterSurveyed, landmarkById } from './survey.js';
 
@@ -204,6 +205,7 @@ export function radioUpdate(dt,ctxState){
       else if(kt>88)call(['approach_fast'],{key:'apfast',cd:16,ttl:2500});
     }
   }else if(!ap||ap.along>3200)live.approachSaid=false;
+  trafficAdvisory(dt);
   // background chatter
   if(radioSettings.chatter){
     chatT-=dt;
@@ -212,6 +214,27 @@ export function radioUpdate(dt,ctxState){
       const pool=Object.keys(manifest).filter(id=>id.startsWith('chat_')&&!EVENT_IDS.has(id));
       if(pool.length)call(['#'+pool[Math.floor(Math.random()*pool.length)]],{chatter:true,pri:0,ttl:3000});
     }
+  }
+}
+// Traffic advisories: Ground calls out AI traffic that comes close: clock position from your nose, range,
+// type and relative height ("Traffic, two o'clock, two miles, a Skylane, slightly above you.").
+let tfcT=0;const tfcSaid=new Map();
+function trafficAdvisory(dt){
+  tfcT-=dt;if(tfcT>0)return;tfcT=1;
+  if(!groups.tfc_lead||!state.started||state.crashed||aircraft.onGround)return;
+  const a=aircraft.position,now=performance.now()/1000;let best=null;
+  for(const t of trafficList()){
+    if(t.crashed||t.phase==='parked'||t.phase==='formation'||t.alt<30)continue;
+    const dx=t.x-a.x,dz=t.z-a.z,d=Math.hypot(dx,dz),dy=t.y-a.y;
+    if(d>5600||Math.abs(dy)>300||now-(tfcSaid.get(t.callsign)??-1e9)<120)continue;
+    if(!best||d<best.d)best={t,dx,dz,dy,d};
+  }
+  if(!best)return;
+  const y=aircraft.yaw,fwd=best.dx*-Math.sin(y)+best.dz*-Math.cos(y),rt=best.dx*Math.cos(y)+best.dz*-Math.sin(y);
+  const clock=((Math.round(Math.atan2(rt,fwd)/(Math.PI/6))%12)+12)%12,mi=Math.min(3,Math.max(1,Math.round(best.d/1852)));
+  const h=best.dy>60?'tfc_above':best.dy<-60?'tfc_below':'tfc_same';
+  if(call(['tfc_lead',`tfc_clock_${clock}`,`tfc_mi_${mi}`,`tfc_type_${best.t.type}`,h],{pri:2,ttl:6000,key:'tfc',cd:25})){
+    tfcSaid.set(best.t.callsign,now);readback('rb_looking',{chance:.7,ttl:9000});
   }
 }
 // Live traffic: the AI aircraft's real moments (traffic.js), voiced with the chatter clips that name them.

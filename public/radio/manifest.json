@@ -2890,5 +2890,209 @@
 "v": "tara",
 "t": "That is a lovely approach.",
 "d": 1.38
+},
+"tfc_lead_00": {
+"g": "tfc_lead",
+"v": "tara",
+"t": "Traffic,",
+"d": 0.67
+},
+"tfc_lead_01": {
+"g": "tfc_lead",
+"v": "tara",
+"t": "Traffic alert,",
+"d": 0.7
+},
+"tfc_lead_02": {
+"g": "tfc_lead",
+"v": "tara",
+"t": "Heads up, traffic,",
+"d": 1.55
+},
+"tfc_lead_03": {
+"g": "tfc_lead",
+"v": "tara",
+"t": "Traffic for you,",
+"d": 1.17
+},
+"tfc_clock_0_00": {
+"g": "tfc_clock_0",
+"v": "tara",
+"t": "twelve o'clock,",
+"d": 0.63
+},
+"tfc_clock_1_00": {
+"g": "tfc_clock_1",
+"v": "tara",
+"t": "one o'clock,",
+"d": 0.66
+},
+"tfc_clock_2_00": {
+"g": "tfc_clock_2",
+"v": "tara",
+"t": "two o'clock,",
+"d": 0.69
+},
+"tfc_clock_3_00": {
+"g": "tfc_clock_3",
+"v": "tara",
+"t": "three o'clock,",
+"d": 0.58
+},
+"tfc_clock_4_00": {
+"g": "tfc_clock_4",
+"v": "tara",
+"t": "four o'clock,",
+"d": 0.69
+},
+"tfc_clock_5_00": {
+"g": "tfc_clock_5",
+"v": "tara",
+"t": "five o'clock,",
+"d": 0.79
+},
+"tfc_clock_6_00": {
+"g": "tfc_clock_6",
+"v": "tara",
+"t": "six o'clock,",
+"d": 0.77
+},
+"tfc_clock_7_00": {
+"g": "tfc_clock_7",
+"v": "tara",
+"t": "seven o'clock,",
+"d": 0.98
+},
+"tfc_clock_8_00": {
+"g": "tfc_clock_8",
+"v": "tara",
+"t": "eight o'clock,",
+"d": 0.69
+},
+"tfc_clock_9_00": {
+"g": "tfc_clock_9",
+"v": "tara",
+"t": "nine o'clock,",
+"d": 0.74
+},
+"tfc_clock_10_00": {
+"g": "tfc_clock_10",
+"v": "tara",
+"t": "ten o'clock,",
+"d": 0.66
+},
+"tfc_clock_11_00": {
+"g": "tfc_clock_11",
+"v": "tara",
+"t": "eleven o'clock,",
+"d": 0.97
+},
+"tfc_mi_1_00": {
+"g": "tfc_mi_1",
+"v": "tara",
+"t": "one mile,",
+"d": 0.83
+},
+"tfc_mi_1_01": {
+"g": "tfc_mi_1",
+"v": "tara",
+"t": "about a mile,",
+"d": 1.11
+},
+"tfc_mi_2_00": {
+"g": "tfc_mi_2",
+"v": "tara",
+"t": "two miles,",
+"d": 0.88
+},
+"tfc_mi_3_00": {
+"g": "tfc_mi_3",
+"v": "tara",
+"t": "three miles,",
+"d": 0.85
+},
+"tfc_same_00": {
+"g": "tfc_same",
+"v": "tara",
+"t": "same altitude.",
+"d": 1.09
+},
+"tfc_same_01": {
+"g": "tfc_same",
+"v": "tara",
+"t": "at your altitude.",
+"d": 0.94
+},
+"tfc_above_00": {
+"g": "tfc_above",
+"v": "tara",
+"t": "slightly above you.",
+"d": 0.99
+},
+"tfc_above_01": {
+"g": "tfc_above",
+"v": "tara",
+"t": "a few hundred feet above.",
+"d": 1.33
+},
+"tfc_below_00": {
+"g": "tfc_below",
+"v": "tara",
+"t": "slightly below you.",
+"d": 1.08
+},
+"tfc_below_01": {
+"g": "tfc_below",
+"v": "tara",
+"t": "a few hundred feet below.",
+"d": 1.43
+},
+"tfc_type_caravan_00": {
+"g": "tfc_type_caravan",
+"v": "tara",
+"t": "a Caravan,",
+"d": 1.11
+},
+"tfc_type_f16_00": {
+"g": "tfc_type_f16",
+"v": "tara",
+"t": "your wingman,",
+"d": 0.87
+},
+"rb_looking_00": {
+"g": "rb_looking",
+"v": "dan",
+"t": "Looking,",
+"d": 0.76
+},
+"rb_looking_01": {
+"g": "rb_looking",
+"v": "dan",
+"t": "Looking for the traffic,",
+"d": 1.37
+},
+"rb_looking_02": {
+"g": "rb_looking",
+"v": "dan",
+"t": "Eyes out, looking,",
+"d": 1.49
+},
+"rb_insight_00": {
+"g": "rb_insight",
+"v": "dan",
+"t": "Traffic in sight,",
+"d": 1.82
+},
+"rb_insight_01": {
+"g": "rb_insight",
+"v": "dan",
+"t": "Got them, in sight,",
+"d": 1.72
+},
+"rb_insight_02": {
+"g": "rb_insight",
+"v": "dan",
+"t": "Tally, traffic in sight,",
+"d": 2.4
 }
 }
