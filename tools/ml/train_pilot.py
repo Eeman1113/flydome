@@ -62,6 +62,7 @@ class Env:
         s.wx, s.wz, s.ground = z(), z(), z()
         s.halfL, s.halfW, s.pavedRwy = z(), z(), torch.zeros(n, dtype=torch.bool, device=dev)
         s.touched = torch.zeros(n, dtype=torch.bool, device=dev); s.prevAlong = z(); s.prevA = torch.zeros(n, 4, device=dev)
+        s.prevSpd, s.prevAlt, s.prevSpdT = z(), z(), z()
         s.landDist = 3000.0
         s.forgiving = torch.zeros(n, dtype=torch.bool, device=dev)   # the coach trains on both flight models
         s.force_task = None
@@ -108,7 +109,7 @@ class Env:
         st.airspeed[m] = V; st.alt[m] = Y - g; st.onGround[m] = tko
         s.hdgT[m] = yaw + R(-1.5, 1.5); s.altT[m] = R(150, 1400); s.spdT[m] = spd[:, 0] + (spd[:, 1] - spd[:, 0]) * torch.rand(k, device=dev)
         s.retarget[m] = R(12, 40)
-        s.prevAlong[m] = torch.where(land, D, 0.0)
+        s.prevAlong[m] = torch.where(land, D, 0.0); s.prevSpd[m] = V; s.prevAlt[m] = Y - g - contact; s.prevSpdT[m] = V
 
     def rwy(s):
         st = s.st; aim = s.halfL - 150
@@ -168,12 +169,13 @@ class Env:
             s.retarget[rt] = 12 + 28 * torch.rand(k, device=dev)
         done |= nav & ((st.onGround & (alt < 3)) | (s.t > 120))
         r += torch.where(nav & (st.crashed | (st.onGround & (alt < 3))), -20.0, 0.0)
-        # approach & landing
+        # approach & landing: per-step terms are costs (never positive), progress is potential-based, completion pays
         prog = (s.prevAlong - along).clamp(-20, 60) / 50; s.prevAlong = along
         air = ~s.touched
-        rl = torch.where(air, .25 * torch.exp(-cross.abs() / 35) + .3 * torch.exp(-gsd.abs() / 18) + .2 * torch.exp(-rh.abs() / .15) + prog
+        decel = (s.prevSpd - st.airspeed).clamp(-2, 4) / 8; s.prevSpd = st.airspeed.clone()
+        rl = torch.where(air, prog - .25 * (1 - torch.exp(-cross.abs() / 35)) - .3 * (1 - torch.exp(-gsd.abs() / 18)) - .2 * (1 - torch.exp(-rh.abs() / .15))
                          - .1 * ((st.airspeed - APP[s.var].mean(1)).abs() / 10).clamp(max=2) * (along < 2500).float(),
-                         .3 * torch.exp(-cross.abs() / 6) + .2 * (1 - st.airspeed / 45).clamp(0, 1) - .3 * ((a[:, 3] + 1) / 2))
+                         decel - .3 * (1 - torch.exp(-cross.abs() / 6)) - .3 * ((a[:, 3] + 1) / 2)) - .02
         td_ok = onRwy & (along > -s.halfL * 1.1)
         bonus = 12 - 5 * (sink - 1.0).clamp(min=0) - .12 * cross.abs() - .25 * (rh.abs() / DEG)
         rl = rl + torch.where(firstTouch, torch.where(td_ok, bonus, -12.0), 0.0)
@@ -182,12 +184,16 @@ class Env:
         rl = rl + torch.where(stopped, 30.0, 0.0) + torch.where(offRwyAfter, -12.0, 0.0) + torch.where(st.crashed, -30.0, 0.0)
         r += torch.where(land, rl, 0.0)
         done |= land & (stopped | offRwyAfter | (s.t > 220) | ((~s.touched) & (along < -s.halfL)))
+        r += torch.where(land & (s.t > 220) & ~stopped, -10.0, 0.0)
         succ |= land & stopped
-        # takeoff
-        rt_ = .4 * torch.exp(-cross.abs() / 8) + .3 * torch.exp(-rh.abs() / .1) + .3 * (alt / 150).clamp(0, 1) - .2 * (st.onGround & (st.airspeed > 45)).float()
+        # takeoff: reward speed gained on the runway and height gained in the air (both potential-based), costs for drift
+        dAlt = (alt - s.prevAlt).clamp(-5, 10) / 30; s.prevAlt = alt.clone()
+        dSpd = torch.where(st.onGround, (st.airspeed - s.prevSpdT).clamp(-2, 4) / 30, 0.0); s.prevSpdT = st.airspeed.clone()
+        rt_ = dAlt + dSpd - .3 * (1 - torch.exp(-cross.abs() / 8)) - .2 * (1 - torch.exp(-rh.abs() / .1)) - .02
         climbed = tko & (alt > 150)
         r += torch.where(tko, rt_ + torch.where(climbed, 20.0, 0.0) + torch.where(st.crashed, -30.0, 0.0) - torch.where(st.onGround & (~onRwy) & (s.t > 2), 1.0, 0.0), 0.0)
         done |= tko & (climbed | (s.t > 90) | (st.onGround & (~onRwy) & (st.airspeed > 5)))
+        r += torch.where(tko & (s.t > 90) & ~climbed, -10.0, 0.0)
         succ |= climbed
         done |= st.crashed
         info = {'succ': succ, 'land_done': land & done, 'sink': sink, 'first': firstTouch & td_ok, 'tko_done': tko & done}
@@ -212,13 +218,15 @@ def main():
     norm = RunningNorm(OBS); retStd = RunningNorm(1); retAcc = torch.zeros(N, device=dev)
     env = Env(N)
     GAMMA, LAM, CLIP, EPOCHS, MB = .99, .95, .2, 5, 4
-    best, hist = -1e9, []
+    best, hist = -1e9, []; last_ls = 0.0
     o = env.obs()
     t0 = time.time()
     for upd in range(1, UPDATES + 1):
         frac = 1 - (upd - 1) / UPDATES
         for g in opt.param_groups: g['lr'] = 3e-4 * max(frac, .1)
-        env.landDist = 1500 + 6000 * min(1, upd / (UPDATES * .45))   # curriculum: approaches start further out over time
+        # curriculum: approaches start close in and move out only while the pilot is succeeding
+        if upd > 1: env.landDist = min(7500.0, max(1500.0, env.landDist + (120 if last_ls > .45 else -40 if last_ls < .2 else 0)))
+        else: env.landDist = 1500.0
         bo, ba, blp, br, bd, bv = [], [], [], [], [], []
         stats = {'succ': 0., 'land': 0., 'tko': 0., 'tkos': 0., 'sink': [], 'r': 0.}
         for t in range(T):
@@ -258,13 +266,13 @@ def main():
                 loss = pl + .5 * vl - .002 * ent
                 opt.zero_grad(); loss.backward(); nn.utils.clip_grad_norm_(list(actor.parameters()) + list(critic.parameters()) + [logstd], .5); opt.step()
             with torch.no_grad(): logstd.clamp_(-2.5, 0)
-        ls = stats['succ'] / max(stats['land'], 1); ts = stats['tkos'] / max(stats['tko'], 1)
+        ls = stats['succ'] / max(stats['land'], 1); ts = stats['tkos'] / max(stats['tko'], 1); last_ls = ls
         sink = sum(stats['sink']) / max(len(stats['sink']), 1)
         score = ls * (env.landDist / 7500) + .3 * ts
         hist.append((upd, ls, ts, sink))
         if upd % 10 == 0 or upd == 1:
             print(f"upd {upd:4d} | land {ls*100:5.1f}% (dist≤{env.landDist:.0f}m) | takeoff {ts*100:5.1f}% | touchdown sink {sink:.2f} m/s | r {stats['r']/T:+.3f} | std {logstd.exp().mean():.2f} | {time.time()-t0:.0f}s", flush=True)
-        if score > best and upd > UPDATES * .45:
+        if score > best and upd > UPDATES * .3:
             best = score
             W = {'obs_mean': norm.mean.tolist(), 'obs_std': torch.sqrt(norm.var + 1e-8).tolist(),
                  'layers': [{'w': l.weight.detach().cpu().tolist(), 'b': l.bias.detach().cpu().tolist()} for l in actor if isinstance(l, nn.Linear)],
