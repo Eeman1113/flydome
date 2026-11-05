@@ -199,6 +199,61 @@ class Env:
         info = {'succ': succ, 'land_done': land & done, 'sink': sink, 'first': firstTouch & td_ok, 'tko_done': tko & done}
         return r, done, info
 
+# ---------------------------------------------------------------- scripted expert (classic autopilot)
+def expert(env):
+    """Hand-tuned autopilot for all three tasks. Used to verify the environment and to warm-start the network
+    by imitation. Sign conventions: +roll banks right (yaw decreases), +pitch is nose up, yaw 0 faces -z."""
+    st = env.st; task = env.task; v = env.var
+    along, cross, gsd, rh, onRwy = env.rwy()
+    contact = VAR[v, 6]; alt = st.y - env.ground - contact
+    jet = v == 2
+    def bank_to(hdg_err, max_bank):
+        bank = (-hdg_err * 1.6).clamp(-max_bank, max_bank)
+        return ((bank - st.roll) * 2.5 - st.rr * .4).clamp(-1, 1)
+    def pitch_to(p_des):
+        return ((p_des - st.pitch) * 5 - st.pr * .6).clamp(-1, 1)
+    def speed_to(spd_des, base):
+        return (base + (spd_des - st.airspeed) * .06).clamp(0, 1)
+    # --- navigation
+    he = fm.wrap(env.hdgT - st.yaw); ae = env.altT - alt
+    vs_des = (ae * .04).clamp(-6, 8)
+    p_nav = (vs_des / st.airspeed.clamp(min=20) + .03).clamp(-.18, .3)
+    nav = torch.stack([pitch_to(p_nav), bank_to(he, 35 * DEG), torch.zeros_like(he), speed_to(env.spdT, torch.where(jet, .55, .6))], 1)
+    # --- approach & landing (runway frame: land toward -z, cross > 0 means right of centreline)
+    hdg_des = (cross * .004).clamp(-.4, .4) + (-st.vx * 0) ; trk_err = fm.wrap(hdg_des - rh)
+    app_spd = APP[v].mean(1)
+    gs_alt = along.clamp(min=0) * math.tan(3 * DEG)
+    vs_land = ((gs_alt - alt) * .25 - st.airspeed * math.tan(3 * DEG)).clamp(-6, 3)
+    p_app = (vs_land / st.airspeed.clamp(min=20) + .06).clamp(-.15, .2)
+    flare = alt < 7
+    p_land = torch.where(flare, torch.full_like(p_app, .1), p_app)
+    thr_land = torch.where(flare, torch.zeros_like(alt), speed_to(app_spd, torch.where(jet, .35, .4)))
+    roll_land = torch.where(flare, ((-st.roll) * 2.5).clamp(-1, 1), bank_to(-trk_err, 20 * DEG))
+    yaw_land = torch.where(st.onGround, ((-rh - cross * .01) * 3).clamp(-1, 1), torch.zeros_like(rh))
+    land = torch.stack([pitch_to(p_land), roll_land, yaw_land, thr_land], 1)
+    land[:, 3] = torch.where(env.touched, torch.zeros_like(alt), land[:, 3])
+    land[:, 0] = torch.where(env.touched & st.onGround, pitch_to(torch.zeros_like(alt)), land[:, 0])
+    # --- takeoff: full power, track the centreline, rotate at ~58 kt (jet ~75 kt), climb at a gentle attitude
+    rot = torch.where(jet, 38.0, 30.0)
+    p_tko = torch.where(st.onGround, torch.where(st.airspeed > rot, torch.full_like(alt, .17), torch.zeros_like(alt)), torch.full_like(alt, .14))
+    yaw_tko = torch.where(st.onGround, ((-rh - cross * .02) * 3).clamp(-1, 1), torch.zeros_like(rh))
+    roll_tko = torch.where(st.onGround, torch.zeros_like(rh), bank_to(-fm.wrap((cross * .004).clamp(-.3, .3) - rh), 15 * DEG))
+    tko = torch.stack([pitch_to(p_tko), roll_tko, yaw_tko, torch.where(jet, torch.full_like(alt, .9), torch.ones_like(alt))], 1)
+    a = torch.where((task == 0)[:, None], nav, torch.where((task == 1)[:, None], land, tko))
+    a = a.clone(); a[:, 3] = a[:, 3] * 2 - 1          # throttle back to the action space [-1, 1]
+    return a
+
+def evaluate_expert(n=4096, steps=2600):
+    env = Env(n); env.landDist = 7000.0; env.reset(torch.ones(n, dtype=torch.bool, device=dev))
+    succ = {0: 0, 1: 0, 2: 0}; tot = {0: 0, 1: 0, 2: 0}; sinks = []
+    for _ in range(steps):
+        task = env.task.clone(); r, d, info = env.step(expert(env))
+        if info['first'].any(): sinks.append(info['sink'][info['first']].mean().item())
+        for k in (1, 2):
+            succ[k] += int((info['succ'] & (task == k)).sum()); tot[k] += int((d & (task == k)).sum())
+        env.reset(d)
+    print(f"expert: landing success {succ[1]/max(tot[1],1)*100:.1f}% of {tot[1]} | takeoff success {succ[2]/max(tot[2],1)*100:.1f}% of {tot[2]} | touchdown sink {sum(sinks)/max(len(sinks),1):.2f} m/s", flush=True)
+
 # ---------------------------------------------------------------- PPO
 class RunningNorm:
     def __init__(s, d): s.mean = torch.zeros(d, device=dev); s.var = torch.ones(d, device=dev); s.count = 1e-4
@@ -217,16 +272,38 @@ def main():
     opt = torch.optim.Adam(list(actor.parameters()) + list(critic.parameters()) + [logstd], lr=3e-4, eps=1e-5)
     norm = RunningNorm(OBS); retStd = RunningNorm(1); retAcc = torch.zeros(N, device=dev)
     env = Env(N)
+    if os.environ.get('EXPERT_TEST', '1') == '1': evaluate_expert()
+    # ---- imitation warm start: DAgger-style (states from a mix of expert and policy, labels from the expert)
+    BC = int(os.environ.get('BC_ITERS', 60))
+    if BC:
+        bc_opt = torch.optim.Adam(actor.parameters(), lr=1e-3); env.landDist = 7000.0
+        o = env.obs(); data_o, data_a = [], []
+        for it in range(BC):
+            beta = max(0.0, 1 - it / (BC * .6))                    # share of expert actions driving the rollout
+            for t in range(48):
+                with torch.no_grad():
+                    norm.update(o); ea = expert(env); pa = actor(norm(o)).clamp(-1, 1)
+                    use_e = (torch.rand(N, 1, device=dev) < beta)
+                    act_ = torch.where(use_e, ea, pa) + torch.randn_like(ea) * .12
+                data_o.append(o.clone()); data_a.append(ea)
+                _, d, _ = env.step(act_); env.reset(d); o = env.obs()
+            data_o = data_o[-1200:]; data_a = data_a[-1200:]
+            O_, A_ = torch.cat(data_o), torch.cat(data_a)
+            for _ in range(4):
+                for idx in torch.randperm(len(O_), device=dev).split(16384)[:24]:
+                    l = ((actor(norm(O_[idx])) - A_[idx]) ** 2).mean(); bc_opt.zero_grad(); l.backward(); bc_opt.step()
+            if it % 10 == 0 or it == BC - 1: print(f'imitation {it:3d}/{BC} | loss {l.item():.4f} | expert share {beta:.2f}', flush=True)
+        with torch.no_grad(): logstd.fill_(-1.2)
+        env.reset(torch.ones(N, dtype=torch.bool, device=dev)); env.landDist = 7000.0
     GAMMA, LAM, CLIP, EPOCHS, MB = .99, .95, .2, 5, 4
     best, hist = -1e9, []; last_ls = 0.0
     o = env.obs()
     t0 = time.time()
     for upd in range(1, UPDATES + 1):
         frac = 1 - (upd - 1) / UPDATES
-        for g in opt.param_groups: g['lr'] = 3e-4 * max(frac, .1)
+        for g in opt.param_groups: g['lr'] = (1e-4 if BC else 3e-4) * max(frac, .1)
         # curriculum: approaches start close in and move out only while the pilot is succeeding
-        if upd > 1: env.landDist = min(7500.0, max(1500.0, env.landDist + (120 if last_ls > .45 else -40 if last_ls < .2 else 0)))
-        else: env.landDist = 1500.0
+        env.landDist = 7000.0 if BC else (min(7500.0, max(1500.0, env.landDist + (120 if last_ls > .45 else -40 if last_ls < .2 else 0))) if upd > 1 else 1500.0)
         bo, ba, blp, br, bd, bv = [], [], [], [], [], []
         stats = {'succ': 0., 'land': 0., 'tko': 0., 'tkos': 0., 'sink': [], 'r': 0.}
         for t in range(T):
@@ -263,7 +340,8 @@ def main():
                 pl = -torch.min(ratio * ADV[mb], ratio.clamp(1 - CLIP, 1 + CLIP) * ADV[mb]).mean()
                 vl = .5 * ((critic(O[mb]).squeeze(1) - RET[mb]) ** 2).mean()
                 ent = (logstd + .5 * math.log(2 * math.pi * math.e)).sum()
-                loss = pl + .5 * vl - .002 * ent
+                pw = 0.0 if (BC and upd <= 15) else 1.0      # critic warm-up: protect the imitation prior
+                loss = pw * pl + .5 * vl - .002 * ent * pw
                 opt.zero_grad(); loss.backward(); nn.utils.clip_grad_norm_(list(actor.parameters()) + list(critic.parameters()) + [logstd], .5); opt.step()
             with torch.no_grad(): logstd.clamp_(-2.5, 0)
         ls = stats['succ'] / max(stats['land'], 1); ts = stats['tkos'] / max(stats['tko'], 1); last_ls = ls
