@@ -2,10 +2,10 @@
 // Only the icons used are imported, so the bundle stays small. React components use lucide-react.
 import { PlaneTakeoff, RefreshCw, History, BookOpen, GraduationCap, Keyboard, Settings, Volume2, VolumeX, Lock, Map, CalendarDays,
   Package, Compass, Mountain, Cloud, Sun, Plane, Eye, EyeOff, Pause, Play, RotateCcw, House, Share2, Download, X, Camera, Fuel, Trophy, Clock,
-  Coins, Navigation, Check, ArrowRight, Sparkles, Ship, Flame, ChevronLeft, ChevronRight } from 'lucide';
+  Coins, Navigation, Check, ArrowRight, Sparkles, Ship, Flame } from 'lucide';
 
 const ICONS={PlaneTakeoff,RefreshCw,History,BookOpen,GraduationCap,Keyboard,Settings,Volume2,VolumeX,Lock,Map,CalendarDays,Package,Compass,
-  Mountain,Cloud,Sun,Plane,Eye,EyeOff,Pause,Play,RotateCcw,House,Share2,Download,X,Camera,Fuel,Trophy,Clock,Coins,Navigation,Check,ArrowRight,Sparkles,Ship,Flame,ChevronLeft,ChevronRight};
+  Mountain,Cloud,Sun,Plane,Eye,EyeOff,Pause,Play,RotateCcw,House,Share2,Download,X,Camera,Fuel,Trophy,Clock,Coins,Navigation,Check,ArrowRight,Sparkles,Ship,Flame};
 
 const esc=v=>String(v).replace(/"/g,'&quot;');
 // lucide('PlaneTakeoff',{size:16,cls:'ic'}) → inline <svg> string (decorative: aria-hidden)

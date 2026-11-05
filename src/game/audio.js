@@ -1,6 +1,6 @@
 // SKYBOUND · audio
 import { $, KTS_PER_MS, clamp, smooth } from './util.js';
-import { iconButton, lucide } from './lucide.js';
+import { iconButton } from './lucide.js';
 import { aircraft, state, AIRCRAFT, aircraftState } from './config.js';
 import { camera } from './engine.js';
 import { toast } from './ui.js';
@@ -128,7 +128,7 @@ export function updateAircraftAudio(dt){
   a.previousRudder=rudder;
 }
 export function syncSoundButton(){const b=$('soundBtn');if(!b)return;iconButton(b,state.audioEnabled?'Volume2':'VolumeX',state.audioEnabled?'SOUND ON':'SOUND OFF');b.setAttribute('aria-pressed',String(state.audioEnabled));
-  const m=$('menuSoundBtn');if(m){m.innerHTML=lucide(state.audioEnabled?'Volume2':'VolumeX',{size:18,cls:''});m.setAttribute('aria-pressed',String(state.audioEnabled));m.title=state.audioEnabled?'Sound on':'Sound off';}}
+  const m=$('menuSoundBtn');if(m){iconButton(m,state.audioEnabled?'Volume2':'VolumeX',state.audioEnabled?'Sound on':'Sound off');m.setAttribute('aria-pressed',String(state.audioEnabled));}}
 export function toggleAircraftAudio(){state.audioEnabled=!state.audioEnabled;if(state.audioEnabled)ensureAircraftAudio();syncSoundButton();toast(state.audioEnabled?'Aircraft audio enabled.':'Aircraft audio muted.');}
 export function setAircraftAudioVolume(value){state.audioVolume=clamp(Number(value),0,1);if(aircraftAudio)setAudioParam(aircraftAudio.master.gain,state.started&&!state.paused&&state.audioEnabled?state.audioVolume:0,.08);}
 document.addEventListener('visibilitychange',()=>{if(!aircraftAudio)return;if(document.hidden){aircraftAudio.ctx.suspend().catch(()=>{});}else if(state.started&&!state.paused){aircraftAudio.ctx.resume().catch(()=>{});}});

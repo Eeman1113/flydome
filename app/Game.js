@@ -1,5 +1,5 @@
 'use client';
-import { ChevronLeft, ChevronRight, ArrowRight, BookOpen, CalendarDays, Camera, Cloud, Compass, Download, Eye, GraduationCap, History, House, Keyboard, Map as MapIcon, Mountain, Package, Pause, PlaneLanding, PlaneTakeoff, Play, RefreshCw, RotateCcw, Settings, Share2, Volume2, X } from 'lucide-react';
+import { ArrowRight, BookOpen, CalendarDays, Camera, Cloud, Compass, Download, Eye, GraduationCap, History, House, Keyboard, Map as MapIcon, Mountain, Package, Pause, PlaneLanding, PlaneTakeoff, Play, RefreshCw, RotateCcw, Settings, Share2, Volume2, X } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 import MobileNotice from './MobileNotice';
@@ -87,50 +87,86 @@ function Simulator({ start }) {
         <span id="controllerStatus" hidden></span><span id="gyroStatus" hidden></span>
       </section>
 
-      <div className="overlay mn" id="mainMenu" data-tab="charters">
+      <div className="overlay" id="mainMenu" data-tab="charters">
         <div className="m-scrim" aria-hidden="true"></div>
-
-        <header className="mn-top">
-          <div className="mn-brand"><b>SKYBOUND</b><small>WORLD <span id="worldSeed">—</span></small></div>
-          <nav className="mn-icons" aria-label="World and settings">
-            <button className="mn-ic" id="resumeWorldBtn" style={{display:'none'}} title="Resume last world" aria-label="Resume last world"><History aria-hidden="true"/><small></small></button>
-            <button className="mn-ic" id="newWorldBtn" title="New world" aria-label="New world"><RefreshCw className="ic-spin" aria-hidden="true"/></button>
-            <button className="mn-ic" id="logbookBtn" title="Logbook" aria-label="Logbook"><BookOpen aria-hidden="true"/></button>
-            <button className="mn-ic" id="controlsBtn" title="Controls" aria-label="Controls"><Keyboard aria-hidden="true"/></button>
-            <button className="mn-ic" title="Settings" aria-label="Settings" onClick={()=>document.getElementById('settingsBtn')?.click()}><Settings aria-hidden="true"/></button>
-            <button className="mn-ic" id="menuSoundBtn" title="Sound" aria-label="Toggle sound"><Volume2 aria-hidden="true"/></button>
-          </nav>
+        <header className="m-top">
+          <div className="m-brand">
+            <span className="m-mark" aria-hidden="true">SB</span>
+            <div><b>SKYBOUND</b><small>FIRST CHARTER · WORLD <span id="worldSeed">—</span></small></div>
+          </div>
+          <div className="m-world">
+            <span className="m-chip" title="Season and terrain"><Mountain className="ic" aria-hidden="true"/><span id="worldBiome">—</span></span>
+            <span className="m-chip" title="Sky"><Cloud className="ic" aria-hidden="true"/><span id="worldSky">—</span></span>
+            <span className="m-chip" title="Home field elevation"><PlaneLanding className="ic" aria-hidden="true"/><span id="worldAirfield">—</span></span>
+            <button className="m-icon-btn" id="newWorldBtn" title="Generate a new world"><RefreshCw className="ic ic-spin" aria-hidden="true"/>NEW WORLD</button>
+            <button className="m-icon-btn" id="resumeWorldBtn" style={{display:'none'}}><History className="ic" aria-hidden="true"/>RESUME<small></small></button>
+          </div>
         </header>
 
-        <main className="mn-main">
-          <p className="mn-meta"><span id="worldBiome">—</span><i>·</i><span id="worldSky">—</span><i>·</i><span id="worldAirfield">—</span></p>
-          <h1 className="mn-title">Every world is <em>uncharted.</em></h1>
+        <section className="m-panel glass" aria-label="Main menu">
+          <h1 className="hero-title">Every world is <em>uncharted.</em></h1>
+          <p className="intro">A new wilderness every time you load. Find its landmarks from the air, survey them low and slow, and bring your aircraft home with a clean landing.</p>
 
-          <ul className="mn-list">
-            <li className="mn-row mn-row-primary">
-              <button className="mn-item" id="startBtn"><span className="mn-label">Fly charter</span><ArrowRight className="mn-go" aria-hidden="true"/></button>
-              <div className="mn-charter">
-                <button className="mn-step" id="chPrev" aria-label="Previous charter"><ChevronLeft aria-hidden="true"/></button>
-                <div className="mn-ch"><b id="chName">—</b><small id="chMeta"></small></div>
-                <button className="mn-step" id="chNext" aria-label="Next charter"><ChevronRight aria-hidden="true"/></button>
-              </div>
-              <div id="charterBoard" hidden></div>
-            </li>
-            <li className="mn-row"><button className="mn-item" id="dailyBtn"><span className="mn-label">Daily charter</span><small className="mn-sub" id="dailyStatus"></small><ArrowRight className="mn-go" aria-hidden="true"/></button><span id="dailyTitle" hidden></span></li>
-            <li className="mn-row"><button className="mn-item" id="cargoBtn"><span className="mn-label">Bush pilot</span><small className="mn-sub">Freight between strips</small><ArrowRight className="mn-go" aria-hidden="true"/></button></li>
-            <li className="mn-row"><button className="mn-item" id="freeBtn"><span className="mn-label">Explore</span><small className="mn-sub">No route, no clock</small><ArrowRight className="mn-go" aria-hidden="true"/></button></li>
-            <li className="mn-row"><button className="mn-item" id="teachBtn"><span className="mn-label">Learn to fly</span><small className="mn-sub">Ten lessons with Skybound Ground</small><ArrowRight className="mn-go" aria-hidden="true"/></button></li>
-          </ul>
-        </main>
+          <button className="m-teach" id="teachBtn"><GraduationCap className="ic" aria-hidden="true"/><span><b>Teach me how to fly</b><small>Ten short lessons with Skybound Ground, from throttle to landing</small></span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
 
-        <footer className="mn-foot">
-          <div className="mn-pilot">
-            <div className="mn-pilot-line"><b id="pilotRank">Student Pilot</b><span id="pilotXp">0 XP</span></div>
-            <div className="mn-xp" role="progressbar" aria-label="Rank progress"><i id="pilotXpBar"></i></div>
-            <div id="pilotStats" hidden></div>
+          <div className="m-tabs" role="tablist" aria-label="Game mode">
+            <button role="tab" data-tab="charters" aria-selected="true"><MapIcon className="ic" aria-hidden="true"/>Charters</button>
+            <button role="tab" data-tab="daily" aria-selected="false"><CalendarDays className="ic" aria-hidden="true"/>Daily</button>
+            <button role="tab" data-tab="cargo" aria-selected="false"><Package className="ic" aria-hidden="true"/>Bush Pilot</button>
+            <button role="tab" data-tab="explore" aria-selected="false"><Compass className="ic" aria-hidden="true"/>Explore</button>
           </div>
-          <div className="mn-hangar" id="hangar"></div>
-        </footer>
+
+          <div className="m-pane" data-pane="charters" role="tabpanel">
+            <div className="board-head"><span>Charter board</span><span className="board-sub">Survey 3 landmarks, then land</span></div>
+            <div className="charter-board" id="charterBoard"><div className="board-empty">Surveying this world…</div></div>
+            <button className="primary m-cta" id="startBtn"><PlaneTakeoff className="ic" aria-hidden="true"/><span>FLY CHARTER</span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
+          </div>
+          <div className="m-pane" data-pane="daily" role="tabpanel">
+            <div className="m-mode">
+              <div className="m-mode-kicker">ONE WORLD FOR EVERY PILOT</div>
+              <div className="daily-title" id="dailyTitle">Daily Charter</div>
+              <p className="daily-status" id="dailyStatus"></p>
+              <ul className="m-points"><li>Same world, same route for everyone today</li><li>Race a ghost of your best run</li><li>Share your result line</li></ul>
+            </div>
+            <button className="primary m-cta" id="dailyBtn"><CalendarDays className="ic" aria-hidden="true"/><span>PLAY DAILY</span></button>
+          </div>
+          <div className="m-pane" data-pane="cargo" role="tabpanel">
+            <div className="m-mode">
+              <div className="m-mode-kicker">FREIGHT BETWEEN BUSH STRIPS</div>
+              <div className="daily-title">Bush Pilot</div>
+              <p className="daily-status">Pick a job from the board: fuel drums, mail, survey crews or a timed medical run. Heavy loads climb slowly; you are paid on landing.</p>
+              <ul className="m-points"><li>Earn cash and XP per delivery</li><li>Medical runs pay a bonus on time</li><li>Fly on from wherever you land</li></ul>
+            </div>
+            <button className="primary m-cta" id="cargoBtn"><Package className="ic" aria-hidden="true"/><span>OPEN JOB BOARD</span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
+          </div>
+          <div className="m-pane" data-pane="explore" role="tabpanel">
+            <div className="m-mode">
+              <div className="m-mode-kicker">NO ROUTE, NO CLOCK</div>
+              <div className="daily-title">Explore</div>
+              <p className="daily-status">Chart the whole world at your own pace. Every landmark you find is named, stamped in your logbook and shareable.</p>
+              <ul className="m-points"><li>Up to 12 landmarks per world</li><li>Rare finds earn their own stamp</li><li>Press M for the expedition chart</li></ul>
+            </div>
+            <button className="primary m-cta" id="freeBtn"><Compass className="ic" aria-hidden="true"/><span>TAKE OFF</span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
+          </div>
+
+          <div className="m-sub">
+                        <button className="m-link" id="controlsBtn"><Keyboard className="ic" aria-hidden="true"/>Controls</button>
+            <button className="m-link" onClick={()=>document.getElementById('settingsBtn')?.click()}><Settings className="ic" aria-hidden="true"/>Settings</button>
+            <button className="m-link" id="menuSoundBtn"><Volume2 className="ic" aria-hidden="true"/><span>Sound on</span></button>
+          </div>
+        </section>
+
+        <aside className="m-dock" aria-label="Pilot and hangar">
+          <div className="glass m-pilot">
+            <div className="side-kicker">PILOT</div>
+            <div className="pilot-rank" id="pilotRank">Student Pilot</div>
+            <div className="xp-bar" role="progressbar" aria-label="Rank progress"><i id="pilotXpBar"></i></div>
+            <div className="pilot-xp" id="pilotXp">0 XP</div>
+            <div className="pilot-stats" id="pilotStats"></div>
+            <button className="ghost" id="logbookBtn"><BookOpen className="ic" aria-hidden="true"/>LOGBOOK</button>
+          </div>
+          <div className="glass m-hangar side-block hangar" id="hangar"></div>
+        </aside>
       </div>
 
       <div className="overlay" id="pauseMenu" style={{display:'none'}}>
