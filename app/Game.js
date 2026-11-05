@@ -86,52 +86,85 @@ function Simulator({ start }) {
         <span id="controllerStatus" hidden></span><span id="gyroStatus" hidden></span>
       </section>
 
-      <div className="overlay" id="mainMenu">
-        <div className="menu-card">
-          <div className="menu-grid">
-            <div className="menu-main">
-              <div className="kicker">FIRST CHARTER · WORLD <span id="worldSeed">—</span></div>
-              <h1 className="hero-title">Every world is<br /><em>uncharted.</em></h1>
-              <p className="intro">A brand-new wilderness every time you load. Take a charter, find its landmarks from the air, survey them low and slow, then bring your Cessna home with a clean landing.</p>
-              <div className="board-head"><span>CHARTER BOARD</span><span className="board-sub" id="worldBiome">—</span></div>
-              <div className="charter-board" id="charterBoard"><div className="board-empty">Surveying this world…</div></div>
-              <div className="menu-buttons">
-                <button className="primary" id="startBtn">FLY CHARTER{'\u00a0'} ↗</button>
-                <button id="cargoBtn">BUSH PILOT</button>
-                <button id="freeBtn">EXPLORE</button>
-                <button id="teachBtn">FLIGHT SCHOOL</button>
-                <button id="controlsBtn">CONTROLS</button>
-              </div>
-            </div>
-            <aside className="menu-side">
-              <div className="side-block pilot">
-                <div className="side-kicker">PILOT</div>
-                <div className="pilot-rank" id="pilotRank">Student Pilot</div>
-                <div className="xp-bar"><i id="pilotXpBar"></i></div>
-                <div className="pilot-xp" id="pilotXp">0 XP</div>
-                <div className="pilot-stats" id="pilotStats"></div>
-                <button className="ghost" id="logbookBtn">OPEN LOGBOOK</button>
-              </div>
-              <div className="side-block hangar" id="hangar"></div>
-              <div className="side-block daily">
-                <div className="side-kicker">DAILY</div>
-                <div className="daily-title" id="dailyTitle">Daily Charter</div>
-                <div className="daily-status" id="dailyStatus"></div>
-                <button className="ghost" id="dailyBtn">PLAY DAILY</button>
-              </div>
-              <div className="side-block world">
-                <div className="side-kicker">THIS WORLD</div>
-                <div className="spec"><span>Sky</span><strong id="worldSky">—</strong></div>
-                <div className="spec"><span>Airfield</span><strong id="worldAirfield">—</strong></div>
-                <div className="world-actions">
-                  <button className="ghost" id="newWorldBtn">NEW WORLD ⟳</button>
-                  <button className="ghost" id="resumeWorldBtn" style={{display:'none'}}>RESUME LAST WORLD<small></small></button>
-                </div>
-              </div>
-            </aside>
+      <div className="overlay" id="mainMenu" data-tab="charters">
+        <div className="m-scrim" aria-hidden="true"></div>
+        <header className="m-top">
+          <div className="m-brand">
+            <span className="m-mark" aria-hidden="true">SB</span>
+            <div><b>SKYBOUND</b><small>FIRST CHARTER · WORLD <span id="worldSeed">—</span></small></div>
           </div>
-          <div className="menu-foot"><span>SKYBOUND · FIRST CHARTER</span><span>REFRESH FOR A NEW WORLD</span></div>
-        </div>
+          <div className="m-world">
+            <span className="m-chip" title="Season and terrain"><span id="worldBiome">—</span></span>
+            <span className="m-chip" title="Sky"><span id="worldSky">—</span></span>
+            <span className="m-chip" title="Home field elevation"><span id="worldAirfield">—</span></span>
+            <button className="m-icon-btn" id="newWorldBtn" title="Generate a new world">NEW WORLD</button>
+            <button className="m-icon-btn" id="resumeWorldBtn" style={{display:'none'}}>RESUME<small></small></button>
+          </div>
+        </header>
+
+        <section className="m-panel glass" aria-label="Main menu">
+          <h1 className="hero-title">Every world is <em>uncharted.</em></h1>
+          <p className="intro">A new wilderness every time you load. Find its landmarks from the air, survey them low and slow, and bring your aircraft home with a clean landing.</p>
+
+          <div className="m-tabs" role="tablist" aria-label="Game mode">
+            <button role="tab" data-tab="charters" aria-selected="true">Charters</button>
+            <button role="tab" data-tab="daily" aria-selected="false">Daily</button>
+            <button role="tab" data-tab="cargo" aria-selected="false">Bush Pilot</button>
+            <button role="tab" data-tab="explore" aria-selected="false">Explore</button>
+          </div>
+
+          <div className="m-pane" data-pane="charters" role="tabpanel">
+            <div className="board-head"><span>Charter board</span><span className="board-sub">Survey 3 landmarks, then land</span></div>
+            <div className="charter-board" id="charterBoard"><div className="board-empty">Surveying this world…</div></div>
+            <button className="primary m-cta" id="startBtn">FLY CHARTER{'\u00a0'} ↗</button>
+          </div>
+          <div className="m-pane" data-pane="daily" role="tabpanel">
+            <div className="m-mode">
+              <div className="m-mode-kicker">ONE WORLD FOR EVERY PILOT</div>
+              <div className="daily-title" id="dailyTitle">Daily Charter</div>
+              <p className="daily-status" id="dailyStatus"></p>
+              <ul className="m-points"><li>Same world, same route for everyone today</li><li>Race a ghost of your best run</li><li>Share your result line</li></ul>
+            </div>
+            <button className="primary m-cta" id="dailyBtn">PLAY DAILY</button>
+          </div>
+          <div className="m-pane" data-pane="cargo" role="tabpanel">
+            <div className="m-mode">
+              <div className="m-mode-kicker">FREIGHT BETWEEN BUSH STRIPS</div>
+              <div className="daily-title">Bush Pilot</div>
+              <p className="daily-status">Pick a job from the board: fuel drums, mail, survey crews or a timed medical run. Heavy loads climb slowly; you are paid on landing.</p>
+              <ul className="m-points"><li>Earn cash and XP per delivery</li><li>Medical runs pay a bonus on time</li><li>Fly on from wherever you land</li></ul>
+            </div>
+            <button className="primary m-cta" id="cargoBtn">OPEN JOB BOARD{'\u00a0'} ↗</button>
+          </div>
+          <div className="m-pane" data-pane="explore" role="tabpanel">
+            <div className="m-mode">
+              <div className="m-mode-kicker">NO ROUTE, NO CLOCK</div>
+              <div className="daily-title">Explore</div>
+              <p className="daily-status">Chart the whole world at your own pace. Every landmark you find is named, stamped in your logbook and shareable.</p>
+              <ul className="m-points"><li>Up to 12 landmarks per world</li><li>Rare finds earn their own stamp</li><li>Press M for the expedition chart</li></ul>
+            </div>
+            <button className="primary m-cta" id="freeBtn">TAKE OFF{'\u00a0'} ↗</button>
+          </div>
+
+          <div className="m-sub">
+            <button className="m-link" id="teachBtn">Flight School</button>
+            <button className="m-link" id="controlsBtn">Controls</button>
+            <button className="m-link" onClick={()=>document.getElementById('settingsBtn')?.click()}>Settings</button>
+            <button className="m-link" onClick={(e)=>{document.getElementById('soundBtn')?.click();const s=document.getElementById('soundBtn');e.currentTarget.textContent=s?.textContent==='SOUND ON'?'Sound on':'Sound off';}}>Sound on</button>
+          </div>
+        </section>
+
+        <aside className="m-dock" aria-label="Pilot and hangar">
+          <div className="glass m-pilot">
+            <div className="side-kicker">PILOT</div>
+            <div className="pilot-rank" id="pilotRank">Student Pilot</div>
+            <div className="xp-bar" role="progressbar" aria-label="Rank progress"><i id="pilotXpBar"></i></div>
+            <div className="pilot-xp" id="pilotXp">0 XP</div>
+            <div className="pilot-stats" id="pilotStats"></div>
+            <button className="ghost" id="logbookBtn">LOGBOOK</button>
+          </div>
+          <div className="glass m-hangar side-block hangar" id="hangar"></div>
+        </aside>
       </div>
 
       <div className="overlay" id="pauseMenu" style={{display:'none'}}>

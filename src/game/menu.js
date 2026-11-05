@@ -12,8 +12,21 @@ export const menuState={charter:0};
 
 function goTo(params){const u=new URL(location.href);u.search='';for(const [k,v] of Object.entries(params))u.searchParams.set(k,v);location.href=u.toString();}
 
+// Mode tabs (Charters / Daily / Bush Pilot / Explore): roving tabindex, arrow keys, remembered per browser.
+let tabsBound=false;
+function setTab(name,focus){
+  const root=$('mainMenu');if(!root)return;root.dataset.tab=name;
+  for(const t of root.querySelectorAll('[role=tab]')){const on=t.dataset.tab===name;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;if(on&&focus)t.focus();}
+  try{localStorage.setItem('skybound.tab',name);}catch{}
+}
+function bindTabs(){
+  if(tabsBound)return;tabsBound=true;const tabs=[...document.querySelectorAll('#mainMenu [role=tab]')];
+  tabs.forEach((t,i)=>{t.onclick=()=>setTab(t.dataset.tab);t.onkeydown=e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();const n=tabs[(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length];setTab(n.dataset.tab,true);}};});
+  let saved='charters';try{saved=localStorage.getItem('skybound.tab')||'charters';}catch{}
+  setTab(IS_DAILY?'charters':saved);
+}
 export function renderMenu(){
-  renderBoard();renderPilot();renderDaily();renderHangar();
+  bindTabs();renderBoard();renderPilot();renderDaily();renderHangar();
   if(IS_DAILY){const k=$('worldSeed')?.parentElement;if(k)k.innerHTML=`DAILY CHARTER #${DAILY_NUMBER} · WORLD <span id="worldSeed">#${WORLD_SEED}</span>`;}
   const prev=previousWorld,btn=$('resumeWorldBtn');
   if(prev&&prev.seed!==WORLD_SEED&&!prev.daily){btn.style.display='';btn.querySelector('small').textContent=`World #${prev.seed}`;btn.onclick=()=>goTo({seed:prev.seed});}
@@ -33,8 +46,8 @@ function renderBoard(){
 function cardHtml(c,i,sel,locked=false){
   const ls=c.ids.map(landmarkById).filter(Boolean),done=ls.filter(l=>mission.discovered.has(l.id)).length;
   const chips=ls.map(l=>`<span class="chip${mission.discovered.has(l.id)?' done':''}" title="${TYPE_LABEL[l.type]}">${iconSvg(l.type,'chip-ico')}${l.name}</span>`).join('');
-  const dots=[1,2,3].map(d=>`<i class="${d<=c.difficulty?'on':''}"></i>`).join('');
-  return `<button class="charter${sel?' selected':''}${c.water?' water':''}${locked?' locked':''}" data-i="${i}" ${locked?'disabled':''}><div class="ch-top"><span class="ch-title">${c.water?'<em class="ch-tag">WATER STRIP</em>':''}${c.title}</span><span class="ch-diff" title="Difficulty">${dots}</span></div><div class="ch-chips">${chips}</div><div class="ch-meta">${locked?`Needs the Caravan Amphibian${unlocked(AIRCRAFT.floats.rank)?' · pick it in the hangar':` · unlocks at ${RANKS[AIRCRAFT.floats.rank][1]}`}`:`${c.km.toFixed(0)} km route · ≈ ${c.minutes} min${c.water?` · alight on ${landmarkById(c.alight)?.name}`:''}${done?` · ${done}/${ls.length} charted`:''}`}</div></button>`;
+  const dots=[1,2,3].map(d=>`<i class="${d<=c.difficulty?'on':''}"></i>`).join('')+`<em>${['Easy','Medium','Hard'][c.difficulty-1]}</em>`;
+  return `<button class="charter${sel?' selected':''}${c.water?' water':''}${locked?' locked':''}" data-i="${i}" ${locked?'disabled':''}><div class="ch-top"><span class="ch-title">${c.water?'<em class="ch-tag">WATER STRIP</em>':''}${c.title}</span><span class="ch-diff" aria-label="Difficulty: ${['easy','medium','hard'][c.difficulty-1]}">${dots}</span></div><div class="ch-chips">${chips}</div><div class="ch-meta">${locked?'<svg class="ch-lock" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5.5 11h13v9.5h-13Z"/></svg>'+`Needs the Caravan Amphibian${unlocked(AIRCRAFT.floats.rank)?' · pick it in the hangar':` · unlocks at ${RANKS[AIRCRAFT.floats.rank][1]}`}`:`${c.km.toFixed(0)} km route · ≈ ${c.minutes} min${c.water?` · alight on ${landmarkById(c.alight)?.name}`:''}${done?` · ${done}/${ls.length} charted`:''}`}</div></button>`;
 }
 function renderPilot(){
   const r=rankInfo(),p=progress.pilot;
