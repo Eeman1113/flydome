@@ -1,4 +1,5 @@
 import { beginMission, mission, nextTarget } from './survey.js';
+import { achEvent } from './achievements.js';
 // SKYBOUND · tutorial
 import { $, DEG, FT_PER_M, KTS_PER_MS, clamp } from './util.js';
 import { TAKEOFF_ROTATE_KTS, aircraft, state } from './config.js';
@@ -127,7 +128,7 @@ export function updateTutorialPanel(){
   $('tutorialStatus').classList.toggle('ready',false);
   state.tutorial.lastStep=i;state.tutorial.lastMode=mode;
 }
-export function finishTutorial(){state.tutorial.active=false;state.tutorial.readySince=0;$('tutorialPanel').style.display='none';toast('Flight school complete. Enjoy your flight!');}
+export function finishTutorial(){achEvent('graduate');state.tutorial.active=false;state.tutorial.readySince=0;$('tutorialPanel').style.display='none';toast('Flight school complete. Enjoy your flight!');}
 export function advanceTutorial(){
   if(!state.tutorial.active)return;
   const next=state.tutorial.index+1;

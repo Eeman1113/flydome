@@ -3,6 +3,7 @@
 // fan and turbine whine, compressor hiss, core roar, afterburner light-up, rumble and crackle,
 // spool lag, cockpit muffling, front/rear directivity and a sonic boom.
 import * as THREE from 'three';
+import { haptic } from './haptics.js';
 import { aircraft, aircraftState, AIRCRAFT, state, shared } from './config.js';
 import { clamp } from './util.js';
 import { camera, plane, gradePass } from './engine.js';
@@ -127,7 +128,7 @@ export function updateJetFx(dt){
     if(agl<15||state.crashed)want=true;
     else if(G.down&&agl>40&&(a.verticalSpeed>2||kt>220))want=false;
     else if(!G.down&&agl<140&&kt<230&&a.verticalSpeed<1)want=true;
-    if(want!==G.down){G.down=want;jetAudio.gear(want);}
+    if(want!==G.down){G.down=want;jetAudio.gear(want);setTimeout(()=>haptic.gear(),2100);}
     const tgt=G.down?1:0;G.t+=Math.sign(tgt-G.t)*Math.min(Math.abs(tgt-G.t),dt/2.2);
     // each leg swings on its hinge: nose folds aft, mains swing forward and in, then the doors close
     for(const L of G.legs){const k=1-legEase(G.t,L.delay);L.piv.rotation.set(L.rx*k,0,L.rz*k);L.piv.visible=G.t>.02;}
@@ -136,7 +137,7 @@ export function updateJetFx(dt){
   // vapour cone flickers in from Mach .95 to 1.02 and fades as the aircraft goes supersonic
   const m=a.mach||0,vc=clamp((m-.94)/.05,0,1)*clamp((1.08-m)/.05,0,1);
   fx.vapour.material.opacity=vc*(.28+.12*Math.random());fx.vapour.visible=vc>.01;
-  if(fx.lastMach<1&&m>=1){jetAudio.boom();radioEvent('boom');}fx.lastMach=m;
+  if(fx.lastMach<1&&m>=1){jetAudio.boom();radioEvent('boom');haptic.boom();}fx.lastMach=m;
 }
 
 // ---------------------------------------------------------------- turbofan sound

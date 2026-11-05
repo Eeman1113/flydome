@@ -1,4 +1,6 @@
 import { triggerCrash } from './crash.js';
+import { progress, saveProgress } from './progress.js';
+import { haptic } from './haptics.js';
 import { onCrash, mission } from './survey.js';
 import { AIRCRAFT, aircraftState } from './config.js';
 // SKYBOUND · physics
@@ -16,7 +18,7 @@ import { sfx } from './sfx.js';
 export function crashAircraft(title,text,msg){
   // Fire/debris/crumple and a short crash-cam orbit before the menu appears.
   const water=/ditch/i.test(title);
-  state.crashed=true;onCrash();triggerCrash(water?'water':'impact');sfx.crash(water,aircraft.position.clone());radioEvent('crash',{water});
+  state.crashed=true;onCrash();triggerCrash(water?'water':'impact');sfx.crash(water,aircraft.position.clone());haptic.crash();progress.pilot.crashes=(progress.pilot.crashes||0)+1;saveProgress();radioEvent('crash',{water});
   clearTimeout(crashAircraft.t);crashAircraft.t=setTimeout(()=>{if(!state.crashed)return;state.paused=true;$('pauseMenu').style.display='grid';setHud();},3400);
   $('pauseMenu').querySelector('h2').textContent=title;$('pauseMenu').querySelector('.kicker').textContent='AIRCRAFT LOST';$('resumeBtn').style.display='none';$('restartBtn').classList.add('primary');
   $('pauseMenu').querySelector('.intro').textContent=mission.charter&&!mission.complete?`${text.replace(' Restart the flight to try again.','')} Your discoveries are saved; this charter's landing bonus is lost. Restart to continue the charter.`:text;

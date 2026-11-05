@@ -1,4 +1,6 @@
 import { updateCrash, clearCrash, crashActive, firePos } from './crash.js';
+import { updateAchievements } from './achievements.js';
+import { updateHaptics } from './haptics.js';
 import { radioEvent, radioUpdate } from './radio.js';
 import { attachJetFx, updateJetFx, updateJetAudio } from './jet.js';
 import './cheat.js';
@@ -339,7 +341,7 @@ export function frame(){requestAnimationFrame(frame);frameStartTime=performance.
   if(state.photo)updatePhotoCamera(frameDt);
   updateWorldFx(frameDt);
   {const a=aircraft,p=a.position,onGround=a.altAGL<aircraftGroundOffset+.3,surface=!onGround?null:onRunway(p.x,p.z)?'runway':isWaterAt(p.x,p.z)?'water':terrain.stripAt(p.x,p.z,6)?'strip':'field';
-   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});updateJetFx(frameDt);updateJetAudio(frameDt);updateSpeedFx(frameDt);radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
+   sfxUpdate(frameDt,{onGround,surface,fire:firePos()});updateJetFx(frameDt);updateJetAudio(frameDt);updateSpeedFx(frameDt);updateHaptics(frameDt,{onGround,surface});updateAchievements(frameDt);radioUpdate(frameDt,{approach:approachState.active?approachState:null});}
   updateWeather(frameDt);updateBeacons(worldTime);updateLandmarkFx(worldTime);updateGhost();updateCrash(frameDt);
   hudFrame();
   perfTick(frameDt);

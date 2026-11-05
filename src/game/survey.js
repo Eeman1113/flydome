@@ -2,6 +2,8 @@
 // Each world is scanned for real landmarks; charters ask the pilot to survey three of them
 // and land at any strip. Discoveries persist; crashes only cost the charter's landing bonus.
 import { DEG, clamp } from './util.js';
+import { achEvent } from './achievements.js';
+import { haptic } from './haptics.js';
 import { AIRPORT_H, terrain } from './world.js';
 import { DAILY_NUMBER, IS_DAILY, RUNWAY_HALF_L, RUNWAY_HALF_W, START_Z, WORLD_SEED, aircraft, state } from './config.js';
 import { onRunway, worldScan, isWaterAt } from './chunks.js';
@@ -226,7 +228,7 @@ function trackLanding(dt){
     }
     if(mission.touchdown&&performance.now()-mission.touchdown.t<4000){mission.bounces++;mission.touchdown.sink=Math.max(mission.touchdown.sink,sink);}
     else{mission.bounces=0;mission.touchdown={sink,offset,headingErr,site,t:performance.now()};}
-    sfx.touchdown(sink,site.kind);
+    sfx.touchdown(sink,site.kind);haptic.touchdown(sink,site.kind);
     mission.airborne=false;
   }
   mission.airborneT=0;
@@ -249,7 +251,7 @@ function gradeLanding(td){
 function recordLandingOnly(){}
 function landed(td){
   const grade=gradeLanding(td);recordLanding(grade);
-  const proper=td.site.kind!=='field';mission.lastLandingT=performance.now();mission.lastLandingProper=proper;
+  const proper=td.site.kind!=='field';if(td.site.kind==='water')achEvent('splashdown');mission.lastLandingT=performance.now();mission.lastLandingProper=proper;
   if(proper)mission.respawn=td.site.kind==='runway'?null:td.site.ref;
   const fpm=Math.round(td.sink*196.85);
   const label=td.site.kind==='field'?'BUSH LANDING':{S:'BUTTER',A:'SMOOTH',B:'GOOD',C:'FIRM',D:'HARD'}[grade];
@@ -260,7 +262,7 @@ function landed(td){
     mission.complete=true;
     const bonus=mission.bonusLost?0:{S:150,A:100,B:60,C:30,D:10}[grade];
     const total=Math.round((200+bonus)*(mission.hardcore?1.5:1));const res=addXP(total+xp);
-    progress.pilot.charters++;const entry=worldEntry(WORLD_SEED);if(!entry.charters.includes(mission.charter.id))entry.charters.push(mission.charter.id);
+    progress.pilot.charters++;if(mission.hardcore)achEvent('hardcore');if(mission.mode==='daily')achEvent('daily');const entry=worldEntry(WORLD_SEED);if(!entry.charters.includes(mission.charter.id))entry.charters.push(mission.charter.id);
     const time=mission.flightTime;
     let share=null;
     if(mission.mode==='daily'){
@@ -330,6 +332,7 @@ function completeJob(td,grade){
   const pay=Math.round(j.pay*gradeMul*(late?.6:1)/5)*5+timeBonus,xp=Math.round(pay/3);
   progress.pilot.cash=(progress.pilot.cash||0)+pay;progress.pilot.deliveries=(progress.pilot.deliveries||0)+1;
   const res=addXP(xp);saveProgress();
+  if(j.cargoId==='medical'&&j.limit&&!late)achEvent('lifesaver');
   radioEvent('delivered',{late,rankUp:res.rankUp?res.rank.index:null});sfx.cash();if(res.rankUp)sfx.fanfare();
   mission.job=null;mission.cargoKg=0;
   const next=generateJobs(td.site.kind==='runway'?'home':td.site.kind==='strip'?`s${td.site.ref.id}`:`w${td.site.ref?.id}`);

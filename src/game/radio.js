@@ -7,7 +7,7 @@ import { $, clamp, DEG } from './util.js';
 import { mission, nextTarget, charterSurveyed, landmarkById } from './survey.js';
 
 const SETTINGS_KEY='skybound.radio';
-export const radioSettings=(()=>{const d={on:true,chatter:true,subs:true,volume:.3,v:2};
+export const radioSettings=(()=>{const d={on:true,chatter:true,subs:true,readback:true,volume:.3,v:2};
   try{const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');if((s.v||1)<2){delete s.volume;s.v=2;}return {...d,...s};}catch{return d;}})();
 export function saveRadioSettings(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(radioSettings));}catch{}if(!radioSettings.on)stopRadio();}
 
@@ -77,7 +77,7 @@ async function transmit(call){
   const bed=noise(t0+.08,t-t0,chatter?.035:.018,1700);
   noise(t,.16,.2*lvl,2600);click(t+.15,.2*lvl);t+=.2;
   call.srcs=srcs;call.bed=bed;call.end=t;
-  const who=chatter?'TRAFFIC':'SKYBOUND GROUND';
+  const who=chatter?'TRAFFIC':call.pilot?'YOU':'SKYBOUND GROUND';
   subtitle(who,call.text);
   await new Promise(r=>setTimeout(r,(t-c.currentTime)*1000));
   if(playing===call)playing=null;
@@ -90,13 +90,13 @@ function pump(){
   playing=call;transmit(call).catch(()=>{playing=null;});
 }
 // Build and queue a call. parts: group names or literal clip ids ('#id').
-function call(parts,{pri=1,ttl,chatter=false,key,cd=0}={}){
+function call(parts,{pri=1,ttl,chatter=false,key,cd=0,pilot=false}={}){
   if(!manifest||!radioSettings.on)return false;
   if(key){const now=performance.now();if(now<(cool.get(key)||0))return false;cool.set(key,now+cd*1000);}
-  const ids=[],text=[];
-  for(const p of parts){if(p==null)continue;const id=p.startsWith('#')?p.slice(1):pick(p);if(!id||!manifest[id])continue;ids.push(id);text.push(manifest[id].t);}
+  const ids=[],text=[],grp=[];
+  for(const p of parts){if(p==null)continue;const id=p.startsWith('#')?p.slice(1):pick(p);if(!id||!manifest[id])continue;ids.push(id);text.push(manifest[id].t);grp.push(manifest[id].g);}
   if(!ids.length)return false;
-  const c={ids,text:text.reduce((s,t)=>!s?t:s+' '+(/,$/.test(s)&&!/^I\b/.test(t)?t[0].toLowerCase()+t.slice(1):t),'').replace(/\s+([,.])/g,'$1'),pri,ttl,chatter,at:performance.now()};
+  const c={pilot,ids,text:text.reduce((s,t,i)=>!s?t:s+' '+(/,$/.test(s)&&/^cs_/.test(grp[i-1])&&!/^I\b/.test(t)?t[0].toLowerCase()+t.slice(1):t),'').replace(/\s+([,.])/g,'$1'),pri,ttl,chatter,at:performance.now()};
   if(pri>=3){stopRadio();queue=[c];}
   else if(playing?.chatter&&!chatter){stopRadio();queue.unshift(c);}
   else{queue.push(c);queue.sort((a,b)=>b.pri-a.pri);if(queue.length>4)queue.length=4;}
@@ -105,6 +105,8 @@ function call(parts,{pri=1,ttl,chatter=false,key,cd=0}={}){
 // ---------------------------------------------------------------- spoken numbers
 const digits=n=>String(n).padStart(3,'0').split('').map(d=>`dig_${d}`);
 function numGroup(n){n=Math.round(n);return n>=0&&n<=30?`num_${n}`:null;}
+// Your readback: body + your callsign, in the pilot's voice. Skipped when readbacks are off or the clips are missing.
+function readback(body,{chance=1,...o}={}){if(!radioSettings.readback||Math.random()>chance||!groups[body])return;const v=AIRCRAFT[aircraftState.variant];call([body,v.jet?'pb_cs_viper':v.floats?'pb_cs_caravan':'pb_cs_skylane'],{pilot:true,ttl:12000,...o});}
 function cs(){const v=AIRCRAFT[aircraftState.variant];return v.jet?'cs_viper':v.floats?'cs_caravan':'cs_skylane';}
 function bearingTo(l){const a=aircraft.position;let b=Math.atan2(l.x-a.x,-(l.z-a.z))/DEG;b=(b+360)%360;return Math.round(b/10)*10%360||360;}
 function targetParts(l,lead){
@@ -132,15 +134,16 @@ export function radioEvent(ev,d={}){
         const body=onStrip?'start_strip':m==='cargo'?'start_cargo':m==='daily'?'start_daily':m==='charter'?'start_charter':m==='tutorial'?'tut_welcome':'start_explore';
         call([cs(),body],{pri:2,ttl:15000});
         if(m==='tutorial')break;
+        if(!onStrip&&m!=='cargo')readback('rb_takeoff',{pri:2,ttl:20000});
         if(!onStrip)call(windParts(),{pri:2,ttl:20000});
         if(WEATHER.rain)call(['wx_rain'],{ttl:25000});else if(WEATHER.gust>5)call(['wx_gusts'],{ttl:25000});else if(WEATHER.lowCloud)call(['wx_lowcloud'],{ttl:25000});
-        const t=nextTarget();if(t&&mission.charter)call(targetParts(t,'brief_first'),{ttl:30000});
+        const t=nextTarget();if(t&&mission.charter){call(targetParts(t,'brief_first'),{ttl:30000});readback('rb_copy',{ttl:35000});}
         break;}
       case 'discovery':{
         call([d.rare?'discovery_rare':'discovery'],{pri:2});
         if(mission.charter&&!mission.complete){
           if(charterSurveyed())call([mission.charter.water?'charter_surveyed_water':'charter_surveyed'],{pri:2});
-          else{const t=nextTarget();if(t)call(targetParts(t,'brief_next'),{ttl:15000});}
+          else{const t=nextTarget();if(t){call(targetParts(t,'brief_next'),{ttl:15000});readback('rb_copy',{chance:.5,ttl:18000});}}
         }
         if(d.rankUp!=null)call(['rank_up',`rank_${d.rankUp}`],{ttl:20000});
         break;}
@@ -148,11 +151,12 @@ export function radioEvent(ev,d={}){
       case 'landed':{
         const g=d.kind==='field'?'land_field':d.kind==='water'&&'SAB'.includes(d.grade)?'land_water':`land_${d.grade}`;
         call([cs(),g],{pri:2});
-        if(d.charterComplete)call(['charter_complete'],{pri:2});
+        if(d.charterComplete){call(['charter_complete'],{pri:2});readback('rb_thanks',{ttl:16000});}
+        else if('SA'.includes(d.grade))readback('rb_thanks',{chance:.5});
         if(d.rankUp!=null)call(['rank_up',`rank_${d.rankUp}`],{ttl:20000});
         break;}
-      case 'job':call([cs(),`job_${d.cargoId}`],{pri:2});break;
-      case 'delivered':call([d.late?'delivered_late':'delivered'],{pri:2});if(d.rankUp!=null)call(['rank_up',`rank_${d.rankUp}`],{ttl:20000});break;
+      case 'job':call([cs(),`job_${d.cargoId}`],{pri:2});readback('rb_job',{ttl:14000});break;
+      case 'delivered':call([d.late?'delivered_late':'delivered'],{pri:2});readback('rb_thanks',{chance:.7});if(d.rankUp!=null)call(['rank_up',`rank_${d.rankUp}`],{ttl:20000});break;
       case 'crash':call([d.water?'ditch':'crash'],{pri:3});break;
       case 'respawn':call([cs(),d.strip?'start_strip':'respawn'],{pri:2});break;
       case 'jet':call(['jet_on'],{pri:3});break;
@@ -192,10 +196,10 @@ export function radioUpdate(dt,ctxState){
   // approach
   const ap=ctxState?.approach;
   if(ap&&ap.along<2600){
-    if(!live.approachSaid){live.approachSaid=true;call([cs(),'approach'],{pri:2,ttl:6000});}
+    if(!live.approachSaid){live.approachSaid=true;call([cs(),'approach'],{pri:2,ttl:6000});readback('rb_land',{pri:2,ttl:9000});}
     else if(ap.along<1900&&ap.along>350){
-      if(ap.dev>.8)call(['approach_high'],{key:'aphigh',cd:14,ttl:2500});
-      else if(ap.dev<-.8)call(['approach_low'],{key:'aplow',cd:14,ttl:2500});
+      if(ap.dev>.8){if(call(['approach_high'],{key:'aphigh',cd:14,ttl:2500}))readback('rb_unable',{chance:.4,ttl:5000});}
+      else if(ap.dev<-.8){if(call(['approach_low'],{key:'aplow',cd:14,ttl:2500}))readback('rb_unable',{chance:.4,ttl:5000});}
       else if(kt>88)call(['approach_fast'],{key:'apfast',cd:16,ttl:2500});
     }
   }else if(!ap||ap.along>3200)live.approachSaid=false;

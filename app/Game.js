@@ -107,7 +107,7 @@ function Simulator({ start }) {
           <h1 className="hero-title">Every world is <em>uncharted.</em></h1>
           <p className="intro">A new wilderness every time you load. Find its landmarks from the air, survey them low and slow, and bring your aircraft home with a clean landing.</p>
 
-          <button className="m-teach" id="teachBtn"><GraduationCap className="ic" aria-hidden="true"/><span><b>Teach me how to fly</b><small>Ten short lessons with Skybound Ground, from throttle to landing</small></span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
+          <button className="m-teach" id="teachBtn"><GraduationCap className="ic" aria-hidden="true"/><span className="m-teach-tag" aria-hidden="true">New here? Start with this</span><span><b>Teach me how to fly</b><small>Ten short lessons with Skybound Ground, from throttle to landing</small></span><ArrowRight className="ic ic-go" aria-hidden="true"/></button>
 
           <div className="m-tabs" role="tablist" aria-label="Game mode">
             <button role="tab" data-tab="charters" aria-selected="true"><MapIcon className="ic" aria-hidden="true"/>Charters</button>
@@ -199,7 +199,7 @@ function Simulator({ start }) {
       </aside>
       
       <div className="overlay" id="modalOverlay" style={{display:'none'}}><div className="modal-card" id="modalContent"></div></div>
-      <div className="toast" id="toast"></div><div className="cheat-banner" id="cheatBanner"></div>
+      <div className="toast" id="toast"></div><div className="cheat-banner" id="cheatBanner"></div><div className="ach-toast" id="achToast" role="status" aria-live="polite"></div>
     </>
   );
 }

@@ -1,5 +1,6 @@
 // SKYBOUND · menu — charter board, pilot card, daily charter, resume and logbook.
 import { $ } from './util.js';
+import { achievementsHtml } from './achievements.js';
 import { lucide, iconButton } from './lucide.js';
 import { DAILY_NUMBER, IS_DAILY, WORLD_SEED, AIRCRAFT, LIVERIES, aircraftState, urlParams } from './config.js';
 import { swapAircraft } from './engine.js';
@@ -26,8 +27,15 @@ function bindTabs(){
   let saved='charters';try{saved=localStorage.getItem('skybound.tab')||'charters';}catch{}
   setTab(IS_DAILY?'charters':saved);
 }
+// First visit: until the pilot has landed once or opened Flight School, point them at the lessons.
+function firstVisitNudge(){
+  const t=$('teachBtn');if(!t)return;let seen=false;try{seen=localStorage.getItem('skybound.taught')==='1';}catch{}
+  const fresh=!seen&&progress.pilot.landings===0&&progress.pilot.flightTime<120;
+  t.classList.toggle('nudge',fresh);
+  if(!t.dataset.bound){t.dataset.bound='1';t.addEventListener('click',()=>{try{localStorage.setItem('skybound.taught','1');}catch{}t.classList.remove('nudge');});}
+}
 export function renderMenu(){
-  bindTabs();renderBoard();renderPilot();renderDaily();renderHangar();
+  bindTabs();firstVisitNudge();renderBoard();renderPilot();renderDaily();renderHangar();
   if(IS_DAILY){const k=$('worldSeed')?.parentElement;if(k)k.innerHTML=`DAILY CHARTER #${DAILY_NUMBER} · WORLD <span id="worldSeed">#${WORLD_SEED}</span>`;}
   const prev=previousWorld,btn=$('resumeWorldBtn');
   if(prev&&prev.seed!==WORLD_SEED&&!prev.daily){btn.style.display='';btn.querySelector('small').textContent=`World #${prev.seed}`;btn.onclick=()=>goTo({seed:prev.seed});}
@@ -82,6 +90,7 @@ export function logbookModal(){
     </div>
     <h3 class="lb-h">Discovery stamps</h3><div class="stamps">${stamps}</div>
     <h3 class="lb-h">Landing grades</h3><div class="grades">${bars}</div>
+    ${achievementsHtml()}
     <h3 class="lb-h">Ranks</h3><ul class="ranks">${ranks}</ul>`);
 }
 

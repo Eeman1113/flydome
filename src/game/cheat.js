@@ -1,5 +1,6 @@
 // SKYBOUND · cheats. Type "fly" anywhere (menu or in flight) to swap into the F-16 and back.
 import { AIRCRAFT, aircraft, aircraftState, state } from './config.js';
+import { haptic } from './haptics.js';
 import { $ } from './util.js';
 import { makeAircraft, swapAircraft, aircraftGroundOffset } from './engine.js';
 import { groundLevelAt } from './chunks.js';
@@ -25,7 +26,7 @@ async function toggleJet(){
   if(toJet)before=aircraftState.variant;
   const id=toJet?'f16':before||'skylane';
   banner('CHEAT ACTIVATED',toJet?'F-16 FIGHTING FALCON':AIRCRAFT[id].name.toUpperCase());
-  sfx.cheat?.();
+  sfx.cheat?.();haptic.cheat();
   try{
     const onGround=!state.started||aircraft.altAGL<aircraftGroundOffset+.5;
     if(onGround)await swapAircraft(id);

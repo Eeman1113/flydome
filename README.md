@@ -57,6 +57,8 @@ Rare finds earn their own logbook stamp. Every charted landmark gets a survey be
 - **Cessna 182 Skylane.** Your first aircraft: a dependable all-round tourer.
 - **Cessna 208 Caravan Amphibian.** Unlocks at **Bush Pilot** rank. It lands on lakes as well as runways, opens water strip charters, and turns charted lakes into cargo destinations.
 - **Paint schemes.** Six liveries, unlocked by rank, up to Cartographer Gold.
+- **Achievements.** 24 to earn, from your first takeoff to breaking the sound barrier, shown in the logbook.
+- **Controller rumble.** DualSense vibration for touchdowns, grass strips, the afterburner, the sonic boom and crashes.
 - **A secret.** There is a third aircraft. Old-school cheat codes still work.
 - **Hardcore charters.** An optional limited-fuel mode: the tank is sized to the route, you refuel by stopping at a strip, and you earn +50% XP.
 
@@ -73,7 +75,7 @@ You're never flying alone. **Skybound Ground**, the controller back at the home 
 - **Emergencies:** she shouts when you stall or get too close to the ground, and calls a mayday when it all goes wrong.
 - **Flight School:** she teaches every lesson.
 
-Each call is built from hundreds of recorded variants (callsigns, numbers, landmark types and lines for every situation), so she rarely repeats herself. Everything plays through a live radio filter with static and squelch. Other pilots chat on the frequency in the background. Every transmission is subtitled, and **Settings** lets you turn the radio, the chatter or the subtitles off.
+Each call is built from hundreds of recorded variants (callsigns, numbers, landmark types and lines for every situation), so she rarely repeats herself. Everything plays through a live radio filter with static and squelch. Your own pilot reads back her clearances in a second voice. Other pilots chat on the frequency in the background. Every transmission is subtitled, and **Settings** lets you turn the radio, the chatter or the subtitles off.
 
 ### A new world every time
 
