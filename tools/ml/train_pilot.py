@@ -220,12 +220,18 @@ def expert(env):
         return ((bank - st.roll) * 2.5 - st.rr * .4).clamp(-1, 1)
     def pitch_to(p_des):
         return ((p_des - st.pitch) * 5 - st.pr * .6).clamp(-1, 1)
+    # trim pitch from the lift equation: the angle of attack that makes lift = weight at this speed and density
+    rho = 1.225 * torch.exp(-st.y.clamp(min=0) / 8500)
+    vv = st.airspeed.clamp(min=20)
+    a_trim = ((2 * fm.MASS * 9.81 / (rho * vv * vv * fm.AREA)) - .22) / 5.25
+    def pitch_for_vs(vs):
+        return (a_trim + vs / vv).clamp(-.15, .3)
     def speed_to(spd_des, base):
         return (base + (spd_des - st.airspeed) * .06).clamp(0, 1)
     # --- navigation
     he = fm.wrap(env.hdgT - st.yaw); ae = env.altT - alt
     vs_des = (ae * .04).clamp(-6, 8)
-    p_nav = (vs_des / st.airspeed.clamp(min=20) + .03).clamp(-.18, .3)
+    p_nav = pitch_for_vs(vs_des)
     nav = torch.stack([pitch_to(p_nav), bank_to(he, 35 * DEG), torch.zeros_like(he), speed_to(env.spdT, torch.where(jet, .55, .6))], 1)
     # --- approach & landing (runway frame: land toward -z, cross > 0 means right of centreline)
     hdg_des = (cross * .008 + st.vx * .06).clamp(-.45, .45); trk_err = fm.wrap(hdg_des - rh)
@@ -235,7 +241,7 @@ def expert(env):
     # sink-rate flare: below 12 m the target descent rate shrinks with height, so the wheels arrive gently
     flare = alt < 12
     vs_land = torch.where(flare, -(.45 + alt * .25), vs_gs)
-    p_land = (vs_land / st.airspeed.clamp(min=20) + .06 + (vs_land - st.vy) * .02).clamp(-.15, .2)
+    p_land = (pitch_for_vs(vs_land) + (vs_land - st.vy) * .02).clamp(-.15, .25)
     thr_land = torch.where(alt < 3, torch.zeros_like(alt), speed_to(app_spd, torch.where(jet, .35, .4)))
     roll_land = torch.where(alt < 5, ((-st.roll) * 2.5).clamp(-1, 1), bank_to(trk_err, 25 * DEG))
     yaw_land = torch.where(st.onGround, ((-rh + cross * .01) * 3).clamp(-1, 1), torch.zeros_like(rh))
