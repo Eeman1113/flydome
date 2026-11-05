@@ -34,7 +34,9 @@ function model(type,livery){
     if(T.lengthM){m.updateMatrixWorld(true);const s=new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());m.scale.setScalar(T.lengthM/Math.max(s.x,s.z));
       m.updateMatrixWorld(true);const c=new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3());m.position.x-=c.x;m.position.z-=c.z;}
     else m.scale.setScalar(T.scale);
-    m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=false;if(o.material?.map)o.material.map.colorSpace=THREE.SRGBColorSpace;
+    m.updateMatrixWorld(true);const sb=new THREE.Box3(),ss=new THREE.Vector3();
+    m.traverse(o=>{if(o.isMesh){o.castShadow=Math.max(...sb.setFromObject(o).getSize(ss).toArray())>1.6;o.receiveShadow=false;   // only big parts cast shadows (like the player's)
+      if(o.material?.map)o.material.map.colorSpace=THREE.SRGBColorSpace;
       if(/landingOff/i.test(o.parent?.name||''))o.visible=false;}});
     return m;});
   return cache[type].then(m=>{const g=new THREE.Group(),inner=cloneSkinned(m);g.add(inner);
@@ -72,7 +74,9 @@ class AI{
     const dir=site.axis,s=newState(site.x+dir[0]*(site.halfL-60),site.h+this.T.contact,site.z+dir[1]*(site.halfL-60),Math.atan2(dir[0],dir[1]));
     this.s=s;this.site=site;this.phase='parked';this.wait=6+Math.random()*25;this.sync();
   }
-  sync(){const s=this.s;this.g.position.set(s.x,s.y,s.z);this.g.rotation.order='YXZ';this.g.rotation.set(s.pitch,s.yaw,-s.roll);}
+  sync(){const s=this.s;this.g.position.set(s.x,s.y,s.z);
+    // beyond ~7 km an aircraft is a pixel or two: skip its ~55 draw calls (it stays on the minimap)
+    const c=aircraft.position;this.g.visible=(s.x-c.x)**2+(s.z-c.z)**2<4.9e7;this.g.rotation.order='YXZ';this.g.rotation.set(s.pitch,s.yaw,-s.roll);}
   env(){return {ground:(x,z)=>groundLevelAt(x,z),paved:(x,z)=>onRunway(x,z),wind:[state.wind.x,state.wind.z],contact:this.T.contact};}
   decide(){
     const s=this.s,g=groundLevelAt(s.x,s.z),wind=[state.wind.x,state.wind.z],T=this.T;
@@ -158,7 +162,7 @@ class AI{
 
 const fleet=[];let wingman=null,started=false,formT=0;
 export async function startTraffic(){
-  if(started)return;started=true;
+  if(started||new URLSearchParams(location.search).has('notraffic'))return;started=true;
   await loadPilot();if(!pilotReady())return;
   const S=sites(),plan=[['caravan','Caravan niner kilo'],['skylane','Beaver one two zulu',[1,.8,.36]],['skylane','Otter five six',[.95,.36,.32]]];
   for(let i=0;i<plan.length;i++){const ai=new AI(plan[i][0],plan[i][1]);ai.livery=plan[i][2];fleet.push(ai);await ai.spawn(S[(i+1)%S.length]);ai.wait=4+i*18;}
