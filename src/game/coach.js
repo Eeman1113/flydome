@@ -16,6 +16,8 @@ export function loadCoach(){
   return loading;
 }
 export function coachReady(){return !!NET;}
+// true while the coach has spoken recently (the radio's generic high/low/fast calls stay quiet meanwhile)
+export function coachActive(){return !!NET&&performance.now()/1000-lastAdviceT<12;}
 function forward(f){
   const n=NET,x=n.x;for(let i=0;i<x.length;i++)x[i]=(f[i]-n.mean[i])/n.std[i];
   let inp=x;n.layers.forEach((l,L)=>{const o=n.buf[L],last=L===n.layers.length-1;
@@ -44,6 +46,14 @@ function plausible({alt,cross,gsd,rh,kt}){
   ok[0]=true;ok[1]=low||slow;ok[2]=high||fast;ok[3]=alt<10||(low&&!slow);ok[4]=alt>10&&high&&!fast;ok[5]=lat>4;ok[6]=lat<-4;
   return ok;
 }
+// rule of thumb, most important first: height (power if fast or low, else pitch), then speed, then centreline
+function ruleFix({alt,cross,gsd,rh,kt}){
+  const lat=cross-100*Math.sin(rh);
+  if(gsd>12)return kt>85?2:4; if(gsd<-10)return 1;
+  if(kt>88)return 2; if(kt<58&&alt>10)return 4;
+  if(lat>8)return 5; if(lat<-8)return 6;
+  return 0;
+}
 const LETTER=['S','A','B','C','D','OFF','CRASH'];
 let t=0,lastAdvice='',lastAdviceT=0,lastGoodT=0;
 // approach: {site:{x,z,yaw,halfL,halfW,h}} from the HUD's approach guide, or null. say(group) queues a radio call.
@@ -55,10 +65,14 @@ export function updateCoach(dt,approach,say){
   if(along>2300||alt<2.5){if(chip)chip.textContent='';return;}
   const out=forward(F),K=7,g=k=>out[k*6];
   const hold=g(0),ok=plausible(f);let best=0;for(let k=1;k<K;k++)if(ok[k]&&g(k)<g(best))best=k;
+  // poor approach but the network sees no sensible fix: fall back to the instructor's rule of thumb
+  let rule=false;
+  if(best===0&&hold>=2.5){const r=ruleFix(f);if(r){best=r;rule=true;}}
   const pred=Math.max(0,Math.min(6,Math.round(hold)));
   if(chip){chip.textContent=`PREDICTED ${LETTER[pred]}`;chip.dataset.g=LETTER[pred];}
   const now=performance.now()/1000,name=NET.j.corr[best];
-  if(best!==0&&hold-g(best)>.35&&(name!==lastAdvice||now-lastAdviceT>7)&&now-lastAdviceT>4.5){
+  // speak when a correction clearly helps, or on a poor approach (C or worse) when any sensible one helps at all
+  if(best!==0&&(rule||hold-g(best)>.35||(hold>=2.5&&hold-g(best)>.05))&&(name!==lastAdvice||now-lastAdviceT>7)&&now-lastAdviceT>4.5){
     lastAdvice=name;lastAdviceT=now;say(`coach_${name}`);
   }else if(best===0&&hold<1.3&&along<1500&&now-lastGoodT>25&&now-lastAdviceT>6){lastGoodT=now;say('coach_good');}
 }
