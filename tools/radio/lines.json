@@ -2382,6 +2382,180 @@
   "text": "Boom. I think the cabins on the ridge just lost their windows."
  },
  {
+  "id": "pb_cs_skylane_00",
+  "group": "pb_cs_skylane",
+  "voice": "dan",
+  "text": "two seven echo."
+ },
+ {
+  "id": "pb_cs_skylane_01",
+  "group": "pb_cs_skylane",
+  "voice": "dan",
+  "text": "Skylane two seven echo."
+ },
+ {
+  "id": "pb_cs_caravan_00",
+  "group": "pb_cs_caravan",
+  "voice": "dan",
+  "text": "four lima."
+ },
+ {
+  "id": "pb_cs_caravan_01",
+  "group": "pb_cs_caravan",
+  "voice": "dan",
+  "text": "Caravan four lima."
+ },
+ {
+  "id": "pb_cs_viper_00",
+  "group": "pb_cs_viper",
+  "voice": "dan",
+  "text": "Viper one one."
+ },
+ {
+  "id": "pb_cs_viper_01",
+  "group": "pb_cs_viper",
+  "voice": "dan",
+  "text": "Viper."
+ },
+ {
+  "id": "rb_takeoff_00",
+  "group": "rb_takeoff",
+  "voice": "dan",
+  "text": "Cleared for takeoff, three six,"
+ },
+ {
+  "id": "rb_takeoff_01",
+  "group": "rb_takeoff",
+  "voice": "dan",
+  "text": "Three six, cleared for takeoff,"
+ },
+ {
+  "id": "rb_takeoff_02",
+  "group": "rb_takeoff",
+  "voice": "dan",
+  "text": "Cleared for takeoff, rolling,"
+ },
+ {
+  "id": "rb_takeoff_03",
+  "group": "rb_takeoff",
+  "voice": "dan",
+  "text": "Copy, cleared for takeoff,"
+ },
+ {
+  "id": "rb_land_00",
+  "group": "rb_land",
+  "voice": "dan",
+  "text": "Cleared to land,"
+ },
+ {
+  "id": "rb_land_01",
+  "group": "rb_land",
+  "voice": "dan",
+  "text": "Copy, cleared to land,"
+ },
+ {
+  "id": "rb_land_02",
+  "group": "rb_land",
+  "voice": "dan",
+  "text": "Cleared to land, thanks,"
+ },
+ {
+  "id": "rb_copy_00",
+  "group": "rb_copy",
+  "voice": "dan",
+  "text": "Copy that,"
+ },
+ {
+  "id": "rb_copy_01",
+  "group": "rb_copy",
+  "voice": "dan",
+  "text": "Roger,"
+ },
+ {
+  "id": "rb_copy_02",
+  "group": "rb_copy",
+  "voice": "dan",
+  "text": "Wilco,"
+ },
+ {
+  "id": "rb_copy_03",
+  "group": "rb_copy",
+  "voice": "dan",
+  "text": "Copy,"
+ },
+ {
+  "id": "rb_copy_04",
+  "group": "rb_copy",
+  "voice": "dan",
+  "text": "Understood,"
+ },
+ {
+  "id": "rb_copy_05",
+  "group": "rb_copy",
+  "voice": "dan",
+  "text": "Roger that,"
+ },
+ {
+  "id": "rb_thanks_00",
+  "group": "rb_thanks",
+  "voice": "dan",
+  "text": "Thanks, Ground,"
+ },
+ {
+  "id": "rb_thanks_01",
+  "group": "rb_thanks",
+  "voice": "dan",
+  "text": "Appreciate it, Ground,"
+ },
+ {
+  "id": "rb_thanks_02",
+  "group": "rb_thanks",
+  "voice": "dan",
+  "text": "Thank you,"
+ },
+ {
+  "id": "rb_thanks_03",
+  "group": "rb_thanks",
+  "voice": "dan",
+  "text": "Cheers, Ground,"
+ },
+ {
+  "id": "rb_job_00",
+  "group": "rb_job",
+  "voice": "dan",
+  "text": "Copy, loaded and rolling,"
+ },
+ {
+  "id": "rb_job_01",
+  "group": "rb_job",
+  "voice": "dan",
+  "text": "Cargo aboard, on our way,"
+ },
+ {
+  "id": "rb_job_02",
+  "group": "rb_job",
+  "voice": "dan",
+  "text": "Copy, we have the load,"
+ },
+ {
+  "id": "rb_unable_00",
+  "group": "rb_unable",
+  "voice": "dan",
+  "text": "Copy, working on it,"
+ },
+ {
+  "id": "rb_unable_01",
+  "group": "rb_unable",
+  "voice": "dan",
+  "text": "Roger, correcting,"
+ },
+ {
+  "id": "rb_unable_02",
+  "group": "rb_unable",
+  "voice": "dan",
+  "text": "Copy, fixing that now,"
+ },
+ {
   "id": "chat_ground_00",
   "group": "chat_ground",
   "voice": "tara",

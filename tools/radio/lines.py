@@ -491,6 +491,18 @@ add('jet_boom', [
     'Boom. I think the cabins on the ridge just lost their windows.',
 ])
 
+# ------------------------------------------------------------------ YOUR readbacks (the player pilot, male voice)
+PILOT = 'dan'
+add('pb_cs_skylane', ['two seven echo.', 'Skylane two seven echo.'], voice=PILOT)
+add('pb_cs_caravan', ['four lima.', 'Caravan four lima.'], voice=PILOT)
+add('pb_cs_viper', ['Viper one one.', 'Viper.'], voice=PILOT)
+add('rb_takeoff', ['Cleared for takeoff, three six,', 'Three six, cleared for takeoff,', 'Cleared for takeoff, rolling,', 'Copy, cleared for takeoff,'], voice=PILOT)
+add('rb_land', ['Cleared to land,', 'Copy, cleared to land,', 'Cleared to land, thanks,'], voice=PILOT)
+add('rb_copy', ['Copy that,', 'Roger,', 'Wilco,', 'Copy,', 'Understood,', 'Roger that,'], voice=PILOT)
+add('rb_thanks', ['Thanks, Ground,', 'Appreciate it, Ground,', 'Thank you,', 'Cheers, Ground,'], voice=PILOT)
+add('rb_job', ['Copy, loaded and rolling,', 'Cargo aboard, on our way,', 'Copy, we have the load,'], voice=PILOT)
+add('rb_unable', ['Copy, working on it,', 'Roger, correcting,', 'Copy, fixing that now,'], voice=PILOT)
+
 # ------------------------------------------------------------------ background chatter (other traffic)
 add('chat_ground', [
     'Caravan niner kilo, taxi to runway three six via alpha, hold short.',
