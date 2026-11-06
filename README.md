@@ -79,7 +79,7 @@ Each call is built from hundreds of recorded variants (callsigns, numbers, landm
 
 ### Traffic in the sky
 
-You share the sky. A Caravan, a yellow Beaver and a red Otter live at the home field: they take off, cruise between strips, fly real approaches and land, and you hear it happen. Ground clears the Caravan for takeoff as it starts its roll, and the Otter gets told the strip is soft as it turns final. They show on your minimap as amber chevrons with their height relative to yours, and when one comes close Skybound Ground calls it out like real ATC: *"Traffic, eleven o'clock, one mile, a Caravan, same altitude."* A **neural network** flies them (more under *Under the hood*). If you find the secret jet, a second F-16, callsign *Viper two*, forms up on your wing and holds formation all the way past Mach 1.
+You share the sky. A Caravan, a yellow Beaver and a red Otter live at the home field: they taxi out from their parking spots, take off, cruise between strips, fly real approaches, land and taxi clear, holding short if you're on the runway. You see their navigation lights and wingtip strobes kilometres away, and you hear it all happen. Ground clears the Caravan for takeoff as it starts its roll, and the Otter gets told the strip is soft as it turns final. They show on your minimap as amber chevrons with their height relative to yours, and when one comes close Skybound Ground calls it out like real ATC: *"Traffic, eleven o'clock, one mile, a Caravan, same altitude."* A **neural network** flies them (more under *Under the hood*). If you find the secret jet, a second F-16, callsign *Viper two*, forms up on your wing and holds formation all the way past Mach 1.
 
 ### A new world every time
 
