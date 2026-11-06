@@ -1,6 +1,8 @@
-# SKYBOUND
+<p align="center"><img src="public/logo.png" alt="SKYBOUND: Bush Flying Adventures" width="760"></p>
 
-**A bush-flying exploration game. Every world is uncharted, and you're the first pilot to fly it.**
+<h1 align="center">SKYBOUND</h1>
+
+<p align="center"><b>A bush-flying exploration game. Every world is uncharted, and you're the first pilot to fly it.</b></p>
 
 Each time you load the page a new wilderness is generated: coastlines, mountain ranges, rivers, forests, crater lakes and sea stacks that no one has seen before. Take survey charters, find and name its landmarks, haul cargo between grass strips, and bring your Cessna home with a clean landing.
 
