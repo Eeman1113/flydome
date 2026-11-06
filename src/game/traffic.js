@@ -95,11 +95,19 @@ function terrainClear(x0,z0,x1,z1){let m=-1e9;for(let i=0;i<=12;i++){const t=i/1
 // highest ground along a heading (forward = (-sin yaw, -cos yaw)) out to `dist` metres
 function aheadMax(x,z,yaw,dist){return terrainClear(x,z,x-Math.sin(yaw)*dist,z-Math.cos(yaw)*dist);}
 
+// parking spot beside a runway (clear of it), facing it; slot spaces aircraft along the edge
+function parkSpot(site,slot){const d=site.axis,lat=[-d[1],d[0]],along=site.halfL-70-slot*30,off=site.halfW+16;
+  return {x:site.x+d[0]*along+lat[0]*off,z:site.z+d[1]*along+lat[1]*off,yaw:Math.atan2(lat[0],lat[1])};}
+// is the player on the ground on this site's runway?
+function playerOnRunway(site,pad=60){if(!aircraft.onGround)return false;const p=aircraft.position,d=site.axis,dx=p.x-site.x,dz=p.z-site.z;
+  return Math.abs(dx*d[0]+dz*d[1])<site.halfL+pad&&Math.abs(-dx*d[1]+dz*d[0])<site.halfW+25;}
+const wrapA=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a;};
+
 class AI{
-  constructor(type,callsign){this.type=type;this.T=TYPES[type];this.callsign=callsign;this.s=null;this.g=null;this.phase='parked';this.t=0;this.wait=8+Math.random()*30;this.decT=0;this.touched=false;}
+  constructor(type,callsign){this.type=type;this.T=TYPES[type];this.callsign=callsign;this.s=null;this.g=null;this.phase='parked';this.t=0;this.wait=8+Math.random()*30;this.decT=0;this.touched=false;this.goArounds=0;}
   async spawn(site){
     this.g=await model(this.type,this.livery);scene.add(this.g);
-    const dir=site.axis,s=newState(site.x+dir[0]*(site.halfL-60),site.h+this.T.contact,site.z+dir[1]*(site.halfL-60),Math.atan2(dir[0],dir[1]));
+    const k=parkSpot(site,this.slot||0),s=newState(k.x,groundLevelAt(k.x,k.z)+this.T.contact,k.z,k.yaw);
     this.s=s;this.site=site;this.phase='parked';this.wait=6+Math.random()*25;this.sync();
   }
   sync(){const s=this.s;this.g.position.set(s.x,s.y,s.z);
@@ -133,16 +141,20 @@ class AI{
     if(this.phase==='formation'){const dyE=aircraft.position.y-s.y-s.vy*1.5;c.pitch=Math.max(-1,Math.min(1,c.pitch+Math.max(-.35,Math.min(.35,dyE*.012))));}
     // terrain escape (takeoff and cruise): if rising ground ahead is above the flight path, climb at best-climb
     // pitch with full power and turn towards the lowest terrain; the network was trained over flat ground
+    // approach: if the ground between here and the runway rises into the path, abandon the approach (the cruise
+    // terrain escape below then takes over)
+    if(this.phase==='approach'&&!this.touched&&info.along>700&&aheadMax(s.x,s.z,s.yaw,Math.min(2500,info.along-400))+35>s.y)this.divert();
+    let escaping=false;
     if((this.phase==='takeoff'||this.phase==='cruise')&&!s.onGround&&s.alt>4&&T.variant!==2){
       // can the climb make it? compare the ground at several ranges against a conservative climb gradient
       let need=-1e9;for(const d of [500,1000,1800,2800])need=Math.max(need,aheadMax(s.x,s.z,s.yaw,d)+60-s.y-.09*d);
-      if(need>0){
-        let best=0,bm=1e9;for(const off of [0,-.5,.5,-1,1,-1.6,1.6]){const m=aheadMax(s.x,s.z,s.yaw+off,2000)+Math.abs(off)*20;if(m<bm){bm=m;best=off;}}
+      if(need>0){escaping=true;
+        let best=0,bm=1e9;for(const off of [0,-.5,.5,-1,1,-1.6,1.6,-2.4,2.4,3.1]){let m=-1e9;for(const d of [300,700,1300,2000])m=Math.max(m,aheadMax(s.x,s.z,s.yaw+off,d)-.09*d);m+=Math.abs(off)*20;if(m<bm){bm=m;best=off;}}   // fine near, coarse far (narrow ridges); incl. turning back
         const pT=kt<62?.05:kt<70?.14:.22;c.pitch=Math.max(-1,Math.min(1,(pT-s.pitch)*5-s.pr*.6));c.throttle=1;
-        const bank=need>80?.62:.45,rollT=Math.max(-bank,Math.min(bank,-best*.9));c.roll=Math.max(-1,Math.min(1,(rollT-s.roll)*2.2));
+        const bank=need>150?.75:need>80?.62:.45,rollT=Math.max(-bank,Math.min(bank,-best*.9));c.roll=Math.max(-1,Math.min(1,(rollT-s.roll)*2.2));
       }
     }
-    if(this.phase==='cruise'&&s.alt<80&&kt>62){const want=Math.max(-1,Math.min(1,(.14-s.pitch)*5-s.pr*.6));c.pitch=Math.max(c.pitch,want);c.throttle=1;c.roll=Math.max(-1,Math.min(1,-s.roll*2));}
+    if(this.phase==='cruise'&&s.alt<80&&kt>62&&!escaping){const want=Math.max(-1,Math.min(1,(.14-s.pitch)*5-s.pr*.6));c.pitch=Math.max(c.pitch,want);c.throttle=1;c.roll=Math.max(-1,Math.min(1,-s.roll*2));}
     // approach: never dive at the runway (a high entry makes the network push over); cap the sink rate
     if(this.phase==='approach'&&!s.onGround){const lim=s.alt>40?-7:-4.5;if(s.vy<lim)c.pitch=Math.max(-1,Math.min(1,c.pitch+Math.min(.8,(lim-s.vy)*.12)));}
     if(this.phase==='approach'&&!s.onGround&&!this.touched){
@@ -151,22 +163,35 @@ class AI{
     }
     if(this.phase==='approach'){
       if(s.touch>0)this.touched=true;
-      if(this.touched&&s.onGround&&s.airspeed<14){this.phase='parked';this.site=this.target;this.wait=25+Math.random()*40;this.say('landed');}
-      if(!this.touched&&info.along<-this.plan.rw.halfL){this.phase='cruise';}   // went around
+      if(this.touched&&s.onGround&&s.airspeed<14){this.phase='parked';this.site=this.target;this.wait=25+Math.random()*40;this.taxi=parkSpot(this.target,this.slot||0);this.say('landed');}
+      if(!this.touched&&info.along<-this.plan.rw.halfL){this.phase='cruise';if(++this.goArounds>=2)this.divert();}   // went around
+      if(!this.touched&&info.along<1800&&info.along>0&&playerOnRunway(this.target)){this.phase='cruise';}   // runway occupied by the player: go around
     }
   }
   update(dt){
     if(!this.s||!this.g)return;
     const s=this.s;
     if(this.phase==='parked'){
-      const w0=this.wait;this.wait-=dt;s.vx*=.9;s.vz*=.9;s.power=0;if(w0>=20&&this.wait<20)this.say('ready');
+      s.vx=s.vy=s.vz=0;s.pitch*=.9;s.roll*=.9;
+      if(this.taxi){   // taxi clear of the runway to the parking spot at walking-pace-plus
+        const dx=this.taxi.x-s.x,dz=this.taxi.z-s.z,d=Math.hypot(dx,dz);
+        if(d<.8){s.yaw+=wrapA(this.taxi.yaw-s.yaw)*Math.min(1,dt*1.5);if(Math.abs(wrapA(this.taxi.yaw-s.yaw))<.05)this.taxi=null;}
+        else{const st=Math.min(d,7*dt);s.x+=dx/d*st;s.z+=dz/d*st;s.yaw+=wrapA(Math.atan2(-dx,-dz)-s.yaw)*Math.min(1,dt*2.5);}
+        s.y=groundLevelAt(s.x,s.z)+this.T.contact;s.power=.12;this.spinProp(dt);this.sync();return;
+      }
+      const w0=this.wait;this.wait-=dt;s.power=0;if(w0>=20&&this.wait<20)this.say('ready');
+      if(this.wait<0&&this.type!=='f16'&&playerOnRunway(this.site,200)){this.wait=10;}   // hold short while you use the runway
       if(this.wait<0&&this.type!=='f16'){
         const all=sites().filter(x=>x!==this.site);if(!all.length)return;
-        this.target=all[Math.floor(Math.random()*all.length)];this.plan=plan(this.target);
+        this.target=all[Math.floor(Math.random()*all.length)];this.plan=plan(this.target);this.goArounds=0;
         const dep=plan(this.site);this.depart=dep.rw;
         // line up at the start of the departure runway, facing the departure direction
         const d=[-Math.sin(dep.rw.yaw),-Math.cos(dep.rw.yaw)];
-        Object.assign(s,newState(this.site.x-d[0]*(this.site.halfL-40),this.site.h+this.T.contact,this.site.z-d[1]*(this.site.halfL-40),dep.rw.yaw));
+        // taxi to the threshold first; the takeoff starts when the taxi finishes (see below)
+        this.lineUp={x:this.site.x-d[0]*(this.site.halfL-40),z:this.site.z-d[1]*(this.site.halfL-40),yaw:dep.rw.yaw};this.taxi=this.lineUp;this.wait=1e9;
+      }
+      if(this.lineUp&&!this.taxi&&!playerOnRunway(this.site,200)){
+        Object.assign(s,newState(this.lineUp.x,this.site.h+this.T.contact,this.lineUp.z,this.lineUp.yaw));this.lineUp=null;
         this.phase='takeoff';this.say('takeoff');
         if(!aircraft.onGround&&Math.hypot(s.x-aircraft.position.x,s.z-aircraft.position.z)<4000)this.say('takeoff_near');
       }
@@ -183,7 +208,10 @@ class AI{
   lights(){animateNavLights(this.g.userData.lights,this.phase!=='parked',this.callsign.length*.37);}
   spinProp(dt){if(!this.prop){this.prop=this.g.getObjectByName('prop_1_33')||null;this.prop&&(this.propAxis='y');}if(this.prop)this.prop.rotation[this.propAxis]+=dt*(18+this.s.power*205);}
   respawn(){const S=sites();this.spawnSite(S[Math.floor(Math.random()*S.length)]);}
-  spawnSite(site){const dir=site.axis;Object.assign(this.s,newState(site.x+dir[0]*(site.halfL-60),site.h+this.T.contact,site.z+dir[1]*(site.halfL-60),Math.atan2(dir[0],dir[1])));this.site=site;this.phase='parked';this.wait=10+Math.random()*30;this.sync();}
+  spawnSite(site){const k=parkSpot(site,this.slot||0);Object.assign(this.s,newState(k.x,groundLevelAt(k.x,k.z)+this.T.contact,k.z,k.yaw));this.taxi=null;this.lineUp=null;this.site=site;this.phase='parked';this.wait=10+Math.random()*30;this.sync();}
+  // give up on this strip (terrain in the approach path, or repeated go-arounds): fly to a different one
+  divert(){const all=sites().filter(x=>x!==this.target&&x!==this.site);if(all.length){this.target=all[Math.floor(Math.random()*all.length)];this.plan=plan(this.target);}
+    this.phase='cruise';this.goArounds=0;}
   remove(){if(this.g)scene.remove(this.g);}
   // radio: only within ~25 km of the player, and only once a flight has started
   say(ev){if(!state.started||!this.s||this.type==='f16')return;const a=aircraft.position;if(Math.hypot(this.s.x-a.x,this.s.z-a.z)>25000)return;
@@ -195,7 +223,7 @@ export async function startTraffic(){
   if(started||new URLSearchParams(location.search).has('notraffic'))return;started=true;
   await loadPilot();if(!pilotReady())return;
   const S=sites(),plan=[['caravan','Caravan niner kilo'],['skylane','Beaver one two zulu',[1,.8,.36]],['skylane','Otter five six',[.95,.36,.32]]];
-  for(let i=0;i<plan.length;i++){const ai=new AI(plan[i][0],plan[i][1]);ai.livery=plan[i][2];fleet.push(ai);await ai.spawn(S[(i+1)%S.length]);ai.wait=4+i*18;}
+  for(let i=0;i<plan.length;i++){const ai=new AI(plan[i][0],plan[i][1]);ai.livery=plan[i][2];ai.slot=i;fleet.push(ai);await ai.spawn(S[(i+1)%S.length]);ai.wait=4+i*18;}
 }
 export function updateTraffic(dt){
   if(!started||!pilotReady()||state.paused)return;
