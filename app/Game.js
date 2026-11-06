@@ -14,6 +14,8 @@ function isHandheld() {
   return mobileUA || iPadOS || noFinePointer;
 }
 
+const BP=process.env.NEXT_PUBLIC_BASE_PATH||'';
+
 export default function Game({ readmeHtml }) {
   const [device, setDevice] = useState(null);
 
@@ -42,9 +44,9 @@ function Simulator({ start }) {
   return (
     <>
       <div id="sim"></div><canvas id="rainDrops" className="rain-drops"></canvas><div className="radio-sub" id="radioSub"></div><div className="grain"></div>
-      <div className="loading" id="loading"><div className="loader-inner"><div className="loader-mark">SB</div><div className="loader-text">INITIALISING RENDERER</div><div className="loader-bar"><i></i></div></div></div>
+      <div className="loading" id="loading"><div className="loader-inner"><img className="loader-logo" src={`${BP}/logo.png`} alt="SKYBOUND: Bush Flying Adventures"/><div className="loader-text">INITIALISING RENDERER</div><div className="loader-bar"><i></i></div></div></div>
       <header className="topbar">
-        <div className="brand"><div className="brand-mark">SB</div><div><div className="brand-name">SKYBOUND</div><div className="brand-sub">FIRST CHARTER · CESSNA 182 SKYLANE</div></div></div>
+        <div className="brand"><img className="brand-badge" src={`${BP}/badge.png`} alt="" aria-hidden="true"/><div><div className="brand-name">SKYBOUND</div><div className="brand-sub">FIRST CHARTER · CESSNA 182 SKYLANE</div></div></div>
         <div className="top-actions"><button id="hudBtn" title="Toggle HUD (H)"><Eye className="ic" aria-hidden="true"/>HUD</button><button id="soundBtn" aria-pressed="true"><Volume2 className="ic" aria-hidden="true"/><span>SOUND ON</span></button><button id="settingsBtn"><Settings className="ic" aria-hidden="true"/>SETTINGS</button><button id="pauseBtn" title="Pause (Esc)"><Pause className="ic" aria-hidden="true"/>PAUSE</button></div>
       </header>
       <section className="hud" id="hud">
@@ -91,8 +93,8 @@ function Simulator({ start }) {
         <div className="m-scrim" aria-hidden="true"></div>
         <header className="m-top">
           <div className="m-brand">
-            <span className="m-mark" aria-hidden="true">SB</span>
-            <div><b>SKYBOUND</b><small>FIRST CHARTER · WORLD <span id="worldSeed">—</span></small></div>
+            <img className="m-logo" src={`${BP}/logo.png`} alt="SKYBOUND: Bush Flying Adventures"/>
+            <div><small>FIRST CHARTER · WORLD <span id="worldSeed">—</span></small></div>
           </div>
           <div className="m-world">
             <span className="m-chip" title="Season and terrain"><Mountain className="ic" aria-hidden="true"/><span id="worldBiome">—</span></span>
