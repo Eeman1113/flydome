@@ -325,7 +325,7 @@ export const _sunTmp=new THREE.Vector3();
 export function updateWorldFx(dt){
   worldTime+=dt;shared.time.value=worldTime;
   if(skyMesh)skyMesh.position.copy(camera.position);
-  if(waterMesh){waterMesh.position.x=camera.position.x;waterMesh.position.z=camera.position.z;}
+  if(waterMesh){waterMesh.position.x=Math.round(camera.position.x/64)*64;waterMesh.position.z=Math.round(camera.position.z/64)*64;} // snapped: identical geometry frame to frame
   if(cloudSystem)cloudSystem.update(dt,camera);
   // Tight shadow frustum that follows the aircraft, snapped to texels to avoid shimmer.
   const castNow=aircraft.altAGL<70;if(plane&&plane.userData.castNow!==castNow){plane.userData.castNow=castNow;plane.traverse(o=>{if(o.isMesh){if(o.userData.cast==null)o.userData.cast=o.castShadow;o.castShadow=castNow&&o.userData.cast;}});}

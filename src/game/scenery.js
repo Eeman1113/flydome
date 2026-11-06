@@ -9,7 +9,10 @@ import { _m4 } from './chunks.js';
 import { scene, plane } from './engine.js';
 
 export function makeWater(){
-  const g=new THREE.PlaneGeometry(1,1,1,1);g.rotateX(-Math.PI/2);
+  // A tessellated grid, dense under the camera (~5 m cells) and coarse at the horizon: one 40 km quad gets its depth
+  // from far-off clipped vertices, too imprecise to resolve against near-flush shore terrain, so the coastline crawled.
+  const n=128,g=new THREE.PlaneGeometry(1,1,n,n);g.rotateX(-Math.PI/2);const p=g.attributes.position;
+  for(let i=0;i<p.count;i++){const x=p.getX(i)*2,z=p.getZ(i)*2;p.setXYZ(i,Math.sign(x)*x*x*.5,0,Math.sign(z)*z*z*.5);}
   const m=new THREE.Mesh(g,mats.water);m.position.y=SEA_LEVEL;m.frustumCulled=false;m.receiveShadow=true;m.renderOrder=1;
   return m;
 }
